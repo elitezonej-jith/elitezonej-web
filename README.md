@@ -279,11 +279,21 @@ The script reads `BASE_URL` (defaults to `http://localhost:3001`) and writes ful
 
 ## Deployment
 
-### Vercel won't work for the admin panels
+### Vercel — demo mode (in-memory SQLite, no persistence)
 
-`better-sqlite3` requires a **writable, persistent filesystem**. Vercel's serverless functions get an ephemeral `/tmp` and the `.next` build is read-only. The storefront deploys fine; the admin panels do not.
+`better-sqlite3` would normally need a writable filesystem, but `lib/admin/db.ts` detects `process.env.VERCEL === "1"` and switches to a **`:memory:`** SQLite database. Same schema, same seeds, same default `admin@elitezonej.com / admin123` login — it just resets on every cold start (≈15-min idle timeout, or any redeploy).
 
-### Options that do work
+**What you get on Vercel:**
+- `/studio` and `/admin` deploy and render exactly like local
+- Login with the default credentials works
+- Mutations work *during a session* — the same lambda instance keeps your edits in RAM until it spins down
+- A second concurrent visitor hitting a different lambda instance gets their own fresh in-memory DB
+
+This is **demo-grade**, not production. For a real persistent host, see *Persistent options* below.
+
+### Persistent options
+
+If you need real writes that survive cold starts:
 
 | Host | Why it works |
 |---|---|
@@ -292,11 +302,11 @@ The script reads `BASE_URL` (defaults to `http://localhost:3001`) and writes ful
 | **Cloudflare Tunnel** to your own server | Lowest cost, full control, real disk |
 | **Self-hosted VPS** (DigitalOcean / Hetzner) | Vanilla `npm run start` behind nginx |
 
-Whichever you pick, ensure `data/` is on a **persistent volume** (not the container's ephemeral layer).
+For any of these, leave `VERCEL` and `IS_SERVERLESS` unset so the panel uses the on-disk DB. Mount `data/` on a **persistent volume**.
 
 ### Storefront-only on Vercel
 
-The public site under `/`, `/collection`, `/products/[slug]`, `/bespoke` reads from the static `lib/products.ts` and deploys cleanly. You can keep that on Vercel and host the admin panels separately under e.g. `admin.elitezonej.com` pointing at Railway.
+The public site under `/`, `/collection`, `/products/[slug]`, `/bespoke` reads from the static `lib/products.ts` and deploys cleanly regardless of the SQLite mode.
 
 ---
 

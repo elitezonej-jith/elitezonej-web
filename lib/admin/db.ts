@@ -72,10 +72,22 @@ function ensureDefaultAdmin(db: Database.Database): void {
   ).run(DEFAULT_ADMIN_EMAIL, hash, DEFAULT_ADMIN_NAME);
 }
 
+// On Vercel (and any serverless host with a read-only filesystem) we cannot
+// write a SQLite file, so fall back to an in-memory DB that re-seeds on every
+// cold start. The UI behaves identically; mutations just don't survive a
+// redeploy or a 15-min idle timeout.
+const IS_SERVERLESS = process.env.VERCEL === "1" || process.env.IS_SERVERLESS === "1";
+
 function open(): Database.Database {
-  if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
-  const db = new Database(DB_PATH);
-  db.pragma("journal_mode = WAL");
+  let db: Database.Database;
+  if (IS_SERVERLESS) {
+    db = new Database(":memory:");
+  } else {
+    if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
+    db = new Database(DB_PATH);
+    // WAL is only meaningful for on-disk databases.
+    db.pragma("journal_mode = WAL");
+  }
   db.pragma("foreign_keys = ON");
 
   // v1 schema is idempotent (CREATE TABLE IF NOT EXISTS …) — safe on every open.
