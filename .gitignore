@@ -48,3 +48,13 @@ next-env.d.ts
 disturbia-audit/
 UI_AUDIT_REPORT.md
 scripts/
+
+# admin panel sqlite store
+/data/*.db
+/data/*.db-journal
+/data/*.db-wal
+/data/*.db-shm
+/public/admin-uploads/
+
+# local testing artifacts
+cookies.txt

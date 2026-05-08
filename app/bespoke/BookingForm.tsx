@@ -1,29 +1,26 @@
 "use client";
-import { useState } from "react";
+import { useActionState } from "react";
+import { submitBespokeBooking, type PublicBookingState } from "../admin/actions/bookings";
 
 type Field = {
-  name: "first" | "last" | "phone";
+  name: "first_name" | "last_name" | "phone";
   label: string;
   type: string;
   placeholder: string;
 };
 
 const TEXT_FIELDS: Field[] = [
-  { name: "first", label: "First name", type: "text", placeholder: "Your first name" },
-  { name: "last",  label: "Last name",  type: "text", placeholder: "Your last name" },
-  { name: "phone", label: "Phone",      type: "tel",  placeholder: "+91 …" },
+  { name: "first_name", label: "First name", type: "text", placeholder: "Your first name" },
+  { name: "last_name",  label: "Last name",  type: "text", placeholder: "Your last name" },
+  { name: "phone",      label: "Phone",      type: "tel",  placeholder: "+91 …" },
 ];
 
+const initial: PublicBookingState = {};
+
 export default function BookingForm() {
-  const [done, setDone] = useState(false);
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [state, action, pending] = useActionState(submitBespokeBooking, initial);
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setDone(true);
-  };
-
-  if (done) {
+  if (state.ok) {
     return (
       <div className="booking-confirm" role="status" aria-live="polite">
         <span className="booking-confirm__check" aria-hidden="true">✓</span>
@@ -36,27 +33,16 @@ export default function BookingForm() {
   }
 
   return (
-    <form className="booking-form" onSubmit={onSubmit}>
+    <form className="booking-form" action={action}>
       <div className="booking-form__row two">
         {TEXT_FIELDS.slice(0, 2).map(f => (
-          <BookingField
-            key={f.name}
-            field={f}
-            value={values[f.name] || ""}
-            onChange={v => setValues(prev => ({ ...prev, [f.name]: v }))}
-          />
+          <BookingField key={f.name} field={f} />
         ))}
       </div>
-      <BookingField
-        field={TEXT_FIELDS[2]}
-        value={values.phone || ""}
-        onChange={v => setValues(prev => ({ ...prev, phone: v }))}
-      />
+      <BookingField field={TEXT_FIELDS[2]} />
       <BookingSelect
         name="city"
         label="City"
-        value={values.city || ""}
-        onChange={v => setValues(prev => ({ ...prev, city: v }))}
         options={[
           "Delhi NCR — Visit atelier",
           "Delhi NCR — Home fitting",
@@ -68,8 +54,6 @@ export default function BookingForm() {
       <BookingSelect
         name="service"
         label="Service"
-        value={values.service || ""}
-        onChange={v => setValues(prev => ({ ...prev, service: v }))}
         options={[
           "Bespoke Suit",
           "Custom Sherwani",
@@ -78,26 +62,27 @@ export default function BookingForm() {
           "Just exploring",
         ]}
       />
-      <button className="btn btn-primary btn-lg btn-block" type="submit">
-        Request appointment
+      {state.error && (
+        <p style={{ margin: 0, color: "var(--accent)", fontStyle: "italic" }} role="alert">
+          {state.error}
+        </p>
+      )}
+      <button className="btn btn-primary btn-lg btn-block" type="submit" disabled={pending}>
+        {pending ? "Sending…" : "Request appointment"}
       </button>
     </form>
   );
 }
 
-function BookingField({
-  field, value, onChange,
-}: { field: Field; value: string; onChange: (v: string) => void }) {
-  const filled = value.length > 0;
+function BookingField({ field }: { field: Field }) {
   return (
-    <label className={`booking-field${filled ? " is-filled" : ""}`}>
+    <label className="booking-field">
       <span className="booking-field__label">{field.label}</span>
       <input
+        name={field.name}
         type={field.type}
         placeholder={field.placeholder}
         required
-        value={value}
-        onChange={e => onChange(e.target.value)}
       />
       <span className="booking-field__rule" aria-hidden="true" />
     </label>
@@ -105,13 +90,12 @@ function BookingField({
 }
 
 function BookingSelect({
-  name, label, value, onChange, options,
-}: { name: string; label: string; value: string; onChange: (v: string) => void; options: string[] }) {
-  const filled = value.length > 0;
+  name, label, options,
+}: { name: string; label: string; options: string[] }) {
   return (
-    <label className={`booking-field booking-field--select${filled ? " is-filled" : ""}`}>
+    <label className="booking-field booking-field--select">
       <span className="booking-field__label">{label}</span>
-      <select name={name} value={value} onChange={e => onChange(e.target.value)} required>
+      <select name={name} required defaultValue="">
         <option value="" disabled hidden></option>
         {options.map(o => <option key={o} value={o}>{o}</option>)}
       </select>

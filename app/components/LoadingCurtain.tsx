@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 
 const STORAGE_KEY = "ezj-curtain-shown-v1";
@@ -9,10 +10,14 @@ const FADE_MS = 900;     // fade-out duration
 export default function LoadingCurtain() {
   // Show by default on cold load — gated by sessionStorage so subsequent
   // navigations within the session never see it again.
+  // Skip entirely on /admin routes — the workbook has its own visual language.
+  const pathname = usePathname();
+  const onAdmin = pathname?.startsWith("/admin") ?? false;
   const [phase, setPhase] = useState<"hidden" | "showing" | "fading">("hidden");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (onAdmin) return;
     try {
       if (window.sessionStorage.getItem(STORAGE_KEY)) return;
     } catch {
@@ -26,7 +31,9 @@ export default function LoadingCurtain() {
       try { window.sessionStorage.setItem(STORAGE_KEY, "1"); } catch {}
     }, HOLD_MS + FADE_MS);
     return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
+  }, [onAdmin]);
+
+  if (onAdmin) return null;
 
   if (phase === "hidden") return null;
 

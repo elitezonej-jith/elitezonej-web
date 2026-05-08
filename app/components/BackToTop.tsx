@@ -1,15 +1,19 @@
 "use client";
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 // Circle is r=20 around a 44x44 SVG viewbox → circumference = 2π · 20 ≈ 125.66
 const CIRC = 125.66;
 const SHOW_THRESHOLD = 400;
 
 export default function BackToTop() {
+  const pathname = usePathname();
+  const onAdmin = pathname?.startsWith("/admin") ?? false;
   const [show, setShow] = useState(false);
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    if (onAdmin) return;
     let raf = 0;
     const apply = () => {
       raf = 0;
@@ -30,9 +34,11 @@ export default function BackToTop() {
       window.removeEventListener("resize", onScroll);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, []);
+  }, [onAdmin]);
 
   const click = () => window.scrollTo({ top: 0, behavior: "smooth" });
+
+  if (onAdmin) return null;
 
   return (
     <button
