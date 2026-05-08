@@ -47,12 +47,21 @@ npm install                      # installs better-sqlite3, bcryptjs, sharp, pup
 npm run dev                      # → http://localhost:3000 (or :3001 if 3000 is busy)
 ```
 
-**First-run flow:**
+**Default credentials** (auto-seeded on first DB open — works for both `/admin` and `/studio`):
 
-1. Visit `/admin` → redirected to `/admin/login` → redirected to `/admin/setup`
-   *(or visit `/studio` for the operator panel — same setup page works)*
-2. Create the **owner** account.
-3. Land on the dashboard. The DB at `data/admin.db` is auto-created with:
+```
+email:    admin@elitezonej.com
+password: admin123
+```
+
+These are baked into `lib/admin/db.ts` (`ensureDefaultAdmin`). Change the password through `/admin/settings` after first login — the seed only runs if the account is missing, so your new password sticks.
+
+**First boot:**
+
+1. `npm run dev`
+2. Visit `/admin/login` (or `/studio/login`) → log in with the creds above
+3. The DB at `data/admin.db` is auto-created with:
+   - The default owner user
    - 30 SKUs seeded from `lib/products.ts`
    - 25 mock orders, 18 customers, 6 bookings, 4 promo codes (so dashboards aren't empty)
    - Default homepage blocks, banners, notices

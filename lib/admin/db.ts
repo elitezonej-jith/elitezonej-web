@@ -1,7 +1,12 @@
 import "server-only";
 import Database from "better-sqlite3";
+import bcrypt from "bcryptjs";
 import fs from "node:fs";
 import path from "node:path";
+
+const DEFAULT_ADMIN_EMAIL = "admin@elitezonej.com";
+const DEFAULT_ADMIN_PASSWORD = "admin123";
+const DEFAULT_ADMIN_NAME = "Studio Owner";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -52,6 +57,21 @@ function applyV2(db: Database.Database): void {
   }
 }
 
+function ensureDefaultAdmin(db: Database.Database): void {
+  // Static credentials so a fresh DB is immediately usable.
+  // If a user with this email already exists, leave their hash alone — the
+  // operator may have changed the password through /admin/settings.
+  const existing = db
+    .prepare("SELECT id FROM users WHERE email = ?")
+    .get(DEFAULT_ADMIN_EMAIL) as { id: number } | undefined;
+  if (existing) return;
+
+  const hash = bcrypt.hashSync(DEFAULT_ADMIN_PASSWORD, 12);
+  db.prepare(
+    `INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'owner')`,
+  ).run(DEFAULT_ADMIN_EMAIL, hash, DEFAULT_ADMIN_NAME);
+}
+
 function open(): Database.Database {
   if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
   const db = new Database(DB_PATH);
@@ -62,6 +82,10 @@ function open(): Database.Database {
   db.exec(fs.readFileSync(SCHEMA_PATH, "utf8"));
   // v2 additions need per-statement handling for ALTER TABLE.
   applyV2(db);
+
+  // Seed the static owner account if missing — runs before catalog seed so
+  // the first /admin visit can log straight in without going through /setup.
+  ensureDefaultAdmin(db);
 
   // Seed catalog from lib/products.ts on first run.
   const productCount = (db
