@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { NAV } from "./nav-data";
+import { useModalA11y } from "./useModalA11y";
 
 // Hamburger glyph — three hairlines morph to an X via stroke transforms
 function HamburgerGlyph({ open }: { open: boolean }) {
@@ -83,19 +84,8 @@ export default function MobileNav() {
   const [open, setOpen] = useState(false);
   const [openCats, setOpenCats] = useState<Set<number>>(new Set());
 
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  const drawerRef = useModalA11y<HTMLElement>(open, close);
 
   // Reset accordion state when drawer closes (so next open starts collapsed)
   useEffect(() => {
@@ -110,8 +100,6 @@ export default function MobileNav() {
       return next;
     });
   };
-
-  const close = () => setOpen(false);
 
   return (
     <>
@@ -131,7 +119,7 @@ export default function MobileNav() {
         onClick={close}
       />
 
-      <nav className="mobile-drawer" data-open={open} aria-hidden={!open} aria-label="Main menu">
+      <nav ref={drawerRef} className="mobile-drawer" data-open={open} inert={!open} role="dialog" aria-modal="true" aria-label="Main menu" tabIndex={-1}>
         <div className="mobile-drawer__head">
           <span className="mobile-drawer__title">
             <span className="mobile-drawer__title-rule" aria-hidden="true" />

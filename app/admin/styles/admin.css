@@ -19,7 +19,7 @@
   --adm-cream: #F4F1EC;
   --adm-ink: #14100C;
   --adm-ink-2: #55493E;
-  --adm-ink-3: #9A8E7F;
+  --adm-ink-3: #6F6353; /* darkened for WCAG AA contrast on cream */
   --adm-ink-4: #C9BC9F;
   --adm-accent: #7A1C1C;
   --adm-accent-hi: #A02828;
@@ -129,8 +129,13 @@
   margin-left: auto;
   font-size: 10px;
   letter-spacing: 0.14em;
-  color: rgba(250, 247, 242, 0.56);
+  color: var(--adm-accent-hi, #A02828);
   font-feature-settings: "tnum" 1;
+}
+/* Catalogue tallies are not action items — keep them quiet so the
+   accent-coloured counts (orders, bespoke) signal "needs attention". */
+.adm-spine__link__count.is-tally {
+  color: rgba(250, 247, 242, 0.42);
 }
 
 .adm-spine__foot {
@@ -645,6 +650,28 @@
 }
 .adm-form__aside em { color: var(--adm-ink-2); font-style: italic; }
 
+.adm-flash-region {
+  position: fixed; bottom: 24px; right: 24px; z-index: 300;
+  pointer-events: none;
+}
+.adm-flash {
+  background: var(--adm-ink-1, #1a1613);
+  color: #faf7f2;
+  padding: 12px 20px;
+  font-family: "Cormorant Garamond", serif;
+  font-style: italic;
+  font-size: 15px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.28);
+  animation: adm-flash-in 220ms ease-out;
+}
+@keyframes adm-flash-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .adm-flash { animation: none; }
+}
+
 .adm-saved-line {
   display: inline-flex; align-items: baseline; gap: 8px;
   font-family: "Cormorant Garamond", serif;
@@ -1069,4 +1096,15 @@
   .adm-spine__foot { padding: 14px 0; justify-content: center; }
   .adm-page { padding: 32px 24px 64px; }
   .adm-topbar { padding: 14px 24px; }
+}
+
+/* a11y: keyboard focus indicator for all interactive controls in the
+   workbook — defensive, since several components reset `outline`. */
+.adm-shell a:focus-visible,
+.adm-shell button:focus-visible,
+.adm-shell [tabindex]:focus-visible,
+.adm-auth-root a:focus-visible,
+.adm-auth-root button:focus-visible {
+  outline: 2px solid var(--adm-accent, #7A1C1C);
+  outline-offset: 2px;
 }

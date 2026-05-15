@@ -24,6 +24,7 @@ export default async function DashboardPage() {
   const top = getTopSkus(30, 5);
   const orders = getRecentOrders(6);
   const revDelta = deltaPct(kpis.revenue30d, kpis.revenue30dPrior);
+  const noSalesYet = kpis.revenue30d === 0 && kpis.revenue30dPrior === 0;
 
   return (
     <div className="adm-page">
@@ -56,10 +57,10 @@ export default async function DashboardPage() {
         <KpiTile
           lead
           kicker="Revenue · last 30"
-          value={rupees(kpis.revenue30d)}
-          delta={revDelta.delta}
-          deltaLabel={`${revDelta.label} vs. prior 30`}
-          caption={`${kpis.orders30d} orders · AOV ${rupees(kpis.aov30d)}`}
+          value={noSalesYet ? "—" : rupees(kpis.revenue30d)}
+          delta={noSalesYet ? undefined : revDelta.delta}
+          deltaLabel={noSalesYet ? undefined : `${revDelta.label} vs. prior 30`}
+          caption={noSalesYet ? "No sales yet — your first order will appear here." : `${kpis.orders30d} orders · AOV ${rupees(kpis.aov30d)}`}
         >
           <div className="adm-kpi__spark">
             <Sparkline data={sparkline} />

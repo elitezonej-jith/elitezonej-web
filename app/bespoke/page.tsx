@@ -6,6 +6,7 @@ import Reveal from "../components/Reveal";
 import Parallax from "../components/Parallax";
 import SectionHead from "../components/SectionHead";
 import BookingForm from "./BookingForm";
+import { WHATSAPP_LINK, WHATSAPP_DISPLAY } from "@/lib/contact";
 import "../styles/bespoke.css";
 
 export const metadata = { title: "Bespoke & Made-to-Measure — Elite Zone J" };
@@ -146,7 +147,7 @@ export default function BespokePage() {
             <h3>Choose your atelier or <em>we&apos;ll come to you.</em></h3>
             <p>By appointment only. Forty-minute fitting, complimentary chai or coffee, no pressure to order on the day. Bring a piece you love so we can match the fit.</p>
             <div className="alt">
-              Or message us on WhatsApp: <a href="https://wa.me/919800000000">+91 98XXX XXXXX</a>
+              Or message us on WhatsApp: <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">{WHATSAPP_DISPLAY}</a>
             </div>
           </div>
           <BookingForm />

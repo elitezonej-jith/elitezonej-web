@@ -63,7 +63,14 @@ export default function AdminSidebar({ user, counts }: { user: User; counts: Cou
             >
               <span>{item.label}</span>
               {item.countKey && counts[item.countKey] > 0 && (
-                <span className="adm-spine__link__count">{counts[item.countKey]}</span>
+                <span
+                  className={
+                    "adm-spine__link__count" +
+                    (item.countKey === "products" || item.countKey === "fabrics" ? " is-tally" : "")
+                  }
+                >
+                  {counts[item.countKey]}
+                </span>
               )}
             </Link>
           ),

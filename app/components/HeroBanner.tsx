@@ -119,26 +119,45 @@ const CSS = `
 
 export default function HeroBanner() {
   const [idx, setIdx] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   const prev = useCallback(() => setIdx(i => (i - 1 + SLIDES.length) % SLIDES.length), []);
   const next = useCallback(() => setIdx(i => (i + 1) % SLIDES.length), []);
 
   useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setReducedMotion(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  useEffect(() => {
+    if (paused || reducedMotion) return;
     const id = setInterval(next, 5000);
     return () => clearInterval(id);
-  }, [next]);
+  }, [next, paused, reducedMotion]);
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: CSS }} />
-      <section className="hb" role="banner" aria-label="Hero banner">
+      <section
+        className="hb"
+        role="banner"
+        aria-label="Hero banner"
+        aria-roledescription="carousel"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onFocusCapture={() => setPaused(true)}
+        onBlurCapture={() => setPaused(false)}
+      >
         <div className="hb-track" style={{ transform: `translateX(-${idx * 100}%)` }}>
           {SLIDES.map((s, i) => (
             <div key={i} className="hb-slide">
               <div
                 className="hb-img"
-                role="img"
-                aria-label={s.eyebrow}
+                aria-hidden="true"
                 style={{ backgroundImage: `url(${s.img})`, backgroundPosition: s.imgPos }}
               />
               <div className="hb-overlay">
@@ -172,6 +191,18 @@ export default function HeroBanner() {
               aria-label={`Slide ${i + 1}`}
             />
           ))}
+          {!reducedMotion && (
+            <button
+              type="button"
+              className="hb-dot"
+              onClick={() => setPaused(p => !p)}
+              aria-pressed={paused}
+              aria-label={paused ? "Play slideshow" : "Pause slideshow"}
+              style={{ width: "auto", borderRadius: 999, padding: "2px 10px", fontSize: 10, letterSpacing: "0.1em", color: "#fff" }}
+            >
+              {paused ? "▶" : "❚❚"}
+            </button>
+          )}
         </div>
       </section>
     </>

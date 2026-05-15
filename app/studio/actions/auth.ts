@@ -1,9 +1,11 @@
 "use server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { rateLimit, resetRateLimit } from "../../../lib/admin/rate-limit";
 import {
-  SESSION_COOKIE, createSession, destroySession, hashPassword, verifyPassword,
+  SESSION_COOKIE, SESSION_COOKIE_OPTIONS, createSession, destroySession,
+  hashPassword, safeNextPath, verifyPassword,
 } from "../../../lib/admin/auth";
 import { countUsers, createUser, getUserByEmail, touchLogin } from "../../../lib/admin/repos/users";
 import { logAudit } from "../../../lib/admin/repos/audit";
@@ -30,22 +32,31 @@ export async function signInStudioAction(_prev: AuthState, fd: FormData): Promis
   });
   if (!parsed.success) return { error: "Enter a valid email and password." };
 
-  const u = getUserByEmail(parsed.data.email);
-  if (!u) return { error: "We couldn't find that account." };
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  const rlKey = `studio-signin:${ip}:${parsed.data.email.toLowerCase()}`;
+  const rl = rateLimit(rlKey, 10, 15 * 60 * 1000);
+  if (!rl.ok) {
+    return { error: `Too many attempts. Try again in ${Math.ceil(rl.retryAfterSec / 60)} min.` };
+  }
 
-  const ok = await verifyPassword(parsed.data.password, u.password_hash);
-  if (!ok) return { error: "Wrong password — try again." };
+  // Constant-time: always run bcrypt to avoid email-enumeration via timing.
+  const u = getUserByEmail(parsed.data.email);
+  const hashForCompare = u?.password_hash ?? "$2a$12$invalidinvalidinvalidinvaliduO0000000000000000000000000000";
+  const ok = await verifyPassword(parsed.data.password, hashForCompare);
+  if (!u || !ok) return { error: "We couldn't sign you in with those details." };
+
+  resetRateLimit(rlKey);
 
   const sess = createSession(u.id);
   const c = await cookies();
   c.set(SESSION_COOKIE, sess.id, {
-    httpOnly: true, sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    expires: new Date(sess.expires_at), path: "/",
+    ...SESSION_COOKIE_OPTIONS,
+    expires: new Date(sess.expires_at),
   });
   touchLogin(u.id);
   logAudit({ user_id: u.id, action: "studio_sign_in", entity: "user", entity_id: String(u.id) });
-  redirect(parsed.data.next?.startsWith("/studio") ? parsed.data.next : "/studio");
+  redirect(safeNextPath(parsed.data.next, "/studio"));
 }
 
 export async function signOutStudioAction(): Promise<void> {
@@ -69,9 +80,8 @@ export async function bootstrapStudioOwnerAction(_prev: AuthState, fd: FormData)
   const sess = createSession(id);
   const c = await cookies();
   c.set(SESSION_COOKIE, sess.id, {
-    httpOnly: true, sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    expires: new Date(sess.expires_at), path: "/",
+    ...SESSION_COOKIE_OPTIONS,
+    expires: new Date(sess.expires_at),
   });
   logAudit({ user_id: id, action: "bootstrap_owner", entity: "user", entity_id: String(id) });
   redirect("/studio");

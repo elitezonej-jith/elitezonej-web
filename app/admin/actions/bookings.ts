@@ -1,9 +1,11 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { createBooking, setBookingStatus, deleteBooking, type BookingInput } from "../../../lib/admin/repos/bookings";
 import { logAudit } from "../../../lib/admin/repos/audit";
 import { requireUser } from "../../../lib/admin/session";
+import { rateLimit } from "../../../lib/admin/rate-limit";
 
 const PublicBookingSchema = z.object({
   first_name: z.string().min(1, "First name required").max(60),
@@ -19,6 +21,14 @@ export type PublicBookingState = { ok?: boolean; error?: string };
 
 // Called from the PUBLIC /bespoke form. No auth required.
 export async function submitBespokeBooking(_prev: PublicBookingState, fd: FormData): Promise<PublicBookingState> {
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  // Max 5 bookings per IP per hour — generous for real users, throttles spam.
+  const rl = rateLimit(`booking:${ip}`, 5, 60 * 60 * 1000);
+  if (!rl.ok) {
+    return { error: "You've sent several requests already. Please WhatsApp us or try again later." };
+  }
+
   const parsed = PublicBookingSchema.safeParse({
     first_name: fd.get("first_name") ?? fd.get("first") ?? "",
     last_name:  fd.get("last_name")  ?? fd.get("last")  ?? "",

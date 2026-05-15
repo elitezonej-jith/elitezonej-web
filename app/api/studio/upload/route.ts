@@ -9,7 +9,39 @@ import { recordAsset } from "../../../../lib/admin/repos/media-assets";
 
 export const runtime = "nodejs";
 
+// DEPLOYMENT CAVEAT: this route writes to `public/uploads/` on the local
+// filesystem. On Vercel (and other read-only serverless FS hosts) these
+// writes will throw at runtime. Before production, swap the fs.writeFile
+// below for Vercel Blob / S3. Tracked in todo.md (L11).
+
 const SAFE_FOLDER = /^[a-z0-9_-]+(\/[a-z0-9_-]+)*$/i;
+const ALLOWED_MIME = new Set([
+  "image/jpeg", "image/png", "image/webp", "image/avif", "image/gif",
+]);
+const MAX_PIXELS = 24_000_000; // 24 megapixels
+
+function sameOrigin(req: NextRequest): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin) {
+    // Some user-agents omit Origin on same-origin POSTs; fall back to Referer.
+    const referer = req.headers.get("referer");
+    if (!referer) return false;
+    try {
+      const r = new URL(referer);
+      const h = req.headers.get("host");
+      return !!h && r.host === h;
+    } catch {
+      return false;
+    }
+  }
+  try {
+    const o = new URL(origin);
+    const h = req.headers.get("host");
+    return !!h && o.host === h;
+  } catch {
+    return false;
+  }
+}
 
 function safeFolder(raw: string): string {
   const f = raw.replace(/^\/+|\/+$/g, "");
@@ -25,6 +57,9 @@ function safeName(filename: string): string {
 }
 
 export async function POST(req: NextRequest) {
+  // Same-origin CSRF check
+  if (!sameOrigin(req)) return new NextResponse("Forbidden", { status: 403 });
+
   // Auth
   const c = await cookies();
   const me = getSessionUser(c.get(SESSION_COOKIE)?.value);
@@ -38,6 +73,12 @@ export async function POST(req: NextRequest) {
   }
   const file = form.get("file");
   if (!(file instanceof Blob)) return new NextResponse("No file uploaded", { status: 400 });
+
+  // MIME allowlist
+  if (!ALLOWED_MIME.has(file.type)) {
+    return new NextResponse(`Unsupported file type: ${file.type || "unknown"}`, { status: 415 });
+  }
+
   const folderRaw = String(form.get("folder") ?? "uploads");
   const folder = safeFolder(folderRaw);
   const maxWidth = Number(form.get("maxWidth") ?? 2400);
@@ -49,8 +90,18 @@ export async function POST(req: NextRequest) {
 
   // Read + transform via sharp
   const inputBuffer = Buffer.from(await file.arrayBuffer());
-  let pipeline = sharp(inputBuffer, { failOn: "none" }).rotate();
-  const meta = await pipeline.metadata();
+  let pipeline = sharp(inputBuffer, { failOn: "truncated" }).rotate();
+  let meta;
+  try {
+    meta = await pipeline.metadata();
+  } catch (e) {
+    return new NextResponse("Image could not be decoded: " + (e as Error).message, { status: 400 });
+  }
+
+  // Pixel-area cap defends against decompression bombs.
+  if (meta.width && meta.height && meta.width * meta.height > MAX_PIXELS) {
+    return new NextResponse("Image dimensions too large (max 24 megapixels)", { status: 413 });
+  }
 
   if (meta.width && meta.width > maxWidth) {
     pipeline = pipeline.resize({ width: maxWidth, withoutEnlargement: true });

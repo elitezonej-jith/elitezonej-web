@@ -13,8 +13,9 @@ export default function EditorialSplit({
   ) : <div style={{ background: "#E8E2D7", aspectRatio: "4/5" }} />;
   const Text = (
     <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "48px 6%", maxWidth: 520 }}>
-      <h2 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: "clamp(26px, 3vw, 44px)", lineHeight: 1.05, fontWeight: 500, margin: 0 }}
-          dangerouslySetInnerHTML={{ __html: headline }} />
+      <h2 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: "clamp(26px, 3vw, 44px)", lineHeight: 1.05, fontWeight: 500, margin: 0 }}>
+        {headline}
+      </h2>
       {body && <p style={{ marginTop: 14, fontSize: 16, color: "#55493E", maxWidth: "44ch" }}>{body}</p>}
       {link?.href ? (
         <Link href={String(link.href)}

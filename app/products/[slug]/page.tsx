@@ -3,7 +3,7 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import TrustStrip from "../../components/TrustStrip";
 import ProductPageClient from "./ProductPageClient";
-import { getProduct } from "@/lib/products";
+import { getProductForPage } from "@/lib/storefront/product-for-page";
 
 // HEADER_CSS removed: the legacy block hard-coded the cream/oxblood
 // header/footer/trust-strip from the original tailoring brand, which
@@ -12,7 +12,7 @@ import { getProduct } from "@/lib/products";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = getProductForPage(slug);
   if (!product) notFound();
 
   // Schema.org Product structured data — eligible for rich results in
@@ -44,7 +44,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
       />
       <Header />
-      <ProductPageClient slug={slug} />
+      <ProductPageClient product={product} />
       <TrustStrip />
       <Footer />
     </>
@@ -53,7 +53,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const p = getProduct(slug);
+  const p = getProductForPage(slug);
   if (!p) return { title: "Not found — Elite Zone J" };
   return { title: `${p.name} — Elite Zone J`, description: p.line };
 }

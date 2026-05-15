@@ -58,6 +58,23 @@ export function getSessionUser(sessionId: string | undefined | null): User | nul
   };
 }
 
+export const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  sameSite: "strict",
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+} as const;
+
+export function safeNextPath(next: string | null | undefined, prefix: "/admin" | "/studio"): string {
+  if (!next || typeof next !== "string") return prefix;
+  if (!next.startsWith(prefix)) return prefix;
+  // Disallow protocol-relative (//evil.com) and any control characters.
+  if (next.startsWith("//") || /[\s\x00-\x1f]/.test(next)) return prefix;
+  // Must be `${prefix}` exactly, or `${prefix}/...`
+  if (next !== prefix && !next.startsWith(`${prefix}/`)) return prefix;
+  return next;
+}
+
 export function destroySession(sessionId: string): void {
   getDb().prepare("DELETE FROM sessions WHERE id = ?").run(sessionId);
 }

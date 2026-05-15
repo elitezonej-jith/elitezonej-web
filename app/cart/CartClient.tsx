@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { PRODUCTS } from "@/lib/products";
@@ -7,11 +8,13 @@ import { useCart } from "../components/CartProvider";
 import WishlistButton from "../components/WishlistButton";
 import Reveal from "../components/Reveal";
 import SectionHead from "../components/SectionHead";
+import ConfirmSheet from "../components/ConfirmSheet";
 import "../styles/cart.css";
 
 
 export default function CartClient() {
   const { items, count, subtotal, hydrated, removeItem, updateQty, clear } = useCart();
+  const [confirmClear, setConfirmClear] = useState(false);
 
   // "Complete the look" — three products not currently in the bag, prefer
   // the same gender/category as the most-recent line.
@@ -86,6 +89,11 @@ export default function CartClient() {
                     </div>
                     <button className="remove" onClick={() => removeItem(it.id)}>Remove</button>
                   </div>
+                  {it.isFabric && (
+                    <div className="t-mono-xs" style={{ color: "var(--ink-2)", marginTop: 4 }}>
+                      Sold in 0.5 m increments · minimum 0.5 m
+                    </div>
+                  )}
                   <div className="alt-line t-body-sm">
                     {it.isFabric
                       ? <>Need a custom dye lot? <Link href="/bespoke#book">Book the cloth desk.</Link></>
@@ -104,28 +112,20 @@ export default function CartClient() {
           <div className="row"><span>Estimated delivery</span><b>Free</b></div>
           <div className="row"><span>Estimated tax</span><b>Inclusive</b></div>
 
-          <details className="promo">
-            <summary>Have a code?</summary>
-            <div className="body">
-              <input placeholder="Enter code" />
-              <button type="button">Apply</button>
-            </div>
-          </details>
-
           <div className="row total"><span>Total</span><b>{fmtINR(subtotal)}</b></div>
 
           <div className="ctas">
-            <button
-              className="btn btn-primary btn-lg btn-block"
-              type="button"
-              disabled={!hydrated || items.length === 0}
-            >Checkout</button>
+            {hydrated && items.length > 0 ? (
+              <Link className="btn btn-primary btn-lg btn-block" href="/checkout">Checkout</Link>
+            ) : (
+              <button className="btn btn-primary btn-lg btn-block" type="button" disabled>Checkout</button>
+            )}
             <Link className="btn btn-secondary btn-block" href="/collection?c=men">Continue shopping</Link>
             {hydrated && items.length > 0 && (
               <button
                 type="button"
-                onClick={() => { if (confirm("Empty your bag?")) clear(); }}
-                style={{ background: "none", border: 0, color: "var(--ink-3)", fontSize: 12, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3, padding: 6 }}
+                onClick={() => setConfirmClear(true)}
+                style={{ background: "none", border: 0, color: "var(--ink-2)", fontSize: 12, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3, padding: 6 }}
               >Empty bag</button>
             )}
           </div>
@@ -171,6 +171,16 @@ export default function CartClient() {
           </div>
         </section>
       )}
+
+      <ConfirmSheet
+        open={confirmClear}
+        title="Empty your bag?"
+        body="This removes everything you've added. You can't undo this."
+        confirmLabel="Yes, empty"
+        cancelLabel="Reconsider"
+        onConfirm={() => { clear(); setConfirmClear(false); }}
+        onCancel={() => setConfirmClear(false)}
+      />
     </>
   );
 }

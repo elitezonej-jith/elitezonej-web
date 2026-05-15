@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Product, PRODUCTS } from "@/lib/products";
@@ -22,13 +22,33 @@ export default function TailoredPDP({ product, setCurrentSlug }: Props) {
   const [angleIdx, setAngleIdx] = useState(0);
   const [sizeOn, setSizeOn] = useState("");
   const [lbOpen, setLbOpen] = useState(false);
-  const [deliveryDate, setDeliveryDate] = useState("Friday, 02 May");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [sizePrompt, setSizePrompt] = useState(false);
+  const sizeBlockRef = useRef<HTMLDivElement>(null);
 
   // Reset gallery + size when the product changes
   useEffect(() => {
     setAngleIdx(0);
     setSizeOn("");
+    setSizePrompt(false);
   }, [product.slug]);
+
+  const handleAddToBag = () => {
+    if (!sizeOn) {
+      setSizePrompt(true);
+      sizeBlockRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    addItem({
+      id: lineId(product.slug, { size: sizeOn }),
+      slug: product.slug,
+      name: product.name,
+      unitPrice: product.salePrice ?? product.price,
+      qty: 1,
+      size: sizeOn,
+      imageSrc: imgSrc(product.slug, "01-front"),
+    });
+  };
 
   useEffect(() => {
     const d = new Date(Date.now() + 7 * 86400000);
@@ -98,24 +118,27 @@ export default function TailoredPDP({ product, setCurrentSlug }: Props) {
             <span className="tax-line">Inclusive of all taxes</span>
           </div>
 
-          <div className="field-block">
+          <div className="field-block" ref={sizeBlockRef}>
             <div className="head">
               <label>Size</label>
               <a href="#">Size guide</a>
             </div>
-            <div className="sizes">
+            <div className="sizes" style={sizePrompt ? { outline: "2px solid var(--oxblood, #7A1C1C)", outlineOffset: 6 } : undefined}>
               {product.sizes.map(s => {
                 const oos = s.endsWith("-oos");
                 const v = oos ? s.replace("-oos", "") : s;
                 const isOn = sizeOn === v && !oos;
                 const cls = oos ? "size oos" : (isOn ? "size on" : "size");
                 return (
-                  <button key={s} className={cls} disabled={oos} onClick={() => !oos && setSizeOn(v)}>
+                  <button key={s} className={cls} disabled={oos} onClick={() => { if (!oos) { setSizeOn(v); setSizePrompt(false); } }}>
                     {v}
                   </button>
                 );
               })}
             </div>
+            <p aria-live="polite" className="t-mono-xs" style={{ minHeight: 16, marginTop: 8, color: "var(--oxblood, #7A1C1C)" }}>
+              {sizePrompt ? "Pick a size to add this to your bag." : ""}
+            </p>
             <Link
               className="t-body-sm"
               href="/bespoke"
@@ -129,21 +152,7 @@ export default function TailoredPDP({ product, setCurrentSlug }: Props) {
             <button
               type="button"
               className="btn btn-primary btn-lg btn-block"
-              disabled={!sizeOn}
-              aria-disabled={!sizeOn}
-              title={sizeOn ? undefined : "Choose a size first"}
-              onClick={() => {
-                if (!sizeOn) return;
-                addItem({
-                  id: lineId(product.slug, { size: sizeOn }),
-                  slug: product.slug,
-                  name: product.name,
-                  unitPrice: product.salePrice ?? product.price,
-                  qty: 1,
-                  size: sizeOn,
-                  imageSrc: imgSrc(product.slug, "01-front"),
-                });
-              }}
+              onClick={handleAddToBag}
             >
               {sizeOn ? "Add to bag" : "Choose a size"}
             </button>
@@ -151,8 +160,12 @@ export default function TailoredPDP({ product, setCurrentSlug }: Props) {
           </div>
 
           <div className="delivery">
-            <div className="pin">110001</div>
-            <div className="text">Delivered by <b>{deliveryDate}</b> · Free shipping</div>
+            <div className="pin" aria-hidden="true">110001</div>
+            <div className="text">
+              {deliveryDate
+                ? <>Delivered by <b>{deliveryDate}</b> · Free shipping</>
+                : <>Free shipping · delivery in 3–5 working days</>}
+            </div>
           </div>
           <div className="returns-line t-mono-xs">7-day returns · Free reverse pickup · Cash on delivery available</div>
 
@@ -284,19 +297,7 @@ export default function TailoredPDP({ product, setCurrentSlug }: Props) {
         <button
           type="button"
           className="pdp-buy-bar__cta"
-          disabled={!sizeOn}
-          onClick={() => {
-            if (!sizeOn) return;
-            addItem({
-              id: lineId(product.slug, { size: sizeOn }),
-              slug: product.slug,
-              name: product.name,
-              unitPrice: product.salePrice ?? product.price,
-              qty: 1,
-              size: sizeOn,
-              imageSrc: imgSrc(product.slug, "01-front"),
-            });
-          }}
+          onClick={handleAddToBag}
         >
           {sizeOn ? "Add to bag" : "Choose a size"}
         </button>

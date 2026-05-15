@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { cookies } from "next/headers";
 import AdminSidebar from "./components/AdminSidebar";
 import AdminTopbar from "./components/AdminTopbar";
+import FlashToast from "./components/FlashToast";
 import { SESSION_COOKIE, getSessionUser } from "../../lib/admin/auth";
 import { countBookings } from "../../lib/admin/repos/bookings";
 import { countOrders } from "../../lib/admin/repos/orders";
@@ -37,6 +38,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       <AdminSidebar user={me} counts={counts} />
       <main className="adm-canvas">
         <AdminTopbar user={me} />
+        <FlashToast />
         {children}
       </main>
     </div>

@@ -2,22 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect } from "react";
 import { useCart } from "./CartProvider";
+import { useModalA11y } from "./useModalA11y";
 import { fmtINR, fmtMeters } from "@/lib/format";
 
 export default function CartDrawer() {
   const { items, count, subtotal, hydrated, drawerOpen, openDrawer, closeDrawer, removeItem, updateQty } = useCart();
-
-  useEffect(() => {
-    document.body.style.overflow = drawerOpen ? "hidden" : "";
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") closeDrawer(); };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [drawerOpen, closeDrawer]);
+  const drawerRef = useModalA11y<HTMLElement>(drawerOpen, closeDrawer);
 
   // Header pill: show 00 until hydrated to avoid SSR/CSR mismatch
   const pill = hydrated ? String(count).padStart(2, "0") : "00";
@@ -42,7 +33,16 @@ export default function CartDrawer() {
         onClick={closeDrawer}
       />
 
-      <aside className="cart-drawer" data-open={drawerOpen} aria-hidden={!drawerOpen} role="dialog" aria-label="Bag">
+      <aside
+        ref={drawerRef}
+        className="cart-drawer"
+        data-open={drawerOpen}
+        inert={!drawerOpen}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Bag"
+        tabIndex={-1}
+      >
         <header className="cart-drawer-head">
           <span>Your Bag ({pill})</span>
           <button className="close" aria-label="Close bag" onClick={closeDrawer}>×</button>
@@ -127,7 +127,7 @@ export default function CartDrawer() {
         .cart-line-spec { display:flex; flex-wrap:wrap; gap:8px; color:var(--ink-3); font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; }
         .cart-line-actions { display:flex; gap:14px; align-items:center; margin-top:4px; }
         .cart-line-qty { display:inline-flex; border:1px solid var(--paper-3); }
-        .cart-line-qty button { background:transparent; border:0; padding:4px 10px; cursor:pointer; font-family:var(--font-mono); font-size:13px; color:var(--ink); }
+        .cart-line-qty button { background:transparent; border:0; padding:6px 12px; min-width:36px; min-height:36px; cursor:pointer; font-family:var(--font-mono); font-size:13px; color:var(--ink); }
         .cart-line-qty button:hover { background:var(--paper-2); }
         .cart-line-qty span { padding:4px 10px; font-family:var(--font-mono); font-size:12px; min-width:36px; text-align:center; border-left:1px solid var(--paper-3); border-right:1px solid var(--paper-3); }
         .cart-line-remove { background:none; border:0; color:var(--ink-3); font-size:12px; cursor:pointer; text-decoration:underline; text-underline-offset:3px; }

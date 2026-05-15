@@ -2,9 +2,9 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireUser } from "../../../lib/admin/session";
+import { requireRole, requireUser } from "../../../lib/admin/session";
 import {
-  createBlock, deleteBlock, reorderBlocks, updateBlock,
+  createBlock, deleteBlock, getBlock, reorderBlocks, updateBlock,
   type HomepageBlockType,
 } from "../../../lib/admin/repos/homepage";
 import { logAudit } from "../../../lib/admin/repos/audit";
@@ -21,9 +21,12 @@ const NewBlockSchema = z.object({
 });
 
 export async function addBlockAction(fd: FormData): Promise<void> {
-  const me = await requireUser();
   const parsed = NewBlockSchema.safeParse(Object.fromEntries(fd.entries()));
   if (!parsed.success) return;
+  // Raw-HTML blocks are an XSS-sensitive surface — owner only.
+  const me = parsed.data.type === "custom_html"
+    ? await requireRole("owner")
+    : await requireUser();
   const id = createBlock({
     type: parsed.data.type as HomepageBlockType,
     title: parsed.data.title,
@@ -66,9 +69,13 @@ export async function reorderBlocksAction(fd: FormData): Promise<void> {
 }
 
 export async function saveBlockConfigAction(fd: FormData): Promise<void> {
-  const me = await requireUser();
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
+  // Editing a raw-HTML block is owner-only (XSS-sensitive).
+  const existing = getBlock(id);
+  const me = existing?.type === "custom_html"
+    ? await requireRole("owner")
+    : await requireUser();
   const title = String(fd.get("title") ?? "");
   const kicker = String(fd.get("kicker") ?? "");
   const configRaw = String(fd.get("config_json") ?? "{}");

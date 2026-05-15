@@ -28,8 +28,9 @@ export default function FullBanner({
         background: "linear-gradient(120deg, rgba(0,0,0,0.45), rgba(0,0,0,0.10))",
         color: "#FAF7F2",
       }}>
-        <h2 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: "clamp(28px, 4vw, 56px)", fontWeight: 500, margin: 0, lineHeight: 1.05 }}
-            dangerouslySetInnerHTML={{ __html: title }} />
+        <h2 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: "clamp(28px, 4vw, 56px)", fontWeight: 500, margin: 0, lineHeight: 1.05 }}>
+          {title}
+        </h2>
         {body && <p style={{ marginTop: 12, maxWidth: "60ch", fontSize: 15 }}>{body}</p>}
         {cta && cta.href ? (
           <Link href={String(cta.href)}

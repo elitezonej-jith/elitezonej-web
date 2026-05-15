@@ -1,12 +1,15 @@
 "use server";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { rateLimit, resetRateLimit } from "../../../lib/admin/rate-limit";
 import {
   SESSION_COOKIE,
+  SESSION_COOKIE_OPTIONS,
   createSession,
   destroySession,
   hashPassword,
+  safeNextPath,
   verifyPassword,
 } from "../../../lib/admin/auth";
 import { countUsers, createUser, getUserByEmail, getUserById, setUserPassword, touchLogin } from "../../../lib/admin/repos/users";
@@ -35,25 +38,32 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
   });
   if (!parsed.success) return { error: "Enter a valid email and password." };
 
-  const u = getUserByEmail(parsed.data.email);
-  if (!u) return { error: "No account matches those credentials." };
+  const h = await headers();
+  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+  const rlKey = `signin:${ip}:${parsed.data.email.toLowerCase()}`;
+  const rl = rateLimit(rlKey, 10, 15 * 60 * 1000);
+  if (!rl.ok) {
+    return { error: `Too many attempts. Try again in ${Math.ceil(rl.retryAfterSec / 60)} min.` };
+  }
 
-  const ok = await verifyPassword(parsed.data.password, u.password_hash);
-  if (!ok) return { error: "No account matches those credentials." };
+  // Constant-time: always run bcrypt to avoid email-enumeration via timing.
+  const u = getUserByEmail(parsed.data.email);
+  const hashForCompare = u?.password_hash ?? "$2a$12$invalidinvalidinvalidinvaliduO0000000000000000000000000000";
+  const ok = await verifyPassword(parsed.data.password, hashForCompare);
+  if (!u || !ok) return { error: "No account matches those credentials." };
+
+  resetRateLimit(rlKey);
 
   const sess = createSession(u.id);
   const c = await cookies();
   c.set(SESSION_COOKIE, sess.id, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    ...SESSION_COOKIE_OPTIONS,
     expires: new Date(sess.expires_at),
-    path: "/",
   });
   touchLogin(u.id);
   logAudit({ user_id: u.id, action: "sign_in", entity: "user", entity_id: String(u.id) });
 
-  redirect(parsed.data.next?.startsWith("/admin") ? parsed.data.next : "/admin");
+  redirect(safeNextPath(parsed.data.next, "/admin"));
 }
 
 export async function signOutAction(): Promise<void> {
@@ -79,11 +89,8 @@ export async function bootstrapOwnerAction(_prev: ActionState, formData: FormDat
   const sess = createSession(id);
   const c = await cookies();
   c.set(SESSION_COOKIE, sess.id, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    ...SESSION_COOKIE_OPTIONS,
     expires: new Date(sess.expires_at),
-    path: "/",
   });
   logAudit({ user_id: id, action: "bootstrap_owner", entity: "user", entity_id: String(id) });
   redirect("/admin");

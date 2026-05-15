@@ -17,6 +17,7 @@ export const metadata = { title: "Dashboard · Studio" };
 export default function StudioDashboardPage() {
   const kpis = getKpis();
   const revDelta = deltaPct(kpis.revenue30d, kpis.revenue30dPrior);
+  const noSalesYet = kpis.revenue30d === 0 && kpis.revenue30dPrior === 0;
   const recentProducts = listProducts({ status: "all", limit: 6 });
   const banners = listBanners();
   const notices = listNotices().slice(0, 3);
@@ -40,8 +41,8 @@ export default function StudioDashboardPage() {
 
       {/* Stats */}
       <div className="stu-stat-grid">
-        <Stat icon={<IconCart />} label="Revenue · 30 days" value={rupees(kpis.revenue30d)}
-              delta={`${revDelta.label} vs. previous 30`} dir={revDelta.delta} />
+        <Stat icon={<IconCart />} label="Revenue · 30 days" value={noSalesYet ? "—" : rupees(kpis.revenue30d)}
+              delta={noSalesYet ? "No sales yet" : `${revDelta.label} vs. previous 30`} dir={noSalesYet ? "flat" : revDelta.delta} />
         <Stat icon={<IconBag />}  label="Orders · 30 days" value={String(kpis.orders30d)}
               delta={`AOV ${rupees(kpis.aov30d)}`} />
         <Stat icon={<IconScissors />} label="Bespoke leads"  value={String(kpis.bookingsNew)}

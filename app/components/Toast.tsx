@@ -25,16 +25,18 @@ export default function Toast() {
     return () => clearTimeout(t);
   }, [lastAdded]);
 
-  if (!shown) return null;
-
+  // Live region stays mounted at all times so screen readers announce
+  // updates; only the visible toast content toggles.
   return (
     <div className="toast-stack" role="status" aria-live="polite">
-      <div className="toast" key={shown.key}>
-        <span className="check" aria-hidden="true">✓</span>
-        <span>Added</span>
-        <span className="name">{shown.name}</span>
-        <span className="meta">· {shown.meta}</span>
-      </div>
+      {shown && (
+        <div className="toast" key={shown.key}>
+          <span className="check" aria-hidden="true">✓</span>
+          <span>Added</span>
+          <span className="name">{shown.name}</span>
+          <span className="meta">· {shown.meta}</span>
+        </div>
+      )}
     </div>
   );
 }

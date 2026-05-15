@@ -54,7 +54,8 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const has = useCallback((slug: string) => slugs.includes(slug), [slugs]);
+  const slugSet = useMemo(() => new Set(slugs), [slugs]);
+  const has = useCallback((slug: string) => slugSet.has(slug), [slugSet]);
   const add = useCallback((slug: string) => {
     setSlugs(prev => prev.includes(slug) ? prev : [slug, ...prev]);
   }, []);

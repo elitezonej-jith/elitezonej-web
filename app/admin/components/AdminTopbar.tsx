@@ -18,9 +18,17 @@ const LABELS: Record<string, string> = {
   new: "New",
 };
 
+function humanize(seg: string): string {
+  const s = decodeURIComponent(seg);
+  if (/^\d+$/.test(s)) return `#${s}`;
+  return s
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function crumbsFromPath(pathname: string): string[] {
   const parts = pathname.split("/").filter(Boolean);
-  return parts.map((p) => LABELS[p] ?? decodeURIComponent(p));
+  return parts.map((p) => LABELS[p] ?? humanize(p));
 }
 
 const FORMATTER = new Intl.DateTimeFormat("en-IN", {

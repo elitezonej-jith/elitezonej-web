@@ -125,7 +125,9 @@ export async function deleteProductAction(fd: FormData): Promise<void> {
   deleteProduct(slug);
   logAudit({ user_id: me.id, action: "delete_product", entity: "product", entity_id: slug });
   revalidatePath("/admin/products");
-  redirect("/admin/products");
+  revalidatePath(`/products/${slug}`);
+  revalidatePath("/collection");
+  redirect(`/admin/products?flash=${encodeURIComponent("Product removed")}`);
 }
 
 export async function saveInventoryAction(fd: FormData): Promise<void> {

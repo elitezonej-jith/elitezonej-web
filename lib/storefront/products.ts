@@ -2,6 +2,7 @@ import "server-only";
 // Storefront-side read helpers. Pull live product data from the admin DB so
 // every studio edit is visible on the public site immediately.
 
+import { cache } from "react";
 import { getDb } from "../admin/db";
 import { listProducts as listAdminProducts } from "../admin/repos/products";
 import { getMeta } from "../admin/repos/product-meta";
@@ -22,7 +23,8 @@ function decorate(p: Product): StorefrontProduct {
   return { ...p, meta, images, thumbnail: thumb };
 }
 
-export function getProduct(slug: string): StorefrontProduct | null {
+export const getProduct = cache(_getProduct);
+function _getProduct(slug: string): StorefrontProduct | null {
   const db = getDb();
   const r = db.prepare("SELECT * FROM products WHERE slug = ? AND status = 'active'").get(slug) as
     | { sizes_json: string; features_json: string; spec_json: string } & Omit<Product, "sizes" | "features" | "spec">
@@ -37,7 +39,7 @@ export function getProduct(slug: string): StorefrontProduct | null {
   return decorate(product);
 }
 
-export function listProducts(filter?: {
+type ListFilter = {
   gender?: "men" | "women" | "unisex";
   category?: string;
   sub?: string;
@@ -46,7 +48,19 @@ export function listProducts(filter?: {
   trending?: boolean;
   newArrival?: boolean;
   limit?: number;
-}): StorefrontProduct[] {
+};
+
+// Per-request memoisation keyed by the serialised filter — repeated
+// carousels with identical filters hit the DB once per render pass.
+const _listProductsByKey = cache((_key: string, filter?: ListFilter) =>
+  _listProducts(filter),
+);
+
+export function listProducts(filter?: ListFilter): StorefrontProduct[] {
+  return _listProductsByKey(JSON.stringify(filter ?? {}), filter);
+}
+
+function _listProducts(filter?: ListFilter): StorefrontProduct[] {
   const opts: Parameters<typeof listAdminProducts>[0] = {
     status: "active",
     kind: filter?.kind,

@@ -18,6 +18,17 @@ const DB_PATH = path.join(DB_DIR, "admin.db");
 const SCHEMA_PATH = path.resolve(process.cwd(), "lib/admin/schema.sql");
 const SCHEMA_V2_PATH = path.resolve(process.cwd(), "lib/admin/schema-v2.sql");
 
+// Read schema files once at module load instead of on every open() — keeps
+// synchronous disk I/O off the request hot path on serverless cold starts.
+const SCHEMA_V1_SQL = fs.readFileSync(SCHEMA_PATH, "utf8");
+const SCHEMA_V2_STATEMENTS = fs.readFileSync(SCHEMA_V2_PATH, "utf8")
+  .split("\n")
+  .filter((line) => !line.trim().startsWith("--"))
+  .join("\n")
+  .split(";")
+  .map((s) => s.trim())
+  .filter(Boolean);
+
 function hasColumn(db: Database.Database, table: string, column: string): boolean {
   try {
     const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
@@ -29,18 +40,7 @@ function hasColumn(db: Database.Database, table: string, column: string): boolea
 
 function applyV2(db: Database.Database): void {
   // Run statement-by-statement so we can swallow "duplicate column" errors.
-  const sql = fs.readFileSync(SCHEMA_V2_PATH, "utf8");
-  // Strip line comments first so they don't break the SQL split
-  const stripped = sql
-    .split("\n")
-    .filter((line) => !line.trim().startsWith("--"))
-    .join("\n");
-  const statements = stripped
-    .split(";")
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  for (const stmt of statements) {
+  for (const stmt of SCHEMA_V2_STATEMENTS) {
     try {
       // ALTER TABLE ADD COLUMN: pre-check so we skip if column exists
       const m = stmt.match(/ALTER\s+TABLE\s+(\w+)\s+ADD\s+COLUMN\s+(\w+)/i);
@@ -91,7 +91,7 @@ function open(): Database.Database {
   db.pragma("foreign_keys = ON");
 
   // v1 schema is idempotent (CREATE TABLE IF NOT EXISTS …) — safe on every open.
-  db.exec(fs.readFileSync(SCHEMA_PATH, "utf8"));
+  db.exec(SCHEMA_V1_SQL);
   // v2 additions need per-statement handling for ALTER TABLE.
   applyV2(db);
 

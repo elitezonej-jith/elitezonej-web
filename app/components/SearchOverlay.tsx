@@ -7,6 +7,7 @@ import { PRODUCTS, Product } from "@/lib/products";
 import { fmtINR } from "@/lib/format";
 import { imgFabric } from "@/lib/images";
 import WishlistButton from "./WishlistButton";
+import { useModalA11y } from "./useModalA11y";
 
 type Props = { open: boolean; onClose: () => void };
 
@@ -52,20 +53,14 @@ export default function SearchOverlay({ open, onClose }: Props) {
   const [cat, setCat] = useState<CatChip>("all");
   const [fabFilter, setFabFilter] = useState<Set<FabricChip>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
+  const overlayRef = useModalA11y(open, onClose);
 
-  // Lock scroll, focus input, ESC closes
+  // Prefer focusing the search input specifically.
   useEffect(() => {
     if (!open) return;
-    document.body.style.overflow = "hidden";
     const t = setTimeout(() => inputRef.current?.focus(), 50);
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", onKey);
-      clearTimeout(t);
-    };
-  }, [open, onClose]);
+    return () => clearTimeout(t);
+  }, [open]);
 
   // Reset on close
   useEffect(() => {
@@ -99,7 +94,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
 
   return (
     <>
-      <div className="search-overlay" data-open={open} aria-hidden={!open} role="dialog" aria-modal="true" aria-label="Search">
+      <div ref={overlayRef} className="search-overlay" data-open={open} inert={!open} role="dialog" aria-modal="true" aria-label="Search" tabIndex={-1}>
         <div className="search-inner">
           <header className="search-head">
             <div className="search-bar">

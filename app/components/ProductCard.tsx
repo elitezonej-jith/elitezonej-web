@@ -91,7 +91,7 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
               key={v.suffix}
               className={v.cls}
               src={`/generated/${p.slug}/${v.suffix}.webp`}
-              alt={`${p.name} ${v.label}`}
+              alt={i === 0 ? p.name : ""}
               fill
               sizes="(max-width: 720px) 50vw, (max-width: 1024px) 33vw, 25vw"
               priority={priority && i === 0}

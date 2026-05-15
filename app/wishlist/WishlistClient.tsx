@@ -8,6 +8,7 @@ import { imgFabric, imgSrc } from "@/lib/images";
 import { useWishlist } from "../components/WishlistProvider";
 import { useCart, lineId } from "../components/CartProvider";
 import WishlistButton from "../components/WishlistButton";
+import ConfirmSheet from "../components/ConfirmSheet";
 import "../styles/wishlist.css";
 
 const REMOVE_ANIM_MS = 420;
@@ -16,6 +17,7 @@ export default function WishlistClient() {
   const { slugs, count, hydrated, remove, clear } = useWishlist();
   const { addItem } = useCart();
   const [leaving, setLeaving] = useState<Set<string>>(new Set());
+  const [confirmClear, setConfirmClear] = useState(false);
 
   const handleRemove = useCallback((slug: string) => {
     setLeaving(prev => {
@@ -72,8 +74,8 @@ export default function WishlistClient() {
           {hydrated && count > 0 && (
             <button
               type="button"
-              onClick={() => { if (confirm("Clear your wishlist?")) clear(); }}
-              style={{ background: "none", border: 0, color: "var(--ink-3)", fontSize: 12, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
+              onClick={() => setConfirmClear(true)}
+              style={{ background: "none", border: 0, color: "var(--ink-2)", fontSize: 12, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}
             >Clear all</button>
           )}
         </div>
@@ -168,6 +170,16 @@ export default function WishlistClient() {
           </div>
         )}
       </section>
+
+      <ConfirmSheet
+        open={confirmClear}
+        title="Clear your wishlist?"
+        body="Every saved piece will be removed from this device."
+        confirmLabel="Yes, clear"
+        cancelLabel="Reconsider"
+        onConfirm={() => { clear(); setConfirmClear(false); }}
+        onCancel={() => setConfirmClear(false)}
+      />
     </>
   );
 }

@@ -47,7 +47,7 @@
   /* Ink */
   --ink:      #1A1613;
   --ink-2:    #55493E;
-  --ink-3:    #9A8E7F;
+  --ink-3:    #6F6353; /* darkened from #9A8E7F to meet WCAG AA 4.5:1 on --paper */
   --ink-4:    #C9BC9F;
 
   /* Brand accent — locked: oxblood */
@@ -421,3 +421,16 @@ section.page { padding-top: var(--pad-y-d); padding-bottom: var(--pad-y-d); }
   pointer-events: none;
 }
 
+
+/* WCAG 2.2 AA SC 2.5.8 — minimum 24x24 (we use 36) interactive target size
+   for small icon/close controls that previously had tight padding. */
+.search-x,
+.search-close,
+.promo-modal-close,
+.promo-sticker-dismiss {
+  min-width: 36px;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}

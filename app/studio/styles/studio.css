@@ -129,6 +129,16 @@
 .stu-side__link.active .stu-side__link__count {
   background: var(--stu-brand-hi);
 }
+/* Catalogue tally — not an action item, so de-emphasise vs attention badges */
+.stu-side__link__count.is-tally {
+  background: transparent;
+  color: var(--stu-muted, #8a8073);
+  font-weight: 500;
+  padding: 2px 4px;
+}
+.stu-side__link.active .stu-side__link__count.is-tally {
+  background: transparent;
+}
 
 .stu-side__foot {
   border-top: 1px solid var(--stu-border);
@@ -1099,4 +1109,12 @@
 /* ReactCrop styling override (light tweaks) */
 .stu .ReactCrop {
   background: var(--stu-bg);
+}
+
+/* a11y: keyboard focus indicator for all interactive controls in Studio. */
+a:focus-visible,
+button:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--stu-accent, #1A1613);
+  outline-offset: 2px;
 }

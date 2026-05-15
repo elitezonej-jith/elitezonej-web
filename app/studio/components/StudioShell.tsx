@@ -78,6 +78,12 @@ const LABELS: Record<string, string> = {
   new: "New",
 };
 
+function humanizeSeg(seg: string): string {
+  const s = decodeURIComponent(seg);
+  if (/^\d+$/.test(s)) return `#${s}`;
+  return s.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export default function StudioShell({
   user, counts, children,
 }: {
@@ -107,6 +113,10 @@ export default function StudioShell({
             }
             const Icon = ICONS[item.icon];
             const count = item.countKey ? counts[item.countKey] : 0;
+            // "products" is a catalogue tally, not an action item — render it
+            // muted so the coloured badge stays meaningful for attention counts
+            // (new bookings, open orders, draft banners).
+            const isTally = item.countKey === "products";
             const active = isActive(pathname, item.href);
             return (
               <Link
@@ -117,7 +127,9 @@ export default function StudioShell({
               >
                 <Icon className="stu-side__link__icon" />
                 <span>{item.label}</span>
-                {count > 0 && <span className="stu-side__link__count">{count}</span>}
+                {count > 0 && (
+                  <span className={`stu-side__link__count${isTally ? " is-tally" : ""}`}>{count}</span>
+                )}
               </Link>
             );
           })}
@@ -140,7 +152,7 @@ export default function StudioShell({
           <div className="stu-topbar__crumbs">
             {segments.map((seg, i) => {
               const last = i === segments.length - 1;
-              const text = LABELS[seg] ?? decodeURIComponent(seg);
+              const text = LABELS[seg] ?? humanizeSeg(seg);
               return (
                 <span key={i}>
                   {i > 0 && <span className="stu-topbar__crumbs__sep"> / </span>}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useModalA11y } from "./useModalA11y";
 
 const COUNTRIES = [
   "India", "United Kingdom", "United States", "United Arab Emirates",
@@ -23,16 +24,8 @@ export default function PromoModal() {
     }
   }, []);
 
-  // Body scroll lock + ESC to close
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  const modalRef = useModalA11y(open, close);
 
   const dismissSticker = () => {
     setDismissed(true);
@@ -79,7 +72,7 @@ export default function PromoModal() {
         onClick={() => setOpen(false)}
       />
 
-      <div className="promo-modal" data-open={open} aria-hidden={!open} role="dialog" aria-label="15% off first order">
+      <div ref={modalRef} className="promo-modal" data-open={open} inert={!open} role="dialog" aria-modal="true" aria-label="15% off first order" tabIndex={-1}>
         <button
           className="promo-modal-close"
           onClick={() => setOpen(false)}
@@ -93,7 +86,7 @@ export default function PromoModal() {
         {submitted ? (
           <div className="promo-thanks">
             <h2>Welcome.</h2>
-            <p>Your 15% code is on its way to {email}.</p>
+            <p>Thanks for joining — we&apos;ll email your 15% code to {email} shortly.</p>
           </div>
         ) : (
           <form className="promo-form" onSubmit={onSubmit}>
