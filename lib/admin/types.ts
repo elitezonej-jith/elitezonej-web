@@ -105,6 +105,8 @@ export type OrderStatus =
   | "fulfilled"
   | "cancelled";
 
+export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
+
 export type Order = {
   id: string;
   customer_id: number;
@@ -116,6 +118,41 @@ export type Order = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  // schema-v3 commerce columns
+  discount: number;
+  shipping: number;
+  promo_code: string | null;
+  payment_status: PaymentStatus;
+  email: string;
+  phone: string;
+  ship_name: string;
+  ship_line1: string;
+  ship_line2: string;
+  ship_city: string;
+  ship_state: string;
+  ship_pincode: string;
+  ship_country: string;
+};
+
+export type Payment = {
+  id: string;
+  order_id: string;
+  provider: "razorpay" | "offline";
+  provider_order_id: string | null;
+  provider_payment_id: string | null;
+  amount: number;
+  currency: string;
+  status: "created" | "paid" | "failed";
+  created_at: string;
+  updated_at: string;
+};
+
+export type NewsletterSubscriber = {
+  id: number;
+  email: string;
+  source: string;
+  status: "subscribed" | "unsubscribed";
+  created_at: string;
 };
 
 export type OrderItem = {

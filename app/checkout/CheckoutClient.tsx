@@ -1,12 +1,93 @@
 "use client";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { fmtINR, fmtMeters } from "@/lib/format";
 import { WHATSAPP_LINK, WHATSAPP_DISPLAY } from "@/lib/contact";
 import { useCart } from "../components/CartProvider";
+import { startCheckout, confirmPayment, type CheckoutStartState } from "./actions";
 import "../styles/cart.css";
 
+declare global {
+  interface Window {
+    Razorpay?: new (options: Record<string, unknown>) => { open: () => void };
+  }
+}
+
+const RZP_SRC = "https://checkout.razorpay.com/v1/checkout.js";
+
+function loadRazorpay(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (window.Razorpay) return resolve(true);
+    const s = document.createElement("script");
+    s.src = RZP_SRC;
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+}
+
+const initial: CheckoutStartState = {};
+
 export default function CheckoutClient() {
-  const { items, subtotal, hydrated } = useCart();
+  const { items, subtotal, hydrated, clear } = useCart();
+  const router = useRouter();
+  const [state, action, pending] = useActionState(startCheckout, initial);
+  const [phase, setPhase] = useState<"form" | "paying" | "error">("form");
+  const [payError, setPayError] = useState<string | null>(null);
+  const launched = useRef(false);
+
+  // When the server has created an order + Razorpay order, open the gateway.
+  useEffect(() => {
+    if (!state.ok || launched.current) return;
+    if (state.provider !== "razorpay" || !state.razorpay) return;
+    launched.current = true;
+    setPhase("paying");
+
+    (async () => {
+      const ready = await loadRazorpay();
+      if (!ready || !window.Razorpay) {
+        setPayError("Could not load the payment window. Please retry.");
+        setPhase("error");
+        return;
+      }
+      const rzp = new window.Razorpay({
+        key: state.razorpay!.keyId,
+        order_id: state.razorpay!.providerOrderId,
+        amount: (state.amount ?? 0) * 100,
+        currency: "INR",
+        name: "Elite Zone J",
+        description: `Order ${state.orderId}`,
+        handler: async (resp: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) => {
+          const r = await confirmPayment({
+            orderId: state.orderId!,
+            razorpay_order_id: resp.razorpay_order_id,
+            razorpay_payment_id: resp.razorpay_payment_id,
+            razorpay_signature: resp.razorpay_signature,
+          });
+          if (r.ok) {
+            clear();
+            router.push(`/checkout/confirmation?o=${encodeURIComponent(state.orderId!)}`);
+          } else {
+            setPayError(r.error ?? "Payment verification failed.");
+            setPhase("error");
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setPayError("Payment was cancelled. Your order is saved as pending.");
+            setPhase("error");
+          },
+        },
+        theme: { color: "#1a1a1a" },
+      });
+      rzp.open();
+    })();
+  }, [state, clear, router]);
 
   if (!hydrated) {
     return (
@@ -17,7 +98,7 @@ export default function CheckoutClient() {
     );
   }
 
-  if (items.length === 0) {
+  if (items.length === 0 && phase === "form") {
     return (
       <section className="cart-head">
         <h1>Checkout</h1>
@@ -29,24 +110,32 @@ export default function CheckoutClient() {
     );
   }
 
-  const orderLines = items
-    .map((it) => {
-      const qty = it.isFabric ? `${fmtMeters(it.qty)}` : `x${it.qty}`;
-      const detail = [it.colour, it.size].filter(Boolean).join(" / ");
-      return `• ${it.name}${detail ? ` (${detail})` : ""} ${qty} — ${fmtINR(it.unitPrice * it.qty)}`;
-    })
-    .join("\n");
-
-  const message = encodeURIComponent(
-    `Hello Elite Zone J, I'd like to place this order:\n\n${orderLines}\n\nSubtotal: ${fmtINR(subtotal)}\n\nPlease confirm availability and payment.`,
+  const cartPayload = JSON.stringify(
+    items.map((it) => ({
+      slug: it.slug,
+      qty: it.qty,
+      size: it.size ?? null,
+      colour: it.colour ?? null,
+      isFabric: !!it.isFabric,
+    })),
   );
-  const waHref = `${WHATSAPP_LINK}?text=${message}`;
+
+  // Offline mode — no gateway configured: order is persisted as pending and we
+  // hand off to WhatsApp for personal confirmation (brand fallback).
+  const offline = state.ok && state.provider === "offline";
+  const waHref = `${WHATSAPP_LINK}?text=${encodeURIComponent(
+    `Hello Elite Zone J, I placed order ${state.orderId} for ${fmtINR(
+      state.pricing?.total ?? subtotal,
+    )}. Please confirm availability and share a payment link.`,
+  )}`;
 
   return (
     <>
       <section className="cart-head">
         <h1>Checkout</h1>
-        <span className="meta t-mono-xs">{fmtINR(subtotal)} · {items.length} line{items.length === 1 ? "" : "s"}</span>
+        <span className="meta t-mono-xs">
+          {fmtINR(subtotal)} · {items.length} line{items.length === 1 ? "" : "s"}
+        </span>
       </section>
 
       <section className="cart-page-wrap">
@@ -69,24 +158,65 @@ export default function CheckoutClient() {
         </div>
 
         <aside className="summary">
-          <h2>Order summary</h2>
-          <div className="row total"><span>Total</span><b>{fmtINR(subtotal)}</b></div>
+          <h2>Shipping &amp; contact</h2>
 
-          <p className="t-body-sm" style={{ margin: "16px 0", color: "var(--ink-2)" }}>
-            Online card &amp; UPI payments are launching shortly. For now we confirm
-            every order personally — send it to our atelier on WhatsApp and we&apos;ll
-            reply with availability, fitting notes and a secure payment link.
-          </p>
+          {offline ? (
+            <div className="t-body-sm" style={{ display: "grid", gap: 12 }}>
+              <p style={{ color: "var(--ink-2)" }}>
+                Order <b>{state.orderId}</b> is saved. Online payment isn’t enabled
+                yet — confirm with our atelier on WhatsApp and we’ll send a secure
+                payment link.
+              </p>
+              <a className="btn btn-primary btn-lg btn-block" href={waHref} target="_blank" rel="noopener noreferrer">
+                Confirm via WhatsApp
+              </a>
+              <Link className="btn btn-secondary btn-block" href="/cart">Back to bag</Link>
+            </div>
+          ) : (
+            <form action={action} className="checkout-form" style={{ display: "grid", gap: 10 }}>
+              <input type="hidden" name="cart" value={cartPayload} />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <input name="first_name" placeholder="First name" required aria-label="First name" />
+                <input name="last_name" placeholder="Last name" required aria-label="Last name" />
+              </div>
+              <input type="email" name="email" placeholder="Email" required aria-label="Email" />
+              <input name="phone" placeholder="Phone" required aria-label="Phone" />
+              <input name="ship_line1" placeholder="Address line 1" required aria-label="Address line 1" />
+              <input name="ship_line2" placeholder="Address line 2 (optional)" aria-label="Address line 2" />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <input name="ship_city" placeholder="City" required aria-label="City" />
+                <input name="ship_state" placeholder="State" required aria-label="State" />
+              </div>
+              <input name="ship_pincode" placeholder="Pincode" inputMode="numeric" required aria-label="Pincode" />
+              <input name="promo_code" placeholder="Promo code (optional)" aria-label="Promo code" />
 
-          <div className="ctas">
-            <a className="btn btn-primary btn-lg btn-block" href={waHref} target="_blank" rel="noopener noreferrer">
-              Place order via WhatsApp
-            </a>
-            <Link className="btn btn-secondary btn-block" href="/cart">Back to bag</Link>
-          </div>
+              <div className="row total" style={{ marginTop: 8 }}>
+                <span>Subtotal</span><b>{fmtINR(subtotal)}</b>
+              </div>
+              <p className="t-mono-xs" style={{ color: "var(--ink-2)" }}>
+                Final total (incl. any promo &amp; shipping) is confirmed on the
+                secure payment screen.
+              </p>
 
-          <div className="reassure t-mono-xs">
-            <span>✓ Personal order confirmation</span>
+              <button
+                type="submit"
+                className="btn btn-primary btn-lg btn-block"
+                disabled={pending || phase === "paying"}
+              >
+                {pending ? "Preparing…" : phase === "paying" ? "Opening payment…" : "Pay securely"}
+              </button>
+              <Link className="btn btn-secondary btn-block" href="/cart">Back to bag</Link>
+
+              {(state.error || payError) && (
+                <p role="alert" className="t-mono-xs" style={{ color: "#b00" }}>
+                  {payError ?? state.error}
+                </p>
+              )}
+            </form>
+          )}
+
+          <div className="reassure t-mono-xs" style={{ marginTop: 16 }}>
+            <span>✓ Secure card &amp; UPI payment</span>
             <span>✓ Free alterations within 30 days</span>
             <span>✓ Reach us on {WHATSAPP_DISPLAY}</span>
           </div>
