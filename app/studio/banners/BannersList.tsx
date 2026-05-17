@@ -2,11 +2,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
-  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
-  type DragEndEvent,
+  DndContext, closestCenter, PointerSensor, KeyboardSensor,
+  useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove, SortableContext, useSortable, verticalListSortingStrategy,
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  useSortable, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { reorderBannersAction, setBannerEnabledAction } from "../actions/banners";
@@ -17,7 +18,10 @@ import { useToast } from "../components/Toast";
 
 export default function BannersList({ banners }: { banners: Banner[] }) {
   const [list, setList] = useState(banners);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   const { show } = useToast();
 
   const onDragEnd = async (e: DragEndEvent) => {
@@ -48,7 +52,7 @@ function Row({ b }: { b: Banner }) {
   const style = { transform: CSS.Transform.toString(transform), transition };
   return (
     <div ref={setNodeRef} style={style} className={`stu-sort-item${isDragging ? " is-dragging" : ""}`}>
-      <span className="stu-sort-item__handle" {...attributes} {...listeners}><IconDrag /></span>
+      <span className="stu-sort-item__handle" {...attributes} {...listeners} aria-label="Drag to reorder"><IconDrag /></span>
       {b.image_path ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img className="stu-sort-item__thumb" src={b.image_path} alt="" />

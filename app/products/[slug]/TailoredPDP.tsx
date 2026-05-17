@@ -66,7 +66,16 @@ export default function TailoredPDP({ product, setCurrentSlug }: Props) {
       <section className="pd">
         <div className="thumbs">
           {ANGLES.map((a, i) => (
-            <div key={a} className={`thumb ${i === angleIdx ? "on" : ""}`} onClick={() => setAngleIdx(i)}>
+            <div
+              key={a}
+              className={`thumb ${i === angleIdx ? "on" : ""}`}
+              role="button"
+              tabIndex={0}
+              aria-label={`Show ${ANGLE_LABELS[i]} view`}
+              aria-pressed={i === angleIdx}
+              onClick={() => setAngleIdx(i)}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setAngleIdx(i); } }}
+            >
               <Image
                 src={imgSrc(product.slug, a)}
                 alt={`${ANGLE_LABELS[i]} view`}
@@ -79,7 +88,15 @@ export default function TailoredPDP({ product, setCurrentSlug }: Props) {
           ))}
         </div>
 
-        <div className="main" onClick={() => setLbOpen(true)} data-zoom-host="tailored">
+        <div
+          className="main"
+          role="button"
+          tabIndex={0}
+          aria-label="Open full-screen image viewer"
+          onClick={() => setLbOpen(true)}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLbOpen(true); } }}
+          data-zoom-host="tailored"
+        >
           {ANGLES.map((a, i) => (
             <div key={a} className={`photo ${i === angleIdx ? "show" : ""}`}>
               <Image
@@ -123,7 +140,7 @@ export default function TailoredPDP({ product, setCurrentSlug }: Props) {
               <label>Size</label>
               <a href="#">Size guide</a>
             </div>
-            <div className="sizes" style={sizePrompt ? { outline: "2px solid var(--oxblood, #7A1C1C)", outlineOffset: 6 } : undefined}>
+            <div className="sizes" style={sizePrompt ? { outline: "2px solid var(--accent)", outlineOffset: 6 } : undefined}>
               {product.sizes.map(s => {
                 const oos = s.endsWith("-oos");
                 const v = oos ? s.replace("-oos", "") : s;
@@ -136,7 +153,7 @@ export default function TailoredPDP({ product, setCurrentSlug }: Props) {
                 );
               })}
             </div>
-            <p aria-live="polite" className="t-mono-xs" style={{ minHeight: 16, marginTop: 8, color: "var(--oxblood, #7A1C1C)" }}>
+            <p aria-live="polite" className="t-mono-xs" style={{ minHeight: 16, marginTop: 8, color: "var(--accent)" }}>
               {sizePrompt ? "Pick a size to add this to your bag." : ""}
             </p>
             <Link
@@ -172,7 +189,7 @@ export default function TailoredPDP({ product, setCurrentSlug }: Props) {
           <div className="feature-list">
             <h4>Features</h4>
             <ul>
-              {product.features.map((f, i) => <li key={i}>{f}</li>)}
+              {product.features.map((f) => <li key={f}>{f}</li>)}
             </ul>
           </div>
         </div>
@@ -187,8 +204,8 @@ export default function TailoredPDP({ product, setCurrentSlug }: Props) {
           <div>
             <table>
               <tbody>
-                {product.spec.map(([k, v], i) => (
-                  <tr key={i}><td className="k">{k}</td><td className="v">{v}</td></tr>
+                {product.spec.map(([k, v]) => (
+                  <tr key={k}><td className="k">{k}</td><td className="v">{v}</td></tr>
                 ))}
               </tbody>
             </table>

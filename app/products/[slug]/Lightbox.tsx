@@ -1,6 +1,7 @@
 "use client";
 import { useEffect } from "react";
 import Image from "next/image";
+import { useModalA11y } from "../../components/useModalA11y";
 
 type Props = {
   open: boolean;
@@ -11,21 +12,21 @@ type Props = {
 };
 
 export default function Lightbox({ open, onClose, images, index, setIndex }: Props) {
+  // Focus trap + Escape + return-focus + scroll lock (shared modal a11y).
+  const dialogRef = useModalA11y<HTMLDivElement>(open, onClose);
+
+  // Arrow-key navigation is lightbox-specific; Escape/focus/scroll are handled
+  // by useModalA11y above.
   useEffect(() => {
     if (!open) return;
     const len = images.length;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
       if (e.key === "ArrowLeft") setIndex(i => (i - 1 + len) % len);
       if (e.key === "ArrowRight") setIndex(i => (i + 1) % len);
     };
     document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [open, images.length, onClose, setIndex]);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, images.length, setIndex]);
 
   if (!open || images.length === 0) return null;
 
@@ -34,10 +35,12 @@ export default function Lightbox({ open, onClose, images, index, setIndex }: Pro
 
   return (
     <div
+      ref={dialogRef}
       className="lightbox"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       role="dialog"
       aria-modal="true"
+      aria-label="Product image viewer"
     >
       <button className="lb-close t-mono-xs" onClick={onClose}>CLOSE</button>
       <button className="lb-nav lb-prev" onClick={() => setIndex(i => (i - 1 + len) % len)}>←</button>

@@ -14,7 +14,7 @@ export default function PasswordForm() {
         <label className="stu-field"><span className="stu-field__label">New password (8+)</span>
           <input name="next" type="password" required minLength={8} autoComplete="new-password" className="stu-input" /></label>
       </div>
-      {state.error && <p className="stu-form__error">{state.error}</p>}
+      {state.error && <p role="alert" className="stu-form__error">{state.error}</p>}
       {state.ok && <p className="stu-form__ok">Password updated.</p>}
       <div>
         <button type="submit" className="stu-btn stu-btn--ghost" disabled={pending}>

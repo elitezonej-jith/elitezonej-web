@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useModalA11y } from "../../components/useModalA11y";
 import { IconTrash } from "./Icons";
 
 export default function ConfirmDialog({
@@ -20,19 +20,21 @@ export default function ConfirmDialog({
   hidden?: Record<string, string>;
   onConfirm?: () => void;
 }) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  const dialogRef = useModalA11y<HTMLDivElement>(open, onClose);
 
   if (!open) return null;
   return (
     <div className="stu-dialog-overlay" onClick={onClose}>
-      <div className="stu-dialog" onClick={(e) => e.stopPropagation()} role="alertdialog">
+      <div
+        ref={dialogRef}
+        className="stu-dialog"
+        onClick={(e) => e.stopPropagation()}
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="stu-confirm-title"
+      >
         <div className="stu-dialog__icon"><IconTrash /></div>
-        <h3 className="stu-dialog__title">{title}</h3>
+        <h3 id="stu-confirm-title" className="stu-dialog__title">{title}</h3>
         {body && <p className="stu-dialog__body">{body}</p>}
         <div className="stu-dialog__row">
           <button type="button" className="stu-btn stu-btn--ghost" onClick={onClose}>{cancelLabel}</button>

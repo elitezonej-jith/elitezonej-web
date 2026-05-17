@@ -38,6 +38,7 @@ export default function FilterBar({
           onKeyDown={(e) => { if (e.key === "Enter") submit(q); }}
           onBlur={() => { if (q !== (sp.get(searchParam) ?? "")) submit(q); }}
           placeholder={placeholder}
+          aria-label={placeholder}
         />
       </div>
       {chips.map((c) => (

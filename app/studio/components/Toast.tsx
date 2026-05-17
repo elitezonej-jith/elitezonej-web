@@ -19,7 +19,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastCtx.Provider value={{ show }}>
       {children}
       {toasts.map((t) => (
-        <div key={t.id} className={`stu-toast ${t.kind === "success" ? "stu-toast--success" : t.kind === "error" ? "stu-toast--error" : ""}`}>
+        <div
+          key={t.id}
+          role={t.kind === "error" ? "alert" : "status"}
+          aria-live={t.kind === "error" ? "assertive" : "polite"}
+          className={`stu-toast ${t.kind === "success" ? "stu-toast--success" : t.kind === "error" ? "stu-toast--error" : ""}`}
+        >
           {t.message}
         </div>
       ))}

@@ -22,7 +22,7 @@ export default function SetupForm() {
         </span>
         <input name="password" type="password" required minLength={8} className="stu-input" />
       </label>
-      {state.error && <p className="stu-form__error">{state.error}</p>}
+      {state.error && <p role="alert" className="stu-form__error">{state.error}</p>}
       <button type="submit" className="stu-btn stu-btn--primary stu-btn--lg" disabled={pending}
               style={{ width: "100%" }}>
         {pending ? "Creating account…" : "Create account & continue"}

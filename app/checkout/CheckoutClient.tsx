@@ -220,7 +220,7 @@ export default function CheckoutClient() {
               <p
                 role="status"
                 className="t-mono-xs"
-                style={{ color: preview.promoApplied ? "var(--ok, #1a7f37)" : "#b00" }}
+                style={{ color: preview.promoApplied ? "var(--success)" : "var(--error)" }}
               >
                 {preview.promoApplied ? "✓ " : ""}{preview.promoMessage}
               </p>
@@ -273,7 +273,7 @@ export default function CheckoutClient() {
             <Link className="btn btn-secondary btn-block" href="/cart">Back to bag</Link>
 
             {(state.error || payError) && (
-              <p role="alert" className="t-mono-xs" style={{ color: "#b00" }}>
+              <p role="alert" className="t-mono-xs" style={{ color: "var(--error)" }}>
                 {payError ?? state.error}
               </p>
             )}

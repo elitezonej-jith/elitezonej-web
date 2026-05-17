@@ -30,7 +30,7 @@ export default function InviteForm() {
         <input name="password" type="text" minLength={8} required className="adm-field__input"
                style={{ fontFamily: "JetBrains Mono, monospace" }} />
       </label>
-      {state.error && <p className="adm-form__error">{state.error}</p>}
+      {state.error && <p role="alert" className="adm-form__error">{state.error}</p>}
       {state.ok && <p className="adm-form__ok">Inscribed. The new operator can sign in.</p>}
       <div style={{ marginTop: 16 }}>
         <button type="submit" className="adm-btn adm-btn--primary" disabled={pending}>

@@ -74,7 +74,7 @@ export default function PromoForm({ initial: p }: { initial?: Promotion }) {
         </label>
       </div>
 
-      {state.error && <p className="adm-form__error">{state.error}</p>}
+      {state.error && <p role="alert" className="adm-form__error">{state.error}</p>}
 
       <div>
         <button type="submit" className="adm-btn adm-btn--primary" disabled={pending}>

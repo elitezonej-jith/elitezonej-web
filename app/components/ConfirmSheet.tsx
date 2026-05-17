@@ -83,8 +83,8 @@ export default function ConfirmSheet({
             type="button"
             onClick={onConfirm}
             style={{
-              flex: 1, padding: "11px 14px", background: "var(--oxblood, #7A1C1C)",
-              border: "1px solid var(--oxblood, #7A1C1C)", color: "#FAF7F2",
+              flex: 1, padding: "11px 14px", background: "var(--accent)",
+              border: "1px solid var(--accent)", color: "#FAF7F2",
               fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", cursor: "pointer",
             }}
           >

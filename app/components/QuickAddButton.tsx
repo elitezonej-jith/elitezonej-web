@@ -61,7 +61,7 @@ export default function QuickAddButton({
             id: lineId(product.slug, { colour: colour.name }),
             slug: product.slug,
             name: product.name,
-            unitPrice: product.price,
+            unitPrice: product.salePrice ?? product.price,
             qty: 1,
             colour: colour.name,
             imageSrc: imgFabric(product.slug, colour.name, "front"),

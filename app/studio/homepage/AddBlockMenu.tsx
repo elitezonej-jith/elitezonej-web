@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { addBlockAction } from "../actions/homepage";
+import { useModalA11y } from "../../components/useModalA11y";
 import { IconPlus } from "../components/Icons";
 
 const OPTIONS: Array<{ value: string; label: string; sub: string }> = [
@@ -20,6 +21,7 @@ const OPTIONS: Array<{ value: string; label: string; sub: string }> = [
 
 export default function AddBlockMenu() {
   const [open, setOpen] = useState(false);
+  const dialogRef = useModalA11y<HTMLDivElement>(open, () => setOpen(false));
   return (
     <>
       <button type="button" className="stu-btn stu-btn--primary" onClick={() => setOpen(true)}>
@@ -27,8 +29,16 @@ export default function AddBlockMenu() {
       </button>
       {open && (
         <div className="stu-dialog-overlay" onClick={() => setOpen(false)}>
-          <div className="stu-dialog" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 540 }}>
-            <h3 className="stu-dialog__title" style={{ marginBottom: 14 }}>Pick a section type</h3>
+          <div
+            ref={dialogRef}
+            className="stu-dialog"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: 540 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="stu-addblock-title"
+          >
+            <h3 id="stu-addblock-title" className="stu-dialog__title" style={{ marginBottom: 14 }}>Pick a section type</h3>
             <div style={{ maxHeight: "60vh", overflow: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
               {OPTIONS.map((o) => (
                 <form key={o.value} action={addBlockAction}>

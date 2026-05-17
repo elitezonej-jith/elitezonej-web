@@ -108,6 +108,10 @@
 .price-row input { font-family: var(--font-mono); font-size: 12px; padding: 8px 10px; }
 .clear-link {
   display: inline-block;
+  appearance: none;
+  background: none;
+  border: 0;
+  font-family: inherit;
   margin-top: var(--s-3);
   color: var(--ink-2);
   font-size: 13px;

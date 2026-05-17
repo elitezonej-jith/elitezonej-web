@@ -18,7 +18,7 @@ export default function PasswordForm() {
           <input name="next" type="password" required minLength={8} autoComplete="new-password" className="adm-field__input" />
         </label>
       </div>
-      {state.error && <p className="adm-form__error">{state.error}</p>}
+      {state.error && <p role="alert" className="adm-form__error">{state.error}</p>}
       {state.ok && <p className="adm-form__ok">Stitched. Your passphrase is updated.</p>}
       <div style={{ marginTop: 16 }}>
         <button type="submit" className="adm-btn adm-btn--ghost" disabled={pending}>

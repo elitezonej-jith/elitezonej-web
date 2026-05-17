@@ -96,7 +96,11 @@ export default function Header() {
         <ul className="nav-primary">
           {NAV.map((cat) => (
             <li key={cat.label} className={cat.groups ? "has-mega" : undefined}>
-              <Link href={cat.href} className={cat.sale ? "nav-sale" : undefined}>{cat.label}</Link>
+              <Link
+                href={cat.href}
+                className={cat.sale ? "nav-sale" : undefined}
+                aria-haspopup={cat.groups ? "true" : undefined}
+              >{cat.label}</Link>
               {cat.groups && (
                 <div className="mega">
                   <div className="row">

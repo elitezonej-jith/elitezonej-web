@@ -20,6 +20,7 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
   const [active, setActive] = useState<Record<FilterKey, Set<string>>>({
     fit: new Set(), fabric: new Set(), occasion: new Set(), size: new Set(),
   });
+  const [price, setPrice] = useState<{ min: string; max: string }>({ min: "", max: "" });
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -46,7 +47,10 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
       return next;
     });
   };
-  const clear = () => setActive({ fit: new Set(), fabric: new Set(), occasion: new Set(), size: new Set() });
+  const clear = () => {
+    setActive({ fit: new Set(), fabric: new Set(), occasion: new Set(), size: new Set() });
+    setPrice({ min: "", max: "" });
+  };
 
   const isFabricMode = cat === "fabrics";
 
@@ -66,13 +70,20 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
       if (active.fit.size) list = list.filter(p => active.fit.has(p.fit));
       if (active.fabric.size) list = list.filter(p => active.fabric.has(p.fabric));
       if (active.occasion.size) list = list.filter(p => active.occasion.has(p.occasion));
+      if (active.size.size) {
+        list = list.filter(p => p.sizes?.some(s => active.size.has(s.replace("-oos", ""))));
+      }
     }
     // Sort by the price the customer actually pays (sale price when on sale).
     const eff = (x: typeof list[number]) => x.salePrice ?? x.price;
+    const min = Number(price.min);
+    const max = Number(price.max);
+    if (price.min !== "" && Number.isFinite(min)) list = list.filter(p => eff(p) >= min);
+    if (price.max !== "" && Number.isFinite(max)) list = list.filter(p => eff(p) <= max);
     if (sortKey === "price-asc") list = [...list].sort((a, b) => eff(a) - eff(b));
     if (sortKey === "price-desc") list = [...list].sort((a, b) => eff(b) - eff(a));
     return list;
-  }, [cat, sub, active, sortKey, isFabricMode]);
+  }, [cat, sub, active, price, sortKey, isFabricMode]);
 
   return (
     <>
@@ -98,8 +109,8 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
       <div className="toolbar">
         <span className="count t-mono-xs">{filtered.length} piece{filtered.length === 1 ? "" : "s"}</span>
         <div className="sort">
-          <label className="t-mono-xs" style={{ color: "var(--ink-3)" }}>Sort by</label>
-          <select value={sortKey} onChange={e => setSortKey(e.target.value)}>
+          <label htmlFor="collection-sort" className="t-mono-xs" style={{ color: "var(--ink-3)" }}>Sort by</label>
+          <select id="collection-sort" value={sortKey} onChange={e => setSortKey(e.target.value)}>
             <option value="newest">Newest</option>
             <option value="price-asc">Price · low to high</option>
             <option value="price-desc">Price · high to low</option>
@@ -117,11 +128,23 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
             <div className="filter-group">
               <h4>Price (₹)</h4>
               <div className="price-row">
-                <input type="number" placeholder="Min" />
-                <input type="number" placeholder="Max" />
+                <input
+                  type="number"
+                  placeholder="Min"
+                  aria-label="Minimum price"
+                  value={price.min}
+                  onChange={e => setPrice(p => ({ ...p, min: e.target.value }))}
+                />
+                <input
+                  type="number"
+                  placeholder="Max"
+                  aria-label="Maximum price"
+                  value={price.max}
+                  onChange={e => setPrice(p => ({ ...p, max: e.target.value }))}
+                />
               </div>
             </div>
-            <a className="clear-link" onClick={clear}>Clear all filters</a>
+            <button type="button" className="clear-link" onClick={clear}>Clear all filters</button>
           </aside>
         )}
 

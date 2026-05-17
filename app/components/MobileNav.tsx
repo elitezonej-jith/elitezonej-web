@@ -223,7 +223,7 @@ export default function MobileNav() {
         </div>
 
         <div className="mobile-drawer__tail">
-          <Link href="/bespoke" onClick={close} className="mobile-drawer__tail-row">
+          <Link href="/account" onClick={close} className="mobile-drawer__tail-row">
             <GlyphAccount /> <span>My Account</span>
           </Link>
           <Link href="/wishlist" onClick={close} className="mobile-drawer__tail-row">

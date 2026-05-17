@@ -2,11 +2,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import {
-  DndContext, closestCenter, PointerSensor, useSensor, useSensors,
-  type DragEndEvent,
+  DndContext, closestCenter, PointerSensor, KeyboardSensor,
+  useSensor, useSensors, type DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove, SortableContext, useSortable, verticalListSortingStrategy,
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  useSortable, verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { reorderBlocksAction, toggleBlockAction } from "../actions/homepage";
@@ -33,7 +34,10 @@ const TYPE_LABELS: Record<string, string> = {
 
 export default function HomepageList({ blocks }: { blocks: HomepageBlockResolved[] }) {
   const [list, setList] = useState(blocks);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
   const { show } = useToast();
 
   const onDragEnd = async (e: DragEndEvent) => {
@@ -64,7 +68,7 @@ function Row({ b }: { b: HomepageBlockResolved }) {
   const style = { transform: CSS.Transform.toString(transform), transition };
   return (
     <div ref={setNodeRef} style={style} className={`stu-sort-item${isDragging ? " is-dragging" : ""}`}>
-      <span className="stu-sort-item__handle" {...attributes} {...listeners}><IconDrag /></span>
+      <span className="stu-sort-item__handle" {...attributes} {...listeners} aria-label="Drag to reorder"><IconDrag /></span>
       <div className="stu-sort-item__main">
         <div className="stu-sort-item__title">{b.title || TYPE_LABELS[b.type] || b.type}</div>
         <div className="stu-sort-item__sub">{TYPE_LABELS[b.type] ?? b.type}{b.kicker ? ` · ${b.kicker}` : ""}</div>

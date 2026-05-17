@@ -219,7 +219,7 @@ export default function ProductForm({
         </div>
       </div>
 
-      {state.error && <p className="stu-form__error">{state.error}</p>}
+      {state.error && <p role="alert" className="stu-form__error">{state.error}</p>}
 
       <div className="stu-btn-row" style={{ justifyContent: "flex-end" }}>
         <button type="submit" className="stu-btn stu-btn--primary stu-btn--lg" disabled={pending}>

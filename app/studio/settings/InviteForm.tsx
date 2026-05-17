@@ -21,7 +21,7 @@ export default function InviteForm() {
       <label className="stu-field"><span className="stu-field__label">Initial password (8+)</span>
         <input name="password" type="text" minLength={8} required className="stu-input"
                style={{ fontFamily: "ui-monospace, monospace" }} /></label>
-      {state.error && <p className="stu-form__error">{state.error}</p>}
+      {state.error && <p role="alert" className="stu-form__error">{state.error}</p>}
       {state.ok && <p className="stu-form__ok">Teammate invited.</p>}
       <div>
         <button type="submit" className="stu-btn stu-btn--primary" disabled={pending}>

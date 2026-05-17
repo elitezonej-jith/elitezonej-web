@@ -158,7 +158,7 @@ export default function ProductEditor({ product }: { product: Product }) {
         </label>
       )}
 
-      {state.error && <p className="adm-form__error">{state.error}</p>}
+      {state.error && <p role="alert" className="adm-form__error">{state.error}</p>}
 
       <div className="adm-btn-row" style={{ alignItems: "center", justifyContent: "space-between" }}>
         <SavedLine at={product.updated_at} />

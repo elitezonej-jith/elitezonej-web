@@ -151,7 +151,7 @@ export default function NewProductForm() {
         <textarea name="note" className="adm-field__textarea" rows={4} />
       </label>
 
-      {state.error && <p className="adm-form__error">{state.error}</p>}
+      {state.error && <p role="alert" className="adm-form__error">{state.error}</p>}
 
       <div style={{ marginTop: 8 }}>
         <button type="submit" className="adm-btn adm-btn--primary" disabled={pending}>

@@ -19,7 +19,7 @@ export default function LoginForm({ next }: { next: string }) {
         <input name="password" type="password" required autoComplete="current-password"
                className="stu-input" placeholder="••••••••" />
       </label>
-      {state.error && <p className="stu-form__error">{state.error}</p>}
+      {state.error && <p role="alert" className="stu-form__error">{state.error}</p>}
       <button type="submit" className="stu-btn stu-btn--primary stu-btn--lg" disabled={pending}
               style={{ width: "100%" }}>
         {pending ? "Signing in…" : "Sign in"}
