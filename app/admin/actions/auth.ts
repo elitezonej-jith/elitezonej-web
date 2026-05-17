@@ -7,6 +7,7 @@ import {
   SESSION_COOKIE,
   SESSION_COOKIE_OPTIONS,
   createSession,
+  destroyAllSessionsForUser,
   destroySession,
   hashPassword,
   purgeExpiredSessions,
@@ -132,6 +133,16 @@ export async function changePasswordAction(_prev: ActionState, formData: FormDat
   if (!ok) return { error: "Current password incorrect." };
   const hash = await hashPassword(next);
   setUserPassword(me.id, hash);
+  // Revoke every outstanding session for this user (a leaked/old session must
+  // not survive a password change), then rotate a fresh one so the operator
+  // who just changed it stays signed in on this device.
+  destroyAllSessionsForUser(me.id);
+  const sess = createSession(me.id);
+  const c = await cookies();
+  c.set(SESSION_COOKIE, sess.id, {
+    ...SESSION_COOKIE_OPTIONS,
+    expires: new Date(sess.expires_at),
+  });
   logAudit({ user_id: me.id, action: "change_password", entity: "user", entity_id: String(me.id) });
   return { ok: true };
 }

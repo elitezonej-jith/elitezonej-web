@@ -44,6 +44,14 @@ export default function CheckoutClient() {
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [previewPending, setPreviewPending] = useState(false);
 
+  // Stable per-checkout key so a double-submit / retry resumes the same order
+  // server-side instead of creating a duplicate.
+  const [idemKey] = useState(() =>
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `idem_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+  );
+
   // When the server has created an order + Razorpay order, open the gateway.
   useEffect(() => {
     if (!state.ok || launched.current) return;
@@ -188,6 +196,7 @@ export default function CheckoutClient() {
 
           <form action={action} className="checkout-form" style={{ display: "grid", gap: 10 }}>
             <input type="hidden" name="cart" value={cartPayload} />
+            <input type="hidden" name="idempotency_key" value={idemKey} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <input name="first_name" placeholder="First name" required aria-label="First name" />
               <input name="last_name" placeholder="Last name" required aria-label="Last name" />

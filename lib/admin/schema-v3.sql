@@ -55,3 +55,21 @@ CREATE TABLE IF NOT EXISTS customer_sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_cust_sessions_customer ON customer_sessions(customer_id);
 CREATE INDEX IF NOT EXISTS idx_cust_sessions_exp ON customer_sessions(expires_at);
+
+-- Payment-gateway webhook idempotency: one row per processed provider event,
+-- so a Razorpay retry/replay of the same event is a guaranteed no-op.
+CREATE TABLE IF NOT EXISTS webhook_events (
+  event_id    TEXT PRIMARY KEY,
+  provider    TEXT NOT NULL DEFAULT 'razorpay',
+  event_type  TEXT,
+  received_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Checkout idempotency: maps a per-submission client key to the order it
+-- created, so a double-click / network retry resumes the same order instead
+-- of creating a duplicate order + duplicate gateway order.
+CREATE TABLE IF NOT EXISTS checkout_idempotency (
+  key        TEXT PRIMARY KEY,
+  order_id   TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);

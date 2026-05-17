@@ -6,14 +6,20 @@ import { createProviderOrder } from "../../lib/storefront/payments";
 import {
   verifyCheckoutSignature,
   razorpayConfigured,
+  fetchRazorpayPayment,
+  amountMatches,
+  publicKeyId,
 } from "../../lib/storefront/payments/razorpay";
 import {
   createPendingOrder,
   fulfilOrderPaid,
   getOrder,
 } from "../../lib/admin/repos/orders";
-import { createPayment } from "../../lib/admin/repos/payments";
-import { getPaymentByProviderOrderId } from "../../lib/admin/repos/payments";
+import { createPayment, getPaymentByProviderOrderId, getPaymentsForOrder } from "../../lib/admin/repos/payments";
+import {
+  getCheckoutIdempotency,
+  putCheckoutIdempotency,
+} from "../../lib/admin/repos/webhook-events";
 import { logAudit } from "../../lib/admin/repos/audit";
 import { rateLimit } from "../../lib/admin/rate-limit";
 import { issueOrderToken, verifyOrderToken } from "../../lib/storefront/checkout-token";
@@ -57,6 +63,39 @@ async function clientIp(): Promise<string> {
   return h.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
 }
 
+/** Rebuilds the start state for an order a prior submission already created
+ *  (double-click / retry of the same idempotency key). Returns null if the
+ *  order can't be safely resumed, so the caller degrades to creating fresh. */
+function resumeCheckout(orderId: string): CheckoutStartState | null {
+  const order = getOrder(orderId);
+  if (!order) return null;
+  const orow = order as unknown as Record<string, unknown>;
+  if (orow.payment_status === "paid") {
+    return { error: "This order has already been paid.", orderId };
+  }
+  const pay = getPaymentsForOrder(orderId)[0];
+  if (!pay) return null;
+  const pricing = {
+    subtotal: Number(order.subtotal ?? 0),
+    discount: Number(orow.discount ?? 0),
+    shipping: Number(orow.shipping ?? 0),
+    tax: Number(order.tax ?? 0),
+    total: Number(order.total ?? 0),
+  };
+  return {
+    ok: true,
+    orderId,
+    token: issueOrderToken(orderId),
+    provider: pay.provider,
+    amount: pricing.total,
+    razorpay:
+      pay.provider === "razorpay" && pay.provider_order_id
+        ? { keyId: publicKeyId(), providerOrderId: pay.provider_order_id }
+        : undefined,
+    pricing,
+  };
+}
+
 export async function startCheckout(
   _prev: CheckoutStartState,
   fd: FormData,
@@ -90,6 +129,19 @@ export async function startCheckout(
   });
   if (!form.success) {
     return { error: form.error.issues[0]?.message ?? "Please complete the form." };
+  }
+
+  // Idempotency: a double-click / network retry carrying the same key resumes
+  // the order it already created instead of duplicating order + gateway order.
+  const idemKey = String(fd.get("idempotency_key") ?? "").slice(0, 80);
+  if (idemKey) {
+    const existing = getCheckoutIdempotency(idemKey);
+    if (existing) {
+      const resumed = resumeCheckout(existing);
+      if (resumed) return resumed;
+      // Couldn't safely resume → fall through and create fresh (no worse
+      // than pre-idempotency behaviour).
+    }
   }
 
   const priced = priceCart(linesParsed.data as CartLineInput[], form.data.promo_code);
@@ -143,6 +195,8 @@ export async function startCheckout(
     provider_order_id: providerOrderId,
     amount: priced.pricing.total,
   });
+
+  if (idemKey) putCheckoutIdempotency(idemKey, orderId);
 
   logAudit({
     user_id: null,
@@ -268,6 +322,27 @@ export async function confirmPayment(input: {
       entity_id: orderId,
     });
     return { ok: false, error: "Payment verification failed. You were not charged twice." };
+  }
+
+  // Reconcile the captured amount/currency — the signature proves the
+  // payment belongs to this order but does NOT cover the amount. The webhook
+  // is the authoritative path; here we refuse only on a *confirmed* mismatch
+  // and otherwise proceed (a fetch failure falls back to the webhook).
+  const gw = await fetchRazorpayPayment(input.razorpay_payment_id);
+  if (gw && (!amountMatches(payment.amount, gw.amount) || gw.currency !== payment.currency)) {
+    logAudit({
+      user_id: null,
+      action: "payment_amount_mismatch",
+      entity: "order",
+      entity_id: orderId,
+      payload: {
+        expected_paise: Math.round(payment.amount * 100),
+        gateway_paise: gw.amount,
+        expected_currency: payment.currency,
+        gateway_currency: gw.currency,
+      },
+    });
+    return { ok: false, error: "Payment amount could not be verified. Please contact us — you have not been charged twice." };
   }
 
   const result = fulfilOrderPaid(orderId, {

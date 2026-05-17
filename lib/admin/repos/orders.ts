@@ -234,3 +234,20 @@ export function fulfilOrderPaid(
     return { ok: false, error: (err as Error).message || "Could not fulfil order." };
   }
 }
+
+/**
+ * Marks a still-pending order's payment as failed (gateway reported
+ * payment.failed). Never touches a paid order and never decrements stock.
+ */
+export function markOrderPaymentFailed(orderId: string): void {
+  const db = getDb();
+  const tx = db.transaction(() => {
+    db.prepare(
+      "UPDATE orders SET payment_status = 'failed', updated_at = datetime('now') WHERE id = ? AND payment_status = 'pending'",
+    ).run(orderId);
+    db.prepare(
+      "UPDATE payments SET status = 'failed', updated_at = datetime('now') WHERE order_id = ? AND status = 'created'",
+    ).run(orderId);
+  });
+  tx();
+}

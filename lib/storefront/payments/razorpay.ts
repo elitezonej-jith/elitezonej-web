@@ -72,3 +72,36 @@ export function verifyWebhookSignature(rawBody: string, signature: string): bool
 export function publicKeyId(): string {
   return process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || process.env.RAZORPAY_KEY_ID || "";
 }
+
+/** Fetches a captured payment from Razorpay to reconcile amount/currency
+ *  against the order we created (the checkout signature does NOT cover the
+ *  amount). Returns null if keys are absent or the fetch fails. */
+export async function fetchRazorpayPayment(
+  paymentId: string,
+): Promise<{ amount: number; currency: string; status: string; order_id: string | null } | null> {
+  const k = keys();
+  if (!k) return null;
+  const auth = Buffer.from(`${k.id}:${k.secret}`).toString("base64");
+  try {
+    const res = await fetch(`${API}/payments/${encodeURIComponent(paymentId)}`, {
+      headers: { Authorization: `Basic ${auth}` },
+    });
+    if (!res.ok) return null;
+    const j = (await res.json()) as {
+      amount?: number; currency?: string; status?: string; order_id?: string;
+    };
+    return {
+      amount: Number(j.amount ?? 0),
+      currency: String(j.currency ?? ""),
+      status: String(j.status ?? ""),
+      order_id: j.order_id ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** payments.amount is stored in rupees; gateway amounts are in paise. */
+export function amountMatches(storedRupees: number, gatewayPaise: number): boolean {
+  return Math.round(storedRupees * 100) === Math.round(gatewayPaise);
+}
