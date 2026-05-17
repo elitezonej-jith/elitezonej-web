@@ -3,6 +3,10 @@ import Footer from "../components/Footer";
 import TrustStrip from "../components/TrustStrip";
 import CollectionClient from "./CollectionClient";
 
+// DB-backed (live catalog from the admin DB) — must render per request so
+// studio/atelier edits are reflected immediately. SQLite reads are sub-ms.
+export const dynamic = "force-dynamic";
+
 export default async function CollectionPage({
   searchParams,
 }: {

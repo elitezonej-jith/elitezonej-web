@@ -3,10 +3,14 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { priceCart, type CartLineInput } from "../../lib/storefront/checkout";
 import { createProviderOrder } from "../../lib/storefront/payments";
-import { verifyCheckoutSignature } from "../../lib/storefront/payments/razorpay";
+import {
+  verifyCheckoutSignature,
+  razorpayConfigured,
+} from "../../lib/storefront/payments/razorpay";
 import {
   createPendingOrder,
   fulfilOrderPaid,
+  getOrder,
 } from "../../lib/admin/repos/orders";
 import { createPayment } from "../../lib/admin/repos/payments";
 import { getPaymentByProviderOrderId } from "../../lib/admin/repos/payments";
@@ -163,6 +167,71 @@ export async function startCheckout(
   };
 }
 
+export type PreviewState = {
+  ok?: boolean;
+  error?: string;
+  promoApplied?: boolean;
+  promoMessage?: string;
+  pricing?: { subtotal: number; discount: number; shipping: number; tax: number; total: number; promo_code: string | null };
+};
+
+/** Price the cart (optionally with a promo) WITHOUT creating an order, so the
+ *  checkout summary can show the discount/shipping/total and confirm whether a
+ *  promo code was accepted before the customer reaches the payment screen
+ *  (QA-011). Read-only and idempotent. */
+export async function previewPricing(
+  _prev: PreviewState,
+  fd: FormData,
+): Promise<PreviewState> {
+  let rawLines: unknown;
+  try {
+    rawLines = JSON.parse(String(fd.get("cart") ?? "[]"));
+  } catch {
+    return { ok: false, error: "Your bag could not be read." };
+  }
+  const linesParsed = z.array(LineSchema).max(50).safeParse(rawLines);
+  if (!linesParsed.success || linesParsed.data.length === 0) {
+    return { ok: false, error: "Your bag is empty." };
+  }
+  const promo = String(fd.get("promo_code") ?? "").trim();
+
+  // Price once with the promo to learn whether it was accepted, and once
+  // without so a rejected code still yields a usable (undiscounted) summary.
+  const withPromo = priceCart(linesParsed.data as CartLineInput[], promo || null);
+  if (!withPromo.ok) {
+    const base = priceCart(linesParsed.data as CartLineInput[], null);
+    if (!base.ok) return { ok: false, error: base.error };
+    return {
+      ok: true,
+      promoApplied: false,
+      promoMessage: promo ? withPromo.error : undefined,
+      pricing: {
+        subtotal: base.pricing.subtotal,
+        discount: base.pricing.discount,
+        shipping: base.pricing.shipping,
+        tax: base.pricing.tax,
+        total: base.pricing.total,
+        promo_code: null,
+      },
+    };
+  }
+
+  const applied = !!promo && withPromo.pricing.promo_code != null;
+  return {
+    ok: true,
+    promoApplied: applied,
+    promoMessage: applied ? `Code ${withPromo.pricing.promo_code} applied.` : undefined,
+    pricing: {
+      subtotal: withPromo.pricing.subtotal,
+      discount: withPromo.pricing.discount,
+      shipping: withPromo.pricing.shipping,
+      tax: withPromo.pricing.tax,
+      total: withPromo.pricing.total,
+      promo_code: withPromo.pricing.promo_code,
+    },
+  };
+}
+
 export type ConfirmState = { ok: boolean; orderId?: string; error?: string };
 
 export async function confirmPayment(input: {
@@ -207,6 +276,49 @@ export async function confirmPayment(input: {
     entity: "order",
     entity_id: orderId,
     payload: { payment_id: input.razorpay_payment_id },
+  });
+  return { ok: true, orderId };
+}
+
+// ── Sandbox payment ─────────────────────────────────────────────────────────
+// Simulated gateway used only while no real Razorpay keys are configured. The
+// instant `RAZORPAY_KEY_ID`/`RAZORPAY_KEY_SECRET` are set, `activeProvider()`
+// returns "razorpay", the storefront opens the real Razorpay modal, and this
+// action hard-refuses — so dropping in live keys needs no other change.
+export async function confirmMockPayment(input: {
+  orderId: string;
+}): Promise<ConfirmState> {
+  if (razorpayConfigured()) {
+    return { ok: false, error: "Sandbox is disabled — the live gateway is active." };
+  }
+  const ip = await clientIp();
+  if (!rateLimit(`mockpay:${ip}`, 20, 10 * 60 * 1000).ok) {
+    return { ok: false, error: "Too many attempts. Please wait a moment." };
+  }
+
+  const orderId = String(input.orderId ?? "");
+  if (!orderId) return { ok: false, error: "Missing order reference." };
+
+  const order = getOrder(orderId);
+  if (!order) return { ok: false, error: "Order not found." };
+  if (order.payment_status === "paid") {
+    return { ok: true, orderId };
+  }
+  if (order.payment_status !== "pending") {
+    return { ok: false, error: "This order can no longer be paid." };
+  }
+
+  const result = fulfilOrderPaid(orderId, {
+    providerPaymentId: `mock_${crypto.randomUUID().replace(/-/g, "").slice(0, 18)}`,
+  });
+  if (!result.ok) return { ok: false, error: result.error };
+
+  logAudit({
+    user_id: null,
+    action: result.alreadyPaid ? "mock_payment_idempotent" : "mock_payment_paid",
+    entity: "order",
+    entity_id: orderId,
+    payload: { mode: "sandbox" },
   });
   return { ok: true, orderId };
 }

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrder, getOrderItems } from "../../../lib/admin/repos/orders";
 import { fmtINR } from "@/lib/format";
+import Header from "../../components/Header";
+import Footer from "../../components/Footer";
 import "../../styles/cart.css";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +21,8 @@ export default async function ConfirmationPage({ searchParams }: Props) {
 
   return (
     <>
+      <Header />
+      <main>
       <section className="cart-head">
         <h1>{paid ? "Order confirmed" : "Order received"}</h1>
         <span className="meta t-mono-xs">Reference {order.id}</span>
@@ -60,10 +64,13 @@ export default async function ConfirmationPage({ searchParams }: Props) {
           </p>
 
           <div className="ctas">
-            <Link className="btn btn-primary btn-block" href="/collection?c=men">Continue shopping</Link>
+            <Link className="btn btn-primary btn-block" href="/account">View your orders</Link>
+            <Link className="btn btn-secondary btn-block" href="/collection?c=men" style={{ marginTop: "8px" }}>Continue shopping</Link>
           </div>
         </aside>
       </section>
+      </main>
+      <Footer />
     </>
   );
 }

@@ -12,6 +12,10 @@ import HeroGrid from "./components/HeroGrid";
 import { PRODUCTS } from "@/lib/products";
 import "./styles/home.css";
 
+// Homepage composition (blocks/banners/products) is read live from the admin
+// DB — render per request so studio edits show immediately.
+export const dynamic = "force-dynamic";
+
 export default function Home() {
   const men = PRODUCTS.filter(p => p.gender === "men").slice(0, 6);
   const women = PRODUCTS.filter(p => p.gender === "women").slice(0, 6);

@@ -9,7 +9,9 @@ export default function WishlistPage() {
   return (
     <>
       <Header />
-      <WishlistClient />
+      <main>
+        <WishlistClient />
+      </main>
       <TrustStrip />
       <Footer />
     </>

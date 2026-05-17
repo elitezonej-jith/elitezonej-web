@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const SESSION_COOKIE = "ezj_admin_session";
+const CUSTOMER_SESSION_COOKIE = "ezj_customer_session";
 
 function withPath(req: NextRequest) {
   // Surface the request path to server components.
@@ -39,9 +40,19 @@ export function proxy(req: NextRequest) {
   if (pathname === "/studio" || pathname.startsWith("/studio/")) {
     return gateSection(req, "/studio");
   }
+  // Storefront customer area — gate to a logged-in customer session.
+  if (pathname === "/account" || pathname.startsWith("/account/")) {
+    const sid = req.cookies.get(CUSTOMER_SESSION_COOKIE)?.value;
+    if (!sid) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("next", pathname);
+      return NextResponse.redirect(url);
+    }
+  }
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/studio/:path*"],
+  matcher: ["/admin/:path*", "/studio/:path*", "/account/:path*"],
 };

@@ -10,6 +10,10 @@ import { getProductForPage } from "@/lib/storefront/product-for-page";
 // conflicted with the new disturbia.css theme. Header/Footer/TrustStrip
 // components now style themselves via globals.css + disturbia.css.
 
+// PDP reads live product/inventory/images from the admin DB — render per
+// request so price, stock and content edits reflect immediately.
+export const dynamic = "force-dynamic";
+
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const product = getProductForPage(slug);

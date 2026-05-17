@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { PRODUCTS } from "@/lib/products";
@@ -19,7 +20,20 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
   const [active, setActive] = useState<Record<FilterKey, Set<string>>>({
     fit: new Set(), fabric: new Set(), occasion: new Set(), size: new Set(),
   });
-  const [sortKey, setSortKey] = useState("newest");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const SORTS = ["newest", "price-asc", "price-desc"] as const;
+  const urlSort = searchParams.get("sort") ?? "";
+  const sortKey = (SORTS as readonly string[]).includes(urlSort) ? urlSort : "newest";
+
+  const setSortKey = (value: string) => {
+    const next = new URLSearchParams(searchParams.toString());
+    if (value === "newest") next.delete("sort");
+    else next.set("sort", value);
+    const qs = next.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
 
   const subData = sub ? SUBCATS[cat]?.[sub] : null;
   const headTitle = subData?.title || CAT_DATA[cat]?.title || "Collection";
@@ -53,8 +67,10 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
       if (active.fabric.size) list = list.filter(p => active.fabric.has(p.fabric));
       if (active.occasion.size) list = list.filter(p => active.occasion.has(p.occasion));
     }
-    if (sortKey === "price-asc") list = [...list].sort((a, b) => a.price - b.price);
-    if (sortKey === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
+    // Sort by the price the customer actually pays (sale price when on sale).
+    const eff = (x: typeof list[number]) => x.salePrice ?? x.price;
+    if (sortKey === "price-asc") list = [...list].sort((a, b) => eff(a) - eff(b));
+    if (sortKey === "price-desc") list = [...list].sort((a, b) => eff(b) - eff(a));
     return list;
   }, [cat, sub, active, sortKey, isFabricMode]);
 
@@ -157,7 +173,7 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
               <Reveal as="div" key={p.slug} className="pcard qa-host" delay={(i % 4) as 0 | 1 | 2 | 3}>
                 <div className="plate">
                   <Link href={`/products/${p.slug}`} aria-label={p.name}>
-                    <Image className="primary" src={`/generated/${p.slug}/01-front.webp`} alt={`${p.name} front`} fill sizes="(max-width: 720px) 50vw, 33vw" loading="lazy" />
+                    <Image className="primary" src={`/generated/${p.slug}/01-front.webp`} alt={`${p.name} front`} fill sizes="(max-width: 720px) 50vw, 33vw" priority={i === 0} loading={i === 0 ? "eager" : "lazy"} />
                     <Image className="alt" src={`/generated/${p.slug}/02-overview.webp`} alt={`${p.name} overview`} fill sizes="(max-width: 720px) 50vw, 33vw" loading="lazy" />
                   </Link>
                   {(p.badge || p.salePrice) && (
@@ -173,7 +189,14 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
                   <div className="meta">
                     <h3 className="name">{p.name}</h3>
                     <div className="row">
-                      <span className="price">{fmtINR(p.price)}</span>
+                      {p.salePrice ? (
+                        <span className="price-group">
+                          <span className="price price-sale">{fmtINR(p.salePrice)}</span>
+                          <span className="price price-orig">{fmtINR(p.price)}</span>
+                        </span>
+                      ) : (
+                        <span className="price">{fmtINR(p.price)}</span>
+                      )}
                       <span className="tag">{p.fabric} · {p.fit}</span>
                     </div>
                   </div>

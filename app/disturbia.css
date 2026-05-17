@@ -2355,7 +2355,10 @@ section.page { padding-top: 64px; padding-bottom: 64px; }
   display: inline-flex;
   align-items: center;
   padding: 0 48px;
-  gap: 0;
+  /* Flex strips the whitespace between the lead text and the .announce-accent
+     child, so "in seven days" rendered as "inseven days" (QA-008). A small
+     gap restores the inter-word space at every viewport. */
+  gap: 0.35em;
   transition: color 300ms ease;
 }
 

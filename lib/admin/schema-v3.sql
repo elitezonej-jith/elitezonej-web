@@ -40,3 +40,18 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
                 CHECK (status IN ('subscribed','unsubscribed')),
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Storefront customer accounts. `password_hash` is nullable: guest customers
+-- created at checkout have none until they sign up (account upgrade in place).
+ALTER TABLE customers ADD COLUMN password_hash TEXT;
+
+CREATE TABLE IF NOT EXISTS customer_sessions (
+  id           TEXT PRIMARY KEY,
+  customer_id  INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  expires_at   TEXT NOT NULL,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  ip           TEXT,
+  ua           TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_cust_sessions_customer ON customer_sessions(customer_id);
+CREATE INDEX IF NOT EXISTS idx_cust_sessions_exp ON customer_sessions(expires_at);

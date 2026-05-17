@@ -3,9 +3,10 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fmtINR, fmtMeters } from "@/lib/format";
-import { WHATSAPP_LINK, WHATSAPP_DISPLAY } from "@/lib/contact";
+import { WHATSAPP_DISPLAY } from "@/lib/contact";
 import { useCart } from "../components/CartProvider";
-import { startCheckout, confirmPayment, type CheckoutStartState } from "./actions";
+import { startCheckout, confirmPayment, previewPricing, type CheckoutStartState, type PreviewState } from "./actions";
+import MockPaymentSheet from "./MockPaymentSheet";
 import "../styles/cart.css";
 
 declare global {
@@ -35,7 +36,13 @@ export default function CheckoutClient() {
   const [state, action, pending] = useActionState(startCheckout, initial);
   const [phase, setPhase] = useState<"form" | "paying" | "error">("form");
   const [payError, setPayError] = useState<string | null>(null);
+  const [sandboxDismissed, setSandboxDismissed] = useState(false);
   const launched = useRef(false);
+
+  // Live promo / total preview (QA-011) — read-only, no order is created.
+  const [promo, setPromo] = useState("");
+  const [preview, setPreview] = useState<PreviewState | null>(null);
+  const [previewPending, setPreviewPending] = useState(false);
 
   // When the server has created an order + Razorpay order, open the gateway.
   useEffect(() => {
@@ -120,14 +127,30 @@ export default function CheckoutClient() {
     })),
   );
 
-  // Offline mode — no gateway configured: order is persisted as pending and we
-  // hand off to WhatsApp for personal confirmation (brand fallback).
-  const offline = state.ok && state.provider === "offline";
-  const waHref = `${WHATSAPP_LINK}?text=${encodeURIComponent(
-    `Hello Elite Zone J, I placed order ${state.orderId} for ${fmtINR(
-      state.pricing?.total ?? subtotal,
-    )}. Please confirm availability and share a payment link.`,
-  )}`;
+  async function runPreview() {
+    setPreviewPending(true);
+    try {
+      const fd = new FormData();
+      fd.set("cart", cartPayload);
+      fd.set("promo_code", promo);
+      const res = await previewPricing({}, fd);
+      setPreview(res);
+    } catch {
+      setPreview({ ok: false, error: "Could not check the code. Please retry." });
+    } finally {
+      setPreviewPending(false);
+    }
+  }
+
+  // Sandbox mode — no live Razorpay keys configured. The order is persisted
+  // (pending) and we present an in-app simulated gateway. The instant real
+  // keys are set, startCheckout returns provider="razorpay" and the block
+  // above opens the real modal instead — no other change required.
+  const sandboxOpen =
+    !!state.ok &&
+    state.provider === "offline" &&
+    !!state.orderId &&
+    !sandboxDismissed;
 
   return (
     <>
@@ -160,60 +183,101 @@ export default function CheckoutClient() {
         <aside className="summary">
           <h2>Shipping &amp; contact</h2>
 
-          {offline ? (
-            <div className="t-body-sm" style={{ display: "grid", gap: 12 }}>
-              <p style={{ color: "var(--ink-2)" }}>
-                Order <b>{state.orderId}</b> is saved. Online payment isn’t enabled
-                yet — confirm with our atelier on WhatsApp and we’ll send a secure
-                payment link.
-              </p>
-              <a className="btn btn-primary btn-lg btn-block" href={waHref} target="_blank" rel="noopener noreferrer">
-                Confirm via WhatsApp
-              </a>
-              <Link className="btn btn-secondary btn-block" href="/cart">Back to bag</Link>
+          <form action={action} className="checkout-form" style={{ display: "grid", gap: 10 }}>
+            <input type="hidden" name="cart" value={cartPayload} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <input name="first_name" placeholder="First name" required aria-label="First name" />
+              <input name="last_name" placeholder="Last name" required aria-label="Last name" />
             </div>
-          ) : (
-            <form action={action} className="checkout-form" style={{ display: "grid", gap: 10 }}>
-              <input type="hidden" name="cart" value={cartPayload} />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <input name="first_name" placeholder="First name" required aria-label="First name" />
-                <input name="last_name" placeholder="Last name" required aria-label="Last name" />
-              </div>
-              <input type="email" name="email" placeholder="Email" required aria-label="Email" />
-              <input name="phone" placeholder="Phone" required aria-label="Phone" />
-              <input name="ship_line1" placeholder="Address line 1" required aria-label="Address line 1" />
-              <input name="ship_line2" placeholder="Address line 2 (optional)" aria-label="Address line 2" />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <input name="ship_city" placeholder="City" required aria-label="City" />
-                <input name="ship_state" placeholder="State" required aria-label="State" />
-              </div>
-              <input name="ship_pincode" placeholder="Pincode" inputMode="numeric" required aria-label="Pincode" />
-              <input name="promo_code" placeholder="Promo code (optional)" aria-label="Promo code" />
-
-              <div className="row total" style={{ marginTop: 8 }}>
-                <span>Subtotal</span><b>{fmtINR(subtotal)}</b>
-              </div>
-              <p className="t-mono-xs" style={{ color: "var(--ink-2)" }}>
-                Final total (incl. any promo &amp; shipping) is confirmed on the
-                secure payment screen.
-              </p>
-
+            <input type="email" name="email" placeholder="Email" required aria-label="Email" />
+            <input name="phone" placeholder="Phone" required aria-label="Phone" />
+            <input name="ship_line1" placeholder="Address line 1" required aria-label="Address line 1" />
+            <input name="ship_line2" placeholder="Address line 2 (optional)" aria-label="Address line 2" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <input name="ship_city" placeholder="City" required aria-label="City" />
+              <input name="ship_state" placeholder="State" required aria-label="State" />
+            </div>
+            <input name="ship_pincode" placeholder="Pincode" inputMode="numeric" required aria-label="Pincode" />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
+              <input
+                name="promo_code"
+                placeholder="Promo code (optional)"
+                aria-label="Promo code"
+                value={promo}
+                onChange={(e) => setPromo(e.target.value)}
+              />
               <button
-                type="submit"
-                className="btn btn-primary btn-lg btn-block"
-                disabled={pending || phase === "paying"}
+                type="button"
+                className="btn btn-secondary"
+                onClick={runPreview}
+                disabled={previewPending}
               >
-                {pending ? "Preparing…" : phase === "paying" ? "Opening payment…" : "Pay securely"}
+                {previewPending ? "Checking…" : "Apply"}
               </button>
-              <Link className="btn btn-secondary btn-block" href="/cart">Back to bag</Link>
+            </div>
 
-              {(state.error || payError) && (
-                <p role="alert" className="t-mono-xs" style={{ color: "#b00" }}>
-                  {payError ?? state.error}
-                </p>
+            {preview?.promoMessage && (
+              <p
+                role="status"
+                className="t-mono-xs"
+                style={{ color: preview.promoApplied ? "var(--ok, #1a7f37)" : "#b00" }}
+              >
+                {preview.promoApplied ? "✓ " : ""}{preview.promoMessage}
+              </p>
+            )}
+
+            <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
+              <div className="row">
+                <span>Subtotal</span>
+                <span>{fmtINR(preview?.pricing?.subtotal ?? subtotal)}</span>
+              </div>
+              {!!preview?.pricing && preview.pricing.discount > 0 && (
+                <div className="row">
+                  <span>Discount{preview.pricing.promo_code ? ` (${preview.pricing.promo_code})` : ""}</span>
+                  <span>−{fmtINR(preview.pricing.discount)}</span>
+                </div>
               )}
-            </form>
-          )}
+              {!!preview?.pricing && (
+                <>
+                  <div className="row">
+                    <span>Shipping</span>
+                    <span>{preview.pricing.shipping > 0 ? fmtINR(preview.pricing.shipping) : "Free"}</span>
+                  </div>
+                  {preview.pricing.tax > 0 && (
+                    <div className="row"><span>Tax</span><span>{fmtINR(preview.pricing.tax)}</span></div>
+                  )}
+                </>
+              )}
+              <div className="row total">
+                <span>Total</span>
+                <b>{fmtINR(preview?.pricing?.total ?? subtotal)}</b>
+              </div>
+            </div>
+            <p className="t-mono-xs" style={{ color: "var(--ink-2)" }}>
+              {preview?.pricing
+                ? "Final total is confirmed on the secure payment screen."
+                : "Taxes & any promo are confirmed on the secure payment screen."}
+            </p>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-lg btn-block"
+              disabled={pending || phase === "paying" || sandboxOpen}
+            >
+              {pending
+                ? "Preparing…"
+                : phase === "paying" || sandboxOpen
+                  ? "Opening payment…"
+                  : "Pay securely"}
+            </button>
+            <Link className="btn btn-secondary btn-block" href="/cart">Back to bag</Link>
+
+            {(state.error || payError) && (
+              <p role="alert" className="t-mono-xs" style={{ color: "#b00" }}>
+                {payError ?? state.error}
+              </p>
+            )}
+          </form>
 
           <div className="reassure t-mono-xs" style={{ marginTop: 16 }}>
             <span>✓ Secure card &amp; UPI payment</span>
@@ -222,6 +286,18 @@ export default function CheckoutClient() {
           </div>
         </aside>
       </section>
+
+      {sandboxOpen && (
+        <MockPaymentSheet
+          orderId={state.orderId!}
+          amount={state.amount ?? state.pricing?.total ?? subtotal}
+          onClose={() => setSandboxDismissed(true)}
+          onSuccess={(oid) => {
+            clear();
+            router.push(`/checkout/confirmation?o=${encodeURIComponent(oid)}`);
+          }}
+        />
+      )}
     </>
   );
 }

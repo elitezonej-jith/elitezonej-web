@@ -1090,3 +1090,19 @@ details.foot-col-acc[open] > summary .foot-col-acc__chev { transform: rotate(180
   .back-to-top * { animation: none !important; transition: none !important; }
   .section-head__rule { transition: none; width: 56px; }
 }
+
+/* ---------------------------------------------------------------------------
+   Sale price group — shared across every product-card surface (home, collection,
+   wishlist, search). Globally loaded so a markdown always reads as
+   "<sale> <struck original>" consistently. Scoped to .price-group so the PDP
+   (which renders .price-sale / .price-orig without this wrapper, styled larger
+   in product.css) is unaffected.
+--------------------------------------------------------------------------- */
+.price-group { display: inline-flex; align-items: baseline; gap: 8px; }
+.price-group .price-sale { color: var(--sale); }
+.price-group .price-orig {
+  color: var(--ink-3);
+  font-size: 0.85em;
+  font-weight: 400;
+  text-decoration: line-through;
+}

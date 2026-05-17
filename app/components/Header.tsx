@@ -63,7 +63,7 @@ export default function Header() {
       <div className="header-top">
         <div className="header-left">
           <MobileNav />
-          <Link className="util-link util-account" href="/bespoke">
+          <Link className="util-link util-account" href="/account">
             <PersonIcon /> <span className="util-text">My Account</span>
           </Link>
           <button className="util-link util-currency" aria-label="Choose currency">
