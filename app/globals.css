@@ -5,8 +5,10 @@
 
 :root {
   /* ---------- Typography ---------- */
-  --font-display: "Cormorant Garamond", "EB Garamond", Georgia, serif;
-  --font-body:    "Montserrat", -apple-system, "Helvetica Neue", sans-serif;
+  /* --ezj-font-* are self-hosted next/font vars wired in app/layout.tsx
+     (also re-applied inline on <html> to win over disturbia.css). */
+  --font-display: var(--ezj-font-display), "Cormorant Garamond", "EB Garamond", Georgia, serif;
+  --font-body:    var(--ezj-font-body), "Montserrat", -apple-system, "Helvetica Neue", sans-serif;
   --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", monospace;
 
   /* Weights — only ship these. Drop Montserrat 300 + 700. */

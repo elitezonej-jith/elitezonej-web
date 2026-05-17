@@ -58,3 +58,7 @@ scripts/
 
 # local testing artifacts
 cookies.txt
+
+# agent instructions (local-only)
+AGENTS.md
+CLAUDE.md

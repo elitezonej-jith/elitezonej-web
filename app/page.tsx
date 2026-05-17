@@ -12,9 +12,10 @@ import HeroGrid from "./components/HeroGrid";
 import { PRODUCTS } from "@/lib/products";
 import "./styles/home.css";
 
-// Homepage composition (blocks/banners/products) is read live from the admin
-// DB — render per request so studio edits show immediately.
-export const dynamic = "force-dynamic";
+// This component reads no request-time API (cookies/headers) and no admin DB —
+// it only filters the static PRODUCTS array. It is statically renderable, so we
+// drop the blanket `force-dynamic` opt-out to regain full <Link> prefetch and
+// the 5-min client router cache (Next 16 prefetching.md:26-30).
 
 export default function Home() {
   const men = PRODUCTS.filter(p => p.gender === "men").slice(0, 6);

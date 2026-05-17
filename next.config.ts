@@ -17,6 +17,20 @@ const nextConfig: NextConfig = {
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
   },
   serverExternalPackages: ["better-sqlite3"],
+  // Client router cache (in-browser, per-session, keyed by route segment —
+  // NOT a shared server cache). Re-warms back/forward & repeat navigations.
+  // `dynamic: 30`: dynamic/cookie-reading pages (login/signup/account) may
+  //   reuse their RSC payload for 30s within the SAME browser only; the server
+  //   still renders per request, so no cross-user/auth leakage (staleTimes.md
+  //   :7,27-30; prefetching.md:191-193 — client cache is per-browser memory).
+  // `static: 180`: statically rendered pages (e.g. home) keep their prefetched
+  //   shell for 3 min (default is 5 min — we shorten it, conservative).
+  experimental: {
+    staleTimes: {
+      dynamic: 30,
+      static: 180,
+    },
+  },
 };
 
 export default nextConfig;

@@ -1,5 +1,26 @@
 import type { Metadata } from "next";
+import { Libre_Baskerville, Roboto } from "next/font/google";
 import "./globals.css";
+
+// Self-hosted via next/font (no render-blocking Google <link>, no
+// layout shift, text visible immediately via fallback). Families /
+// weights mirror the former
+//   css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400
+//          &family=Roboto:wght@300;400;500;700
+// link. Pirata One was dropped — it is referenced nowhere in the app.
+const libreBaskerville = Libre_Baskerville({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--ezj-font-display",
+});
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700"],
+  display: "swap",
+  variable: "--ezj-font-body",
+});
 import "./disturbia.css";
 import "./styles/page-chrome.css";
 import { CartProvider } from "./components/CartProvider";
@@ -70,18 +91,37 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Pirata+One&family=Roboto:wght@300;400;500;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html
+      lang="en"
+      data-scroll-behavior="smooth"
+      className={`${libreBaskerville.variable} ${roboto.variable}`}
+      // Inline custom props override disturbia.css :root (loaded after
+      // globals.css), so the self-hosted next/font families resolve
+      // everywhere `var(--font-display|body)` is used. Fallback chain
+      // preserved so text is never invisible while the font loads.
+      style={
+        {
+          "--font-display":
+            "var(--ezj-font-display), \"Cormorant Garamond\", Georgia, serif",
+          "--font-body":
+            "var(--ezj-font-body), -apple-system, \"Helvetica Neue\", sans-serif",
+        } as React.CSSProperties
+      }
+    >
       <body>
         <LoadingCurtain />
         <HeaderScrollHook />
+        {/*
+          DEV NOTE: React DevTools >=7.0 emits the console error "We are
+          cleaning up async info that was not on the parent Suspense
+          boundary. This is a bug in React." when installed on React 19.2.
+          It originates entirely inside the extension's installHook.js — the
+          full call stack lives in chrome-extension://.../build/installHook.js,
+          and the string exists nowhere in React/React-DOM/Next 16.2.4. Our
+          tree has no <Suspense>/use(Promise) misuse. Disabling the React
+          DevTools extension removes the warning; no boundary change is
+          needed. Tracked: github.com/vercel/next.js/discussions/84973
+        */}
         <WishlistProvider>
           <CartProvider>
             {children}

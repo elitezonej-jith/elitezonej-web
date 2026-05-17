@@ -246,6 +246,23 @@ footer.site {
 @media (prefers-reduced-motion: reduce) {
   .rev { opacity: 1; transform: none; filter: none; transition: none; }
 }
+/* First-paint / no-JS safety net: if the IntersectionObserver in
+   <Reveal> never runs (JS disabled, hydration not yet complete, or
+   element above the fold), this CSS-only fallback still reveals the
+   content so it is never permanently blank pre-hydration. When the
+   .in class IS added by JS its end state is identical (opacity:1,
+   no transform/blur), so there is no visible conflict or layout
+   shift. The 1.4s delay lets the normal scroll reveal win first. */
+.rev {
+  animation: rev-failsafe 700ms cubic-bezier(.22, 1, .36, 1) 1400ms both;
+}
+.rev.in { animation: none; }
+@keyframes rev-failsafe {
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rev { animation: none; }
+}
 
 /* ─────────────────────────────────────────────────────────────────────
    SectionHead — editorial section marker (numeral · rule · title)
@@ -319,10 +336,13 @@ footer.site {
    key-driven re-render that replays the keyframes on each route).
    ───────────────────────────────────────────────────────────────────── */
 .route-transition {
-  animation: route-fade-in 520ms cubic-bezier(.22, 1, .36, 1) both;
+  /* Subtle, non-blocking entrance. Content is visible IMMEDIATELY
+     (keyframe starts at opacity:1) — no 520ms mandatory blank gate
+     on every navigation. Just a brief 4px settle. */
+  animation: route-fade-in 140ms cubic-bezier(.22, 1, .36, 1) both;
 }
 @keyframes route-fade-in {
-  0%   { opacity: 0; transform: translateY(8px); }
+  0%   { opacity: 1; transform: translateY(4px); }
   100% { opacity: 1; transform: translateY(0); }
 }
 
@@ -1105,4 +1125,41 @@ details.foot-col-acc[open] > summary .foot-col-acc__chev { transform: rotate(180
   font-size: 0.85em;
   font-weight: 400;
   text-decoration: line-through;
+}
+
+/* ---------------------------------------------------------------------------
+   Route loading skeletons — lightweight per-route fallbacks for the auth
+   surfaces (/login, /signup, /account). Reuse the real page layout classes
+   (auth-wrap / account-shell / account-card) so there is NO layout shift
+   when the real content swaps in. Token-based, reduced-motion-safe.
+--------------------------------------------------------------------------- */
+.skel {
+  background: var(--paper-2);
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+}
+.skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--paper-3) 50%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: skel-shimmer 1.2s cubic-bezier(.785, .135, .15, .86) infinite;
+}
+.skel-line   { height: 14px; margin-bottom: var(--s-3); }
+.skel-title  { height: 32px; width: 60%; margin-bottom: var(--s-4); }
+.skel-block  { height: 44px; margin-bottom: var(--s-3); }
+.skel-w-40   { width: 40%; }
+.skel-w-70   { width: 70%; }
+@keyframes skel-shimmer {
+  to { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel::after { animation: none; }
 }
