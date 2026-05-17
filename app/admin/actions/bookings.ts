@@ -60,8 +60,10 @@ export async function submitBespokeBooking(_prev: PublicBookingState, fd: FormDa
 export async function setBookingStatusAction(fd: FormData): Promise<void> {
   const me = await requireUser();
   const id = Number(fd.get("id") ?? 0);
-  const status = String(fd.get("status") ?? "new") as "new" | "contacted" | "scheduled" | "done" | "closed";
-  if (!id) return;
+  const STATUSES = ["new", "contacted", "scheduled", "done", "closed"] as const;
+  const raw = String(fd.get("status") ?? "new");
+  if (!id || !(STATUSES as readonly string[]).includes(raw)) return;
+  const status = raw as (typeof STATUSES)[number];
   setBookingStatus(id, status);
   logAudit({ user_id: me.id, action: "set_booking_status", entity: "booking", entity_id: String(id), payload: { status } });
   revalidatePath("/admin/bespoke");

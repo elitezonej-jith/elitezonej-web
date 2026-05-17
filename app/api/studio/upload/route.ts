@@ -98,6 +98,13 @@ export async function POST(req: NextRequest) {
     return new NextResponse("Image could not be decoded: " + (e as Error).message, { status: 400 });
   }
 
+  // Authoritative type check: trust sharp's decoded format, not the
+  // client-supplied multipart MIME header (file.type is attacker-controlled).
+  const ALLOWED_FORMATS = new Set(["jpeg", "png", "webp", "avif", "tiff"]);
+  if (!meta.format || !ALLOWED_FORMATS.has(meta.format)) {
+    return new NextResponse(`Unsupported image format: ${meta.format ?? "unknown"}`, { status: 415 });
+  }
+
   // Pixel-area cap defends against decompression bombs.
   if (meta.width && meta.height && meta.width * meta.height > MAX_PIXELS) {
     return new NextResponse("Image dimensions too large (max 24 megapixels)", { status: 413 });

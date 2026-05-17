@@ -24,7 +24,7 @@ const Schema = z.object({
 export type NoticeSaveState = { error?: string };
 
 export async function saveNoticeAction(_prev: NoticeSaveState, fd: FormData): Promise<NoticeSaveState> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   const parsed = Schema.safeParse(Object.fromEntries(fd.entries()));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please review the form." };
@@ -53,7 +53,7 @@ export async function saveNoticeAction(_prev: NoticeSaveState, fd: FormData): Pr
 }
 
 export async function deleteNoticeAction(fd: FormData): Promise<void> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
   deleteNotice(id);
@@ -64,11 +64,12 @@ export async function deleteNoticeAction(fd: FormData): Promise<void> {
 }
 
 export async function toggleNoticeAction(fd: FormData): Promise<void> {
-  await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   const enabled = String(fd.get("enabled") ?? "0") === "1" ? 1 : 0;
   if (!id) return;
   updateNotice(id, { enabled });
+  logAudit({ user_id: me.id, action: "toggle_notice", entity: "notice", entity_id: String(id), payload: { enabled } });
   revalidatePath("/studio/notices");
   revalidatePath("/");
 }

@@ -5,6 +5,13 @@ import { requireUser } from "../../../lib/admin/session";
 import { createCategory, updateCategory, deleteCategory } from "../../../lib/admin/repos/categories";
 import { logAudit } from "../../../lib/admin/repos/audit";
 
+const UpdateCategorySchema = z.object({
+  id: z.coerce.number().int().positive(),
+  name: z.string().min(1).max(80),
+  slug: z.string().min(1).max(60).regex(/^[a-z0-9-]+$/),
+  sort_order: z.coerce.number().int().min(0).max(999).default(0),
+});
+
 const CategorySchema = z.object({
   parent_id: z.union([z.literal(""), z.coerce.number().int()]).optional(),
   name: z.string().min(1).max(80),
@@ -33,14 +40,10 @@ export async function createCategoryAction(fd: FormData): Promise<void> {
 
 export async function updateCategoryAction(fd: FormData): Promise<void> {
   const me = await requireUser();
-  const id = Number(fd.get("id") ?? 0);
-  if (!id) return;
-  const patch = {
-    name: String(fd.get("name") ?? ""),
-    slug: String(fd.get("slug") ?? ""),
-    sort_order: Number(fd.get("sort_order") ?? 0),
-  };
-  updateCategory(id, patch);
+  const parsed = UpdateCategorySchema.safeParse(Object.fromEntries(fd.entries()));
+  if (!parsed.success) return;
+  const { id, name, slug, sort_order } = parsed.data;
+  updateCategory(id, { name, slug, sort_order });
   logAudit({ user_id: me.id, action: "update_category", entity: "category", entity_id: String(id) });
   revalidatePath("/admin/categories");
 }

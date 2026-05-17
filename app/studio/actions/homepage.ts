@@ -26,7 +26,7 @@ export async function addBlockAction(fd: FormData): Promise<void> {
   // Raw-HTML blocks are an XSS-sensitive surface — owner only.
   const me = parsed.data.type === "custom_html"
     ? await requireRole("owner")
-    : await requireUser();
+    : await requireUser("/studio/login");
   const id = createBlock({
     type: parsed.data.type as HomepageBlockType,
     title: parsed.data.title,
@@ -39,7 +39,7 @@ export async function addBlockAction(fd: FormData): Promise<void> {
 }
 
 export async function deleteBlockAction(fd: FormData): Promise<void> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
   deleteBlock(id);
@@ -50,17 +50,18 @@ export async function deleteBlockAction(fd: FormData): Promise<void> {
 }
 
 export async function toggleBlockAction(fd: FormData): Promise<void> {
-  await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   const enabled = String(fd.get("enabled") ?? "0") === "1" ? 1 : 0;
   if (!id) return;
   updateBlock(id, { enabled });
+  logAudit({ user_id: me.id, action: "toggle_home_block", entity: "home_block", entity_id: String(id), payload: { enabled } });
   revalidatePath("/studio/homepage");
   revalidatePath("/");
 }
 
 export async function reorderBlocksAction(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser("/studio/login");
   const ordered = String(fd.get("ordered") ?? "").split(",").map((n) => Number(n)).filter(Boolean);
   if (!ordered.length) return;
   reorderBlocks(ordered);
@@ -75,7 +76,7 @@ export async function saveBlockConfigAction(fd: FormData): Promise<void> {
   const existing = getBlock(id);
   const me = existing?.type === "custom_html"
     ? await requireRole("owner")
-    : await requireUser();
+    : await requireUser("/studio/login");
   const title = String(fd.get("title") ?? "");
   const kicker = String(fd.get("kicker") ?? "");
   const configRaw = String(fd.get("config_json") ?? "{}");

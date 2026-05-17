@@ -19,7 +19,7 @@ const Schema = z.object({
 export type FlashState = { error?: string };
 
 export async function saveFlashSaleAction(_prev: FlashState, fd: FormData): Promise<FlashState> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   const parsed = Schema.safeParse(Object.fromEntries(fd.entries()));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please review the form." };
@@ -44,7 +44,7 @@ export async function saveFlashSaleAction(_prev: FlashState, fd: FormData): Prom
 }
 
 export async function deleteFlashSaleAction(fd: FormData): Promise<void> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
   deleteFlashSale(id);

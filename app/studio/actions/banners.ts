@@ -26,7 +26,7 @@ const BannerSchema = z.object({
 export type BannerSaveState = { error?: string };
 
 export async function saveBannerAction(_prev: BannerSaveState, fd: FormData): Promise<BannerSaveState> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   const parsed = BannerSchema.safeParse(Object.fromEntries(fd.entries()));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please review the form." };
@@ -54,7 +54,7 @@ export async function saveBannerAction(_prev: BannerSaveState, fd: FormData): Pr
 }
 
 export async function deleteBannerAction(fd: FormData): Promise<void> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
   deleteBanner(id);
@@ -65,7 +65,7 @@ export async function deleteBannerAction(fd: FormData): Promise<void> {
 }
 
 export async function reorderBannersAction(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser("/studio/login");
   const ordered = String(fd.get("ordered") ?? "").split(",").map((n) => Number(n)).filter(Boolean);
   if (!ordered.length) return;
   reorderBanners(ordered);
@@ -74,11 +74,12 @@ export async function reorderBannersAction(fd: FormData): Promise<void> {
 }
 
 export async function setBannerEnabledAction(fd: FormData): Promise<void> {
-  await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   const enabled = String(fd.get("enabled") ?? "0") === "1" ? 1 : 0;
   if (!id) return;
   updateBanner(id, { enabled });
+  logAudit({ user_id: me.id, action: "set_banner_enabled", entity: "banner", entity_id: String(id), payload: { enabled } });
   revalidatePath("/studio/banners");
   revalidatePath("/");
 }

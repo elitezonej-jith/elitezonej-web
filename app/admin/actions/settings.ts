@@ -1,6 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { requireUser } from "../../../lib/admin/session";
+import { requireRole } from "../../../lib/admin/session";
 import { setSettings } from "../../../lib/admin/repos/settings";
 import { logAudit } from "../../../lib/admin/repos/audit";
 
@@ -18,7 +18,7 @@ const ALLOWED_SETTING_KEYS = new Set([
 ]);
 
 export async function saveSettingsAction(fd: FormData): Promise<void> {
-  const me = await requireUser();
+  const me = await requireRole("owner");
   const map: Record<string, string> = {};
   for (const [k, v] of fd.entries()) {
     if (typeof v === "string" && ALLOWED_SETTING_KEYS.has(k)) map[k] = v;

@@ -14,8 +14,18 @@ export function listUsers(): User[] {
 
 export function getUserByEmail(email: string): (User & { password_hash: string }) | null {
   return (getDb()
-    .prepare("SELECT * FROM users WHERE email = ?")
+    .prepare(
+      "SELECT id, email, name, role, created_at, last_login_at, password_hash FROM users WHERE email = ?",
+    )
     .get(email.toLowerCase()) as (User & { password_hash: string }) | undefined) ?? null;
+}
+
+/** Auth-only: fetch the password hash by user id (tighter than email lookup
+ *  for self-scoped flows like password change). */
+export function getUserAuthById(id: number): { id: number; password_hash: string } | null {
+  return (getDb()
+    .prepare("SELECT id, password_hash FROM users WHERE id = ?")
+    .get(id) as { id: number; password_hash: string } | undefined) ?? null;
 }
 
 export function getUserById(id: number): User | null {

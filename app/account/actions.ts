@@ -16,6 +16,7 @@ import {
   createAccount,
   getCustomerAuthByEmail,
   destroyCustomerSession,
+  purgeExpiredCustomerSessions,
 } from "../../lib/admin/repos/customer-auth";
 import { logAudit } from "../../lib/admin/repos/audit";
 import { getDb } from "../../lib/admin/db";
@@ -142,6 +143,7 @@ export async function signInAction(_prev: AuthState, fd: FormData): Promise<Auth
   }
 
   resetRateLimit(rlKey);
+  purgeExpiredCustomerSessions(); // opportunistic cleanup of abandoned expired rows
   await setSessionCookie(account.id, ip, ua);
   logAudit({
     user_id: null,

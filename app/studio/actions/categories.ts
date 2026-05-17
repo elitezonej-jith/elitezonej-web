@@ -21,7 +21,7 @@ const Schema = z.object({
 export type CatSaveState = { error?: string };
 
 export async function saveCategoryAction(_prev: CatSaveState, fd: FormData): Promise<CatSaveState> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   const parsed = Schema.safeParse(Object.fromEntries(fd.entries()));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please review the form." };
@@ -51,7 +51,7 @@ export async function saveCategoryAction(_prev: CatSaveState, fd: FormData): Pro
 }
 
 export async function deleteCategoryAction(fd: FormData): Promise<void> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
   deleteCategory(id);

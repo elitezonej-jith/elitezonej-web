@@ -110,8 +110,10 @@ export async function saveProductAction(_prev: ActionState, fd: FormData): Promi
 export async function setProductStatusAction(fd: FormData): Promise<void> {
   const me = await requireUser();
   const slug = String(fd.get("slug") ?? "");
-  const status = String(fd.get("status") ?? "active") as "active" | "draft" | "archived";
-  if (!slug) return;
+  const STATUSES = ["active", "draft", "archived"] as const;
+  const raw = String(fd.get("status") ?? "active");
+  if (!slug || !(STATUSES as readonly string[]).includes(raw)) return;
+  const status = raw as (typeof STATUSES)[number];
   setStatus(slug, status);
   logAudit({ user_id: me.id, action: "set_product_status", entity: "product", entity_id: slug, payload: { status } });
   revalidatePath("/admin/products");

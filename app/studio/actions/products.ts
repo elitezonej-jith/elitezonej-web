@@ -59,7 +59,7 @@ function parseSpec(raw: string): [string, string][] {
 export type ProductSaveState = { error?: string };
 
 export async function saveProductAction(_prev: ProductSaveState, fd: FormData): Promise<ProductSaveState> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const raw = Object.fromEntries(fd.entries()) as Record<string, string>;
   const parsed = ProductSchema.safeParse(raw);
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please review the form." };
@@ -116,7 +116,7 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
 }
 
 export async function deleteProductAction(fd: FormData): Promise<void> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const slug = String(fd.get("slug") ?? "");
   if (!slug) return;
   deleteProduct(slug);
@@ -126,7 +126,7 @@ export async function deleteProductAction(fd: FormData): Promise<void> {
 }
 
 export async function archiveProductAction(fd: FormData): Promise<void> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const slug = String(fd.get("slug") ?? "");
   const status = String(fd.get("status") ?? "archived") as "active" | "draft" | "archived";
   if (!slug) return;
@@ -137,7 +137,7 @@ export async function archiveProductAction(fd: FormData): Promise<void> {
 }
 
 export async function duplicateProductAction(fd: FormData): Promise<void> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const slug = String(fd.get("slug") ?? "");
   if (!slug) return;
   const src = getProduct(slug);
@@ -167,7 +167,7 @@ export async function duplicateProductAction(fd: FormData): Promise<void> {
 // — Image manager actions —
 
 export async function attachImageAction(fd: FormData): Promise<void> {
-  const me = await requireUser();
+  const me = await requireUser("/studio/login");
   const slug = String(fd.get("slug") ?? "");
   const imagePath = String(fd.get("image_path") ?? "");
   const alt = String(fd.get("alt") ?? "");
@@ -178,16 +178,17 @@ export async function attachImageAction(fd: FormData): Promise<void> {
 }
 
 export async function deleteImageAction(fd: FormData): Promise<void> {
-  await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   const slug = String(fd.get("slug") ?? "");
-  if (!id) return;
-  deleteProductImage(id);
+  if (!id || !slug) return;
+  deleteProductImage(id, slug);
+  logAudit({ user_id: me.id, action: "delete_image", entity: "product", entity_id: slug, payload: { id } });
   revalidatePath(`/studio/products/${slug}`);
 }
 
 export async function reorderImagesAction(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser("/studio/login");
   const slug = String(fd.get("slug") ?? "");
   const ordered = String(fd.get("ordered") ?? "").split(",").map((n) => Number(n)).filter(Boolean);
   if (!slug || !ordered.length) return;
@@ -196,7 +197,7 @@ export async function reorderImagesAction(fd: FormData): Promise<void> {
 }
 
 export async function setThumbnailAction(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser("/studio/login");
   const slug = String(fd.get("slug") ?? "");
   const id = Number(fd.get("id") ?? 0);
   if (!slug || !id) return;
@@ -205,7 +206,7 @@ export async function setThumbnailAction(fd: FormData): Promise<void> {
 }
 
 export async function setHoverAction(fd: FormData): Promise<void> {
-  await requireUser();
+  await requireUser("/studio/login");
   const slug = String(fd.get("slug") ?? "");
   const id = Number(fd.get("id") ?? 0);
   if (!slug || !id) return;
@@ -214,9 +215,11 @@ export async function setHoverAction(fd: FormData): Promise<void> {
 }
 
 export async function updateAltAction(fd: FormData): Promise<void> {
-  await requireUser();
+  const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
-  const alt = String(fd.get("alt") ?? "");
-  if (!id) return;
-  updateAlt(id, alt);
+  const alt = String(fd.get("alt") ?? "").slice(0, 300);
+  const slug = String(fd.get("slug") ?? "");
+  if (!id || !slug) return;
+  updateAlt(id, alt, slug);
+  logAudit({ user_id: me.id, action: "update_image_alt", entity: "product", entity_id: slug, payload: { id } });
 }

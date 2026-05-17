@@ -45,8 +45,10 @@ export function addImage(slug: string, image_path: string, alt = ""): number {
   return Number(r.lastInsertRowid);
 }
 
-export function deleteImage(id: number): void {
-  getDb().prepare("DELETE FROM product_images WHERE id = ?").run(id);
+export function deleteImage(id: number, slug: string): void {
+  getDb()
+    .prepare("DELETE FROM product_images WHERE id = ? AND product_slug = ?")
+    .run(id, slug);
 }
 
 export function setThumbnail(slug: string, id: number): void {
@@ -76,8 +78,10 @@ export function reorderImages(slug: string, orderedIds: number[]): void {
   tx();
 }
 
-export function updateAlt(id: number, alt: string): void {
-  getDb().prepare("UPDATE product_images SET alt = ? WHERE id = ?").run(alt, id);
+export function updateAlt(id: number, alt: string, slug: string): void {
+  getDb()
+    .prepare("UPDATE product_images SET alt = ? WHERE id = ? AND product_slug = ?")
+    .run(alt, id, slug);
 }
 
 // On products that don't yet have any rows in product_images, derive a fallback

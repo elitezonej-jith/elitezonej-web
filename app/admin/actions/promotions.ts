@@ -44,8 +44,10 @@ export async function savePromoAction(_prev: PromoState, fd: FormData): Promise<
 export async function setPromoStatusAction(fd: FormData): Promise<void> {
   const me = await requireUser();
   const code = String(fd.get("code") ?? "").toUpperCase();
-  const status = String(fd.get("status") ?? "active") as "active" | "scheduled" | "expired" | "disabled";
-  if (!code) return;
+  const STATUSES = ["active", "scheduled", "expired", "disabled"] as const;
+  const raw = String(fd.get("status") ?? "active");
+  if (!code || !(STATUSES as readonly string[]).includes(raw)) return;
+  const status = raw as (typeof STATUSES)[number];
   setPromotionStatus(code, status);
   logAudit({ user_id: me.id, action: "set_promo_status", entity: "promotion", entity_id: code, payload: { status } });
   revalidatePath("/admin/promotions");

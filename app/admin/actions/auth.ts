@@ -9,10 +9,11 @@ import {
   createSession,
   destroySession,
   hashPassword,
+  purgeExpiredSessions,
   safeNextPath,
   verifyPassword,
 } from "../../../lib/admin/auth";
-import { countUsers, createUser, getUserByEmail, getUserById, setUserPassword, touchLogin } from "../../../lib/admin/repos/users";
+import { countUsers, createUser, getUserByEmail, getUserAuthById, getUserById, setUserPassword, touchLogin } from "../../../lib/admin/repos/users";
 import { logAudit } from "../../../lib/admin/repos/audit";
 import { requireRole, requireUser } from "../../../lib/admin/session";
 
@@ -53,6 +54,7 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
   if (!u || !ok) return { error: "No account matches those credentials." };
 
   resetRateLimit(rlKey);
+  purgeExpiredSessions(); // opportunistic cleanup of abandoned expired rows
 
   const sess = createSession(u.id);
   const c = await cookies();
@@ -124,7 +126,7 @@ export async function changePasswordAction(_prev: ActionState, formData: FormDat
   const current = String(formData.get("current") ?? "");
   const next = String(formData.get("next") ?? "");
   if (next.length < 8) return { error: "New password must be at least 8 characters." };
-  const u = getUserByEmail(me.email);
+  const u = getUserAuthById(me.id);
   if (!u) return { error: "Account not found." };
   const ok = await verifyPassword(current, u.password_hash);
   if (!ok) return { error: "Current password incorrect." };
