@@ -4,6 +4,7 @@ import {
   createRazorpayOrder,
   publicKeyId,
 } from "./razorpay";
+import { isEphemeralPersistence } from "../../admin/db";
 
 export type ProviderName = "razorpay" | "offline";
 
@@ -27,6 +28,15 @@ export async function createProviderOrder(args: {
   receipt: string;
 }): Promise<CreatedProviderOrder> {
   if (activeProvider() === "razorpay") {
+    // Guard: never take a real payment when persistence is the ephemeral
+    // in-memory fallback — the paid order would be lost on the next cold
+    // start. Fail the checkout loudly instead of silently losing money.
+    if (isEphemeralPersistence()) {
+      throw new Error(
+        "Live payments are disabled: server storage is ephemeral (in-memory). " +
+          "A durable database must be configured before accepting real payments.",
+      );
+    }
     const o = await createRazorpayOrder(args);
     return { provider: "razorpay", providerOrderId: o.id, publicKey: publicKeyId() };
   }

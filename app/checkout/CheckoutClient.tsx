@@ -78,7 +78,10 @@ export default function CheckoutClient() {
           });
           if (r.ok) {
             clear();
-            router.push(`/checkout/confirmation?o=${encodeURIComponent(state.orderId!)}`);
+            router.push(
+              `/checkout/confirmation?o=${encodeURIComponent(state.orderId!)}` +
+                (state.token ? `&t=${encodeURIComponent(state.token)}` : ""),
+            );
           } else {
             setPayError(r.error ?? "Payment verification failed.");
             setPhase("error");
@@ -290,11 +293,15 @@ export default function CheckoutClient() {
       {sandboxOpen && (
         <MockPaymentSheet
           orderId={state.orderId!}
+          token={state.token ?? ""}
           amount={state.amount ?? state.pricing?.total ?? subtotal}
           onClose={() => setSandboxDismissed(true)}
           onSuccess={(oid) => {
             clear();
-            router.push(`/checkout/confirmation?o=${encodeURIComponent(oid)}`);
+            router.push(
+              `/checkout/confirmation?o=${encodeURIComponent(oid)}` +
+                (state.token ? `&t=${encodeURIComponent(state.token)}` : ""),
+            );
           }}
         />
       )}

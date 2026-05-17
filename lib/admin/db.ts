@@ -83,9 +83,26 @@ function ensureDefaultAdmin(db: Database.Database): void {
 // redeploy or a 15-min idle timeout.
 const IS_SERVERLESS = process.env.VERCEL === "1" || process.env.IS_SERVERLESS === "1";
 
+/** True when the DB is the ephemeral in-memory fallback (orders/payments do
+ *  NOT survive a cold start). Callers gate real-money paths on this. */
+export function isEphemeralPersistence(): boolean {
+  return IS_SERVERLESS;
+}
+
+let warnedEphemeral = false;
+
 function open(): Database.Database {
   let db: Database.Database;
   if (IS_SERVERLESS) {
+    if (!warnedEphemeral) {
+      warnedEphemeral = true;
+      console.warn(
+        "[db] EPHEMERAL IN-MEMORY DATABASE — orders, payments and sessions " +
+          "are lost on every cold start/redeploy. Live payments are refused " +
+          "in this mode (see lib/storefront/payments). Configure a durable " +
+          "database before accepting real money.",
+      );
+    }
     db = new Database(":memory:");
   } else {
     if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });

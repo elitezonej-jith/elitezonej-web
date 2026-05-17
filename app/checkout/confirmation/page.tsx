@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrder, getOrderItems } from "../../../lib/admin/repos/orders";
+import { verifyOrderToken } from "../../../lib/storefront/checkout-token";
+import { getCurrentCustomer } from "../../../lib/storefront/session";
 import { fmtINR } from "@/lib/format";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
@@ -8,13 +10,22 @@ import "../../styles/cart.css";
 
 export const dynamic = "force-dynamic";
 
-type Props = { searchParams: Promise<{ o?: string }> };
+type Props = { searchParams: Promise<{ o?: string; t?: string }> };
 
 export default async function ConfirmationPage({ searchParams }: Props) {
-  const { o } = await searchParams;
+  const { o, t } = await searchParams;
   if (!o) notFound();
   const order = getOrder(o);
   if (!order) notFound();
+
+  // Access control (closes the ?o= IDOR PII leak): either a valid short-lived
+  // checkout token from the browser that placed this order, or an
+  // authenticated customer who owns it.
+  const customer = await getCurrentCustomer();
+  const tokenOk = verifyOrderToken(o, t);
+  const ownerOk = !!customer && order.customer_id === customer.id;
+  if (!tokenOk && !ownerOk) notFound();
+
   const items = getOrderItems(o);
 
   const paid = order.payment_status === "paid";

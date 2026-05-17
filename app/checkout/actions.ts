@@ -16,6 +16,7 @@ import { createPayment } from "../../lib/admin/repos/payments";
 import { getPaymentByProviderOrderId } from "../../lib/admin/repos/payments";
 import { logAudit } from "../../lib/admin/repos/audit";
 import { rateLimit } from "../../lib/admin/rate-limit";
+import { issueOrderToken, verifyOrderToken } from "../../lib/storefront/checkout-token";
 
 const LineSchema = z.object({
   slug: z.string().min(1).max(160),
@@ -46,6 +47,9 @@ export type CheckoutStartState = {
   amount?: number;
   razorpay?: { keyId: string; providerOrderId: string };
   pricing?: { subtotal: number; discount: number; shipping: number; tax: number; total: number };
+  /** Binds the receipt view and sandbox-pay to the browser that created this
+   *  order — closes the ?o= IDOR (PII leak / unauth order-paid). */
+  token?: string;
 };
 
 async function clientIp(): Promise<string> {
@@ -151,6 +155,7 @@ export async function startCheckout(
   return {
     ok: true,
     orderId,
+    token: issueOrderToken(orderId),
     provider,
     amount: priced.pricing.total,
     razorpay:
@@ -287,6 +292,7 @@ export async function confirmPayment(input: {
 // action hard-refuses — so dropping in live keys needs no other change.
 export async function confirmMockPayment(input: {
   orderId: string;
+  token: string;
 }): Promise<ConfirmState> {
   if (razorpayConfigured()) {
     return { ok: false, error: "Sandbox is disabled — the live gateway is active." };
@@ -298,6 +304,12 @@ export async function confirmMockPayment(input: {
 
   const orderId = String(input.orderId ?? "");
   if (!orderId) return { ok: false, error: "Missing order reference." };
+
+  // Bind to the checkout that created this order — without this any visitor
+  // could POST an arbitrary order id and flip it to paid (IDOR).
+  if (!verifyOrderToken(orderId, input.token)) {
+    return { ok: false, error: "This payment session is invalid or has expired." };
+  }
 
   const order = getOrder(orderId);
   if (!order) return { ok: false, error: "Order not found." };

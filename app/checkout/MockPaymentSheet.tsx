@@ -8,12 +8,14 @@ type Phase = "idle" | "stitching" | "sealed" | "error";
 
 export default function MockPaymentSheet({
   orderId,
+  token,
   amount,
   email,
   onSuccess,
   onClose,
 }: {
   orderId: string;
+  token: string;
   amount: number;
   email?: string;
   onSuccess: (orderId: string) => void;
@@ -52,7 +54,7 @@ export default function MockPaymentSheet({
     setPhase("stitching");
     // Let the seam "sew" before the server settles — pure theatre, but the
     // confirm itself is a real, idempotent server action.
-    const settle = confirmMockPayment({ orderId });
+    const settle = confirmMockPayment({ orderId, token });
     await new Promise((r) => setTimeout(r, 2100));
     const res = await settle;
     if (res.ok) {
