@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useCart } from "./CartProvider";
 import { useModalA11y } from "./useModalA11y";
 import { fmtINR, fmtMeters } from "@/lib/format";
@@ -9,6 +11,17 @@ import { fmtINR, fmtMeters } from "@/lib/format";
 export default function CartDrawer() {
   const { items, count, subtotal, hydrated, drawerOpen, openDrawer, closeDrawer, removeItem, updateQty } = useCart();
   const drawerRef = useModalA11y<HTMLElement>(drawerOpen, closeDrawer);
+
+  // The overlay + drawer are portalled to <body> so their `position: fixed`
+  // resolves against the viewport. app/template.tsx wraps every route in
+  // .route-transition, whose `animation: ... both` holds a computed
+  // `transform: translateY(0)` after it finishes — any non-`none` transform
+  // makes that element a containing block, which would otherwise pin the
+  // drawer to page height instead of the viewport. Portalling escapes it
+  // regardless of the transform's animation timing. Mount guard avoids an
+  // SSR/hydration mismatch (document is client-only).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // Header pill: show 00 until hydrated to avoid SSR/CSR mismatch
   const pill = hydrated ? String(count).padStart(2, "0") : "00";
@@ -26,6 +39,8 @@ export default function CartDrawer() {
         {hydrated && count > 0 && <span key={count} className="bag-count">{pill}</span>}
       </button>
 
+      {mounted && createPortal(
+        <>
       <div
         className="cart-overlay"
         data-open={drawerOpen}
@@ -112,10 +127,13 @@ export default function CartDrawer() {
           </Link>
         </footer>
       </aside>
+        </>,
+        document.body,
+      )}
 
       {/* Drawer-line CSS, scoped to .cart-drawer to avoid leakage */}
       <style dangerouslySetInnerHTML={{ __html: `
-        .cart-drawer-body { padding:0; overflow-y:auto; }
+        .cart-drawer-body { flex:1 1 auto; min-height:0; padding:0; overflow-y:auto; }
         .cart-line { display:grid; grid-template-columns:80px 1fr; gap:14px; padding:14px 16px; border-bottom:var(--rule); align-items:start; }
         .cart-line-img { display:block; width:80px; aspect-ratio:3/4; position:relative; background:var(--paper-2); overflow:hidden; }
         .cart-line-img img { object-fit:cover; }
