@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getOrder, getOrderItems } from "../../../lib/admin/repos/orders";
+import { saveAddressFromOrder } from "../../../lib/admin/repos/addresses";
 import { verifyOrderToken } from "../../../lib/storefront/checkout-token";
 import { getCurrentCustomer } from "../../../lib/storefront/session";
 import { fmtINR } from "@/lib/format";
@@ -29,6 +30,28 @@ export default async function ConfirmationPage({ searchParams }: Props) {
   const items = getOrderItems(o);
 
   const paid = order.payment_status === "paid";
+
+  // Save the used shipping address to the customer's book, de-duplicated.
+  // Only for the authenticated owner of a paid order — guests save nothing.
+  // Best-effort: the order is already settled, so a failure here must never
+  // surface to the customer.
+  if (paid && customer && ownerOk) {
+    try {
+      const [firstName, ...rest] = (order.ship_name || "").trim().split(/\s+/);
+      saveAddressFromOrder(customer.id, {
+        first_name: firstName ?? "",
+        last_name: rest.join(" "),
+        line1: order.ship_line1,
+        line2: order.ship_line2,
+        city: order.ship_city,
+        state: order.ship_state,
+        pincode: order.ship_pincode,
+        country: order.ship_country || "India",
+      });
+    } catch {
+      /* non-critical: order is paid; address-book save is opportunistic */
+    }
+  }
 
   return (
     <>

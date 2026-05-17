@@ -94,6 +94,28 @@ CREATE TABLE IF NOT EXISTS customers (
   created_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Saved shipping address book. Scoped to the owning customer; the app only
+-- ever queries WHERE customer_id = <server-resolved session id>. Exactly one
+-- row per customer carries is_default = 1 (enforced transactionally in
+-- repos/addresses.ts, not by a DB constraint).
+CREATE TABLE IF NOT EXISTS addresses (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id   INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+  label         TEXT NOT NULL DEFAULT '',
+  first_name    TEXT NOT NULL DEFAULT '',
+  last_name     TEXT NOT NULL DEFAULT '',
+  line1         TEXT NOT NULL DEFAULT '',
+  line2         TEXT NOT NULL DEFAULT '',
+  city          TEXT NOT NULL DEFAULT '',
+  state         TEXT NOT NULL DEFAULT '',
+  pincode       TEXT NOT NULL DEFAULT '',
+  country       TEXT NOT NULL DEFAULT 'India',
+  is_default    INTEGER NOT NULL DEFAULT 0,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_addresses_customer ON addresses(customer_id);
+
 CREATE TABLE IF NOT EXISTS orders (
   id           TEXT PRIMARY KEY,
   customer_id  INTEGER NOT NULL REFERENCES customers(id) ON DELETE CASCADE,

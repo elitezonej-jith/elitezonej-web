@@ -1,5 +1,5 @@
 "use client";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, type FormEvent, type InputHTMLAttributes } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fmtINR, fmtMeters } from "@/lib/format";
@@ -7,7 +7,9 @@ import { WHATSAPP_DISPLAY } from "@/lib/contact";
 import { useCart } from "../components/CartProvider";
 import { startCheckout, confirmPayment, previewPricing, type CheckoutStartState, type PreviewState } from "./actions";
 import MockPaymentSheet from "./MockPaymentSheet";
+import type { Address } from "../../lib/admin/repos/addresses";
 import "../styles/cart.css";
+import "../styles/addresses.css";
 
 declare global {
   interface Window {
@@ -30,7 +32,89 @@ function loadRazorpay(): Promise<boolean> {
 
 const initial: CheckoutStartState = {};
 
-export default function CheckoutClient() {
+/** Client-side rules mirroring the authoritative server CheckoutSchema in
+ *  actions.ts. UX only — the server Zod validation stays the source of truth.
+ *  Returns "" when valid, else the message (kept identical to the server's). */
+const CHECKOUT_RULES: Record<string, (v: string) => string> = {
+  email: (v) =>
+    /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.trim()) && v.trim().length <= 160
+      ? ""
+      : "A valid email is required",
+  phone: (v) => (v.trim().length >= 6 && v.trim().length <= 40 ? "" : "Phone number is required"),
+  first_name: (v) => (v.trim().length >= 1 && v.trim().length <= 60 ? "" : "First name is required"),
+  last_name: (v) => (v.trim().length >= 1 && v.trim().length <= 60 ? "" : "Last name is required"),
+  ship_line1: (v) => (v.trim().length >= 1 && v.trim().length <= 200 ? "" : "Enter your address"),
+  ship_city: (v) => (v.trim().length >= 1 && v.trim().length <= 80 ? "" : "City is required"),
+  ship_state: (v) => (v.trim().length >= 1 && v.trim().length <= 80 ? "" : "State is required"),
+  ship_pincode: (v) => (/^\d{6}$/.test(v.trim()) ? "" : "Enter a valid 6-digit pincode"),
+};
+/** Submit order = focus order of the first invalid field. */
+const CHECKOUT_FIELD_ORDER = [
+  "first_name",
+  "last_name",
+  "email",
+  "phone",
+  "ship_line1",
+  "ship_city",
+  "ship_state",
+  "ship_pincode",
+] as const;
+
+/** Text input with an inline, screen-reader-associated validation error.
+ *  The error line is always rendered (empty when valid) so it reserves its
+ *  own space — appearing/clearing an error causes no layout shift. The
+ *  uncontrolled input retains its typed value across a failed submit
+ *  (React 19 server-action forms are not reset). */
+function Field({ err, ...props }: InputHTMLAttributes<HTMLInputElement> & { err?: string }) {
+  const errId = props.name ? `err-${props.name}` : undefined;
+  return (
+    <div style={{ display: "grid", gap: 4 }}>
+      <input
+        {...props}
+        aria-invalid={err ? true : undefined}
+        aria-describedby={err ? errId : props["aria-describedby"]}
+      />
+      <span
+        id={errId}
+        role="alert"
+        className="t-mono-xs"
+        style={{ color: "var(--error)", minHeight: "1em", lineHeight: 1.1 }}
+      >
+        {err ?? ""}
+      </span>
+    </div>
+  );
+}
+
+type ShipPrefill = {
+  first_name: string;
+  last_name: string;
+  ship_line1: string;
+  ship_line2: string;
+  ship_city: string;
+  ship_state: string;
+  ship_pincode: string;
+};
+
+function toPrefill(a: Address): ShipPrefill {
+  return {
+    first_name: a.first_name,
+    last_name: a.last_name,
+    ship_line1: a.line1,
+    ship_line2: a.line2,
+    ship_city: a.city,
+    ship_state: a.state,
+    ship_pincode: a.pincode,
+  };
+}
+
+export default function CheckoutClient({
+  savedAddresses = [],
+  defaultAddressId = null,
+}: {
+  savedAddresses?: Address[];
+  defaultAddressId?: number | null;
+}) {
   const { items, subtotal, hydrated, clear } = useCart();
   const router = useRouter();
   const [state, action, pending] = useActionState(startCheckout, initial);
@@ -38,6 +122,65 @@ export default function CheckoutClient() {
   const [payError, setPayError] = useState<string | null>(null);
   const [sandboxDismissed, setSandboxDismissed] = useState(false);
   const launched = useRef(false);
+
+  // Saved-address picker. The default address (if any) is auto-selected and
+  // its values prefilled; "new" means manual entry. Changing selection bumps
+  // prefillKey so the uncontrolled ship_* inputs remount with new defaults —
+  // CHECKOUT_RULES / guardSubmit / the server CheckoutSchema are unaffected.
+  const initialSel =
+    defaultAddressId != null &&
+    savedAddresses.some((a) => a.id === defaultAddressId)
+      ? defaultAddressId
+      : "new";
+  const [selectedAddr, setSelectedAddr] = useState<number | "new">(initialSel);
+  const [prefillKey, setPrefillKey] = useState(0);
+  const initialPrefill =
+    typeof initialSel === "number"
+      ? toPrefill(savedAddresses.find((a) => a.id === initialSel)!)
+      : null;
+  const [prefill, setPrefill] = useState<ShipPrefill | null>(initialPrefill);
+
+  function chooseAddress(sel: number | "new") {
+    setSelectedAddr(sel);
+    const a = typeof sel === "number" ? savedAddresses.find((x) => x.id === sel) : null;
+    setPrefill(a ? toPrefill(a) : null);
+    setPrefillKey((k) => k + 1);
+    setClientErrors({});
+  }
+
+  // Client-side address validation (UX only; server Zod stays authoritative).
+  const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+  function validateField(name: string, value: string) {
+    const rule = CHECKOUT_RULES[name];
+    if (!rule) return;
+    setClientErrors((prev) => {
+      const msg = rule(value);
+      if ((prev[name] ?? "") === msg) return prev;
+      const next = { ...prev };
+      if (msg) next[name] = msg;
+      else delete next[name];
+      return next;
+    });
+  }
+
+  // Run all rules on submit; block the server action and focus the first
+  // invalid field if anything fails. The server still re-validates.
+  function guardSubmit(e: FormEvent<HTMLFormElement>) {
+    const form = e.currentTarget;
+    const errs: Record<string, string> = {};
+    for (const name of CHECKOUT_FIELD_ORDER) {
+      const el = form.elements.namedItem(name) as HTMLInputElement | null;
+      const msg = CHECKOUT_RULES[name]?.(el?.value ?? "") ?? "";
+      if (msg) errs[name] = msg;
+    }
+    if (Object.keys(errs).length > 0) {
+      e.preventDefault();
+      setClientErrors(errs);
+      const first = CHECKOUT_FIELD_ORDER.find((n) => errs[n]);
+      if (first) (form.elements.namedItem(first) as HTMLInputElement | null)?.focus();
+    }
+  }
 
   // Live promo / total preview (QA-011) — read-only, no order is created.
   const [promo, setPromo] = useState("");
@@ -194,22 +337,64 @@ export default function CheckoutClient() {
         <aside className="summary">
           <h2>Shipping &amp; contact</h2>
 
-          <form action={action} className="checkout-form" style={{ display: "grid", gap: 10 }}>
+          <form action={action} onSubmit={guardSubmit} className="checkout-form" style={{ display: "grid", gap: 10 }}>
             <input type="hidden" name="cart" value={cartPayload} />
             <input type="hidden" name="idempotency_key" value={idemKey} />
+
+            {savedAddresses.length > 0 && (
+              <fieldset className="addr-picker">
+                <legend>Ship to a saved address</legend>
+                {savedAddresses.map((a) => (
+                  <label key={a.id} className="addr-pick">
+                    <input
+                      type="radio"
+                      name="saved_address_pick"
+                      value={a.id}
+                      checked={selectedAddr === a.id}
+                      onChange={() => chooseAddress(a.id)}
+                    />
+                    <span className="addr-pick-text">
+                      <b>
+                        {a.first_name} {a.last_name}
+                      </b>
+                      {a.is_default === 1 && (
+                        <span className="addr-pick-default">Default</span>
+                      )}
+                      <br />
+                      {a.line1}
+                      {a.line2 ? `, ${a.line2}` : ""}, {a.city}, {a.state}{" "}
+                      {a.pincode}
+                    </span>
+                  </label>
+                ))}
+                <label className="addr-pick">
+                  <input
+                    type="radio"
+                    name="saved_address_pick"
+                    value="new"
+                    checked={selectedAddr === "new"}
+                    onChange={() => chooseAddress("new")}
+                  />
+                  <span className="addr-pick-text">
+                    <b>Enter a new address</b>
+                  </span>
+                </label>
+              </fieldset>
+            )}
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <input name="first_name" placeholder="First name" required aria-label="First name" />
-              <input name="last_name" placeholder="Last name" required aria-label="Last name" />
+              <Field key={`first_name-${prefillKey}`} name="first_name" placeholder="First name" required aria-label="First name" defaultValue={prefill?.first_name ?? ""} onBlur={(e) => validateField("first_name", e.target.value)} err={clientErrors.first_name ?? state.fieldErrors?.first_name} />
+              <Field key={`last_name-${prefillKey}`} name="last_name" placeholder="Last name" required aria-label="Last name" defaultValue={prefill?.last_name ?? ""} onBlur={(e) => validateField("last_name", e.target.value)} err={clientErrors.last_name ?? state.fieldErrors?.last_name} />
             </div>
-            <input type="email" name="email" placeholder="Email" required aria-label="Email" />
-            <input name="phone" placeholder="Phone" required aria-label="Phone" />
-            <input name="ship_line1" placeholder="Address line 1" required aria-label="Address line 1" />
-            <input name="ship_line2" placeholder="Address line 2 (optional)" aria-label="Address line 2" />
+            <Field type="email" name="email" placeholder="Email" required aria-label="Email" onBlur={(e) => validateField("email", e.target.value)} err={clientErrors.email ?? state.fieldErrors?.email} />
+            <Field name="phone" placeholder="Phone" required aria-label="Phone" onBlur={(e) => validateField("phone", e.target.value)} err={clientErrors.phone ?? state.fieldErrors?.phone} />
+            <Field key={`ship_line1-${prefillKey}`} name="ship_line1" placeholder="Address line 1" required aria-label="Address line 1" defaultValue={prefill?.ship_line1 ?? ""} onBlur={(e) => validateField("ship_line1", e.target.value)} err={clientErrors.ship_line1 ?? state.fieldErrors?.ship_line1} />
+            <Field key={`ship_line2-${prefillKey}`} name="ship_line2" placeholder="Address line 2 (optional)" aria-label="Address line 2" defaultValue={prefill?.ship_line2 ?? ""} err={state.fieldErrors?.ship_line2} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <input name="ship_city" placeholder="City" required aria-label="City" />
-              <input name="ship_state" placeholder="State" required aria-label="State" />
+              <Field key={`ship_city-${prefillKey}`} name="ship_city" placeholder="City" required aria-label="City" defaultValue={prefill?.ship_city ?? ""} onBlur={(e) => validateField("ship_city", e.target.value)} err={clientErrors.ship_city ?? state.fieldErrors?.ship_city} />
+              <Field key={`ship_state-${prefillKey}`} name="ship_state" placeholder="State" required aria-label="State" defaultValue={prefill?.ship_state ?? ""} onBlur={(e) => validateField("ship_state", e.target.value)} err={clientErrors.ship_state ?? state.fieldErrors?.ship_state} />
             </div>
-            <input name="ship_pincode" placeholder="Pincode" inputMode="numeric" required aria-label="Pincode" />
+            <Field key={`ship_pincode-${prefillKey}`} name="ship_pincode" placeholder="Pincode" inputMode="numeric" required aria-label="Pincode" defaultValue={prefill?.ship_pincode ?? ""} onBlur={(e) => validateField("ship_pincode", e.target.value)} err={clientErrors.ship_pincode ?? state.fieldErrors?.ship_pincode} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
               <input
                 name="promo_code"

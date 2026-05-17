@@ -1,0 +1,203 @@
+/* Saved address book — account section + checkout picker.
+   Token-only, namespaced .addr-*. Static styling (no transitions) to match
+   the rest of the storefront and stay reduced-motion-safe by construction. */
+
+.addr-book { display: grid; gap: 0; }
+
+.addr-empty {
+  color: var(--ink-2);
+  font-size: 14px;
+  margin: 0 0 4px;
+}
+
+.addr-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.addr-card-wrap {
+  display: grid;
+  gap: 8px;
+}
+
+.addr-card {
+  border: 1px solid var(--paper-3);
+  border-radius: 3px;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.addr-card-body { position: relative; }
+
+.addr-card-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.addr-card-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  padding: 2px 6px;
+}
+
+.addr-card-name {
+  margin: 8px 0 4px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.addr-card-lines {
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.addr-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.addr-link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.addr-link-btn:hover { color: var(--ink); }
+.addr-link-btn:disabled { opacity: 0.6; cursor: default; }
+.addr-link-danger { color: var(--error); }
+.addr-link-danger:hover { color: var(--error); }
+
+.addr-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.addr-confirm-q {
+  font-size: 13px;
+  color: var(--ink);
+}
+
+/* ---- Form ---- */
+.addr-form { display: grid; gap: 10px; }
+.addr-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.addr-field { display: grid; gap: 4px; }
+.addr-input {
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--paper-3);
+  border-radius: 3px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+}
+.addr-input:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+.addr-input[aria-invalid="true"] { border-color: var(--error); }
+.addr-field-err {
+  color: var(--error);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.1;
+  min-height: 1em; /* reserve space — no layout shift when an error appears */
+}
+.addr-form-err {
+  color: var(--error);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  margin: 0;
+}
+.addr-default-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.addr-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+/* ---- Checkout picker ---- */
+.addr-picker {
+  border: 0;
+  margin: 0 0 14px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.addr-picker legend {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  padding: 0;
+  margin-bottom: 4px;
+}
+.addr-pick {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid var(--paper-3);
+  border-radius: 3px;
+  padding: 12px;
+  cursor: pointer;
+}
+.addr-pick:has(input:checked) { border-color: var(--ink); }
+.addr-pick:has(input:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+.addr-pick input { margin-top: 3px; }
+.addr-pick-text {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.addr-pick-text b { color: var(--ink); font-weight: 600; }
+.addr-pick-default {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-left: 6px;
+}
+
+@media (max-width: 560px) {
+  .addr-row-2 { grid-template-columns: 1fr; }
+}

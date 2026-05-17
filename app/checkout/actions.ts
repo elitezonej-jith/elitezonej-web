@@ -37,7 +37,7 @@ const CheckoutSchema = z.object({
   phone: z.string().min(6, "Phone number is required").max(40),
   first_name: z.string().min(1, "First name is required").max(60),
   last_name: z.string().min(1, "Last name is required").max(60),
-  ship_line1: z.string().min(3, "Address is required").max(200),
+  ship_line1: z.string().trim().min(1, "Enter your address").max(200),
   ship_line2: z.string().max(200).optional().default(""),
   ship_city: z.string().min(1, "City is required").max(80),
   ship_state: z.string().min(1, "State is required").max(80),
@@ -48,6 +48,9 @@ const CheckoutSchema = z.object({
 export type CheckoutStartState = {
   ok?: boolean;
   error?: string;
+  /** Per-field validation messages, keyed by CheckoutSchema field name.
+   *  Additive — `error` (above) is still set for the summary alert. */
+  fieldErrors?: Partial<Record<keyof typeof CheckoutSchema.shape, string>>;
   orderId?: string;
   provider?: "razorpay" | "offline";
   amount?: number;
@@ -128,7 +131,14 @@ export async function startCheckout(
     promo_code: fd.get("promo_code") ?? "",
   });
   if (!form.success) {
-    return { error: form.error.issues[0]?.message ?? "Please complete the form." };
+    const flat = z.flattenError(form.error);
+    const fieldErrors = Object.fromEntries(
+      Object.entries(flat.fieldErrors).map(([k, msgs]) => [k, msgs?.[0] ?? ""]),
+    ) as Partial<Record<keyof typeof CheckoutSchema.shape, string>>;
+    return {
+      error: form.error.issues[0]?.message ?? "Please complete the form.",
+      fieldErrors,
+    };
   }
 
   // Idempotency: a double-click / network retry carrying the same key resumes

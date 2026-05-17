@@ -42,16 +42,43 @@ export function getCustomerOrders(id: number) {
     .all(id) as Array<{ id: string; status: string; total: number; created_at: string }>;
 }
 
+/**
+ * Orders for the authenticated customer, resolved by their verified session
+ * email rather than a single customers.id. Signup lowercases the email
+ * (customer-auth.ts) but checkout's upsertCustomer historically did not, and
+ * SQLite string equality is case-sensitive — so a person could own more than
+ * one customers row differing only by email case. Matching on LOWER(email)
+ * collapses those rows so every order the customer placed is returned.
+ *
+ * The email MUST come from the server-side session — never from client input.
+ */
+export function getCustomerOrdersByEmail(email: string) {
+  const normalised = email.trim().toLowerCase();
+  return getDb()
+    .prepare(
+      `SELECT o.id, o.status, o.total, o.created_at
+       FROM orders o
+       JOIN customers c ON c.id = o.customer_id
+       WHERE LOWER(c.email) = ?
+       ORDER BY datetime(o.created_at) DESC`,
+    )
+    .all(normalised) as Array<{ id: string; status: string; total: number; created_at: string }>;
+}
+
 export function upsertCustomer(input: Omit<Customer, "id" | "total_orders" | "total_spent" | "created_at">): number {
   const db = getDb();
+  // Normalise to match the lowercasing done at signup (customer-auth.ts), so
+  // a case-variant checkout email reuses the existing row instead of creating
+  // a duplicate that would orphan the customer's order history.
+  const email = input.email.trim().toLowerCase();
   const existing = db
-    .prepare("SELECT id FROM customers WHERE email = ?")
-    .get(input.email) as { id: number } | undefined;
+    .prepare("SELECT id FROM customers WHERE LOWER(email) = ?")
+    .get(email) as { id: number } | undefined;
   if (existing) return existing.id;
   const r = db
     .prepare(
       `INSERT INTO customers (email, first_name, last_name, phone, city) VALUES (?, ?, ?, ?, ?)`,
     )
-    .run(input.email, input.first_name, input.last_name, input.phone, input.city);
+    .run(email, input.first_name, input.last_name, input.phone, input.city);
   return Number(r.lastInsertRowid);
 }
