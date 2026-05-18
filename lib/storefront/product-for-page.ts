@@ -10,7 +10,7 @@ import {
   type Product as LegacyProduct,
 } from "../products";
 
-function adaptDbProduct(p: StorefrontProduct): LegacyProduct {
+export function adaptDbProduct(p: StorefrontProduct): LegacyProduct {
   // Reconstruct a legacy-shape Product from the DB row + static metadata
   // (if a static record exists for the same slug, prefer its fabric extras).
   const staticMatch = STATIC_PRODUCTS.find((s) => s.slug === p.slug);

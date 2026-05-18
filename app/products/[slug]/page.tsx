@@ -4,6 +4,7 @@ import Footer from "../../components/Footer";
 import TrustStrip from "../../components/TrustStrip";
 import ProductPageClient from "./ProductPageClient";
 import { getProductForPage } from "@/lib/storefront/product-for-page";
+import { listProductsForPage } from "@/lib/storefront/catalogue";
 
 // HEADER_CSS removed: the legacy block hard-coded the cream/oxblood
 // header/footer/trust-strip from the original tailoring brand, which
@@ -48,7 +49,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
       />
       <Header />
-      <ProductPageClient product={product} />
+      <ProductPageClient
+        product={product}
+        related={listProductsForPage().filter((p) => p.slug !== slug).slice(0, 3)}
+      />
       <TrustStrip />
       <Footer />
     </>

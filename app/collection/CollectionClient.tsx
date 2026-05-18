@@ -3,11 +3,10 @@ import { useState, useMemo } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { PRODUCTS } from "@/lib/products";
+import type { Product } from "@/lib/products";
 import { fmtINR } from "@/lib/format";
 import { WHATSAPP_LINK } from "@/lib/contact";
 import { imgFabric } from "@/lib/images";
-import { CAT_DATA, SUBCATS } from "@/lib/subcats";
 import WishlistButton from "../components/WishlistButton";
 import QuickAddButton from "../components/QuickAddButton";
 import Reveal from "../components/Reveal";
@@ -16,7 +15,23 @@ import "../styles/collection.css";
 
 type FilterKey = "fit" | "fabric" | "occasion" | "size";
 
-export default function CollectionClient({ cat, sub }: { cat: string; sub: string }) {
+export default function CollectionClient({
+  cat,
+  sub,
+  products,
+  headTitle,
+  headStand,
+  parentTitle,
+  hasSub,
+}: {
+  cat: string;
+  sub: string;
+  products: Product[];
+  headTitle: string;
+  headStand: string;
+  parentTitle: string;
+  hasSub: boolean;
+}) {
   const [active, setActive] = useState<Record<FilterKey, Set<string>>>({
     fit: new Set(), fabric: new Set(), occasion: new Set(), size: new Set(),
   });
@@ -36,9 +51,8 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
-  const subData = sub ? SUBCATS[cat]?.[sub] : null;
-  const headTitle = subData?.title || CAT_DATA[cat]?.title || "Collection";
-  const headStand = subData?.stand || CAT_DATA[cat]?.stand || "";
+  // headTitle / headStand / parentTitle / hasSub are resolved server-side
+  // (rename-aware via the DB categories overlay) and passed in as props.
 
   const toggle = (k: FilterKey, v: string) => {
     setActive(prev => {
@@ -55,7 +69,7 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
   const isFabricMode = cat === "fabrics";
 
   const filtered = useMemo(() => {
-    let list = PRODUCTS.slice();
+    let list = products.slice();
     if (isFabricMode) {
       list = list.filter(p => p.kind === "fabric");
     } else {
@@ -83,7 +97,7 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
     if (sortKey === "price-asc") list = [...list].sort((a, b) => eff(a) - eff(b));
     if (sortKey === "price-desc") list = [...list].sort((a, b) => eff(b) - eff(a));
     return list;
-  }, [cat, sub, active, price, sortKey, isFabricMode]);
+  }, [products, cat, sub, active, price, sortKey, isFabricMode]);
 
   return (
     <>
@@ -91,9 +105,9 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
         <div className="crumb t-mono-xs">
           <Link href="/">Home</Link>
           <span className="sep">/</span>
-          {subData ? (
+          {hasSub ? (
             <>
-              <Link href={`/collection?c=${cat}`}>{CAT_DATA[cat]?.title || cat}</Link>
+              <Link href={`/collection?c=${cat}`}>{parentTitle || cat}</Link>
               <span className="sep">/</span>
               <span>{headTitle}</span>
             </>
@@ -159,7 +173,7 @@ export default function CollectionClient({ cat, sub }: { cat: string; sub: strin
               </a>
               <div style={{ marginTop: "var(--s-5)" }}>
                 <Link href={`/collection?c=${cat}`} className="t-mono-xs" style={{ color: "var(--ink-2)", textDecoration: "underline", textUnderlineOffset: "3px" }}>
-                  View all {(CAT_DATA[cat]?.title || "pieces").toLowerCase()} →
+                  View all {(parentTitle || "pieces").toLowerCase()} →
                 </Link>
               </div>
             </div>

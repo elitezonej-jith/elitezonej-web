@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { PRODUCTS, Product } from "@/lib/products";
+import type { Product } from "@/lib/products";
 import { fmtINR } from "@/lib/format";
 import { imgFabric } from "@/lib/images";
 import WishlistButton from "./WishlistButton";
 import { useModalA11y } from "./useModalA11y";
 
-type Props = { open: boolean; onClose: () => void };
+type Props = { open: boolean; onClose: () => void; products: Product[] };
 
 type CatChip = "all" | "men" | "women" | "fabrics" | "festive";
 type FabricChip = "Wool" | "Linen" | "Cotton" | "Silk" | "Velvet";
@@ -48,7 +48,7 @@ function matchesCat(p: Product, cat: CatChip) {
   }
 }
 
-export default function SearchOverlay({ open, onClose }: Props) {
+export default function SearchOverlay({ open, onClose, products }: Props) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<CatChip>("all");
   const [fabFilter, setFabFilter] = useState<Set<FabricChip>>(new Set());
@@ -74,13 +74,13 @@ export default function SearchOverlay({ open, onClose }: Props) {
   );
 
   const results = useMemo(() => {
-    return PRODUCTS.filter(p => {
+    return products.filter(p => {
       if (!matchesQuery(p, tokens)) return false;
       if (!matchesCat(p, cat)) return false;
       if (fabFilter.size > 0 && !fabFilter.has(p.fabric as FabricChip)) return false;
       return true;
     }).slice(0, 24);
-  }, [tokens, cat, fabFilter]);
+  }, [products, tokens, cat, fabFilter]);
 
   const toggleFab = (f: FabricChip) => {
     setFabFilter(prev => {
@@ -149,7 +149,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
           <div className="search-results" aria-live="polite">
             <div className="search-results-head t-mono-xs">
               {tokens.length === 0 && cat === "all" && fabFilter.size === 0
-                ? `Browse · ${PRODUCTS.length} pieces in the catalogue`
+                ? `Browse · ${products.length} pieces in the catalogue`
                 : `${results.length} result${results.length === 1 ? "" : "s"}`}
             </div>
 

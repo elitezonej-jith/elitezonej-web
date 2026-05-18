@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { NAV } from "./nav-data";
+import type { NavCategory } from "./nav-data";
 import { useModalA11y } from "./useModalA11y";
 
 // Hamburger glyph — three hairlines morph to an X via stroke transforms
@@ -80,7 +80,13 @@ function GlyphBag() {
   );
 }
 
-export default function MobileNav() {
+export default function MobileNav({
+  nav,
+  currencyLabel,
+}: {
+  nav: NavCategory[];
+  currencyLabel: string;
+}) {
   const [open, setOpen] = useState(false);
   const [openCats, setOpenCats] = useState<Set<number>>(new Set());
 
@@ -133,7 +139,7 @@ export default function MobileNav() {
 
         <div className="mobile-drawer__scroll">
           <ul className="mobile-drawer__list">
-            {NAV.map((cat, i) => {
+            {nav.map((cat, i) => {
               const isOpen = openCats.has(i);
               if (!cat.groups) {
                 // Flat link — no expansion
@@ -232,7 +238,7 @@ export default function MobileNav() {
           <Link href="/cart" onClick={close} className="mobile-drawer__tail-row">
             <GlyphBag /> <span>Bag</span>
           </Link>
-          <span className="mobile-drawer__region">India · INR ₹</span>
+          <span className="mobile-drawer__region">India · {currencyLabel}</span>
         </div>
       </nav>
     </>

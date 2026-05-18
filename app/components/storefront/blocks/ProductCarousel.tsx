@@ -1,9 +1,9 @@
 import CarouselShowcase from "../../CarouselShowcase";
-import { PRODUCTS } from "@/lib/products";
+import { listProductsForPage } from "@/lib/storefront/catalogue";
 
-// Byte-parity wrapper: renders the real <CarouselShowcase> (the "New In" /
-// "Festive Edit" side-heading product row) using the same static catalog and
-// filter the original homepage used: PRODUCTS.filter(gender).slice(0, limit).
+// Renders the real <CarouselShowcase> ("New In" / "Festive Edit" side-heading
+// product row) from the LIVE DB catalogue (static-index ordered, so the order
+// matches the original) with the same gender/category/limit semantics.
 export default function ProductCarousel({
   title,
   ctaLabel,
@@ -21,7 +21,7 @@ export default function ProductCarousel({
   category?: string;
   limit?: number;
 }) {
-  let products = PRODUCTS;
+  let products = listProductsForPage();
   if (gender) products = products.filter((p) => p.gender === gender);
   if (category) products = products.filter((p) => p.category === category);
   const sliced = products.slice(0, limit ?? 6);

@@ -6,7 +6,13 @@ import TailoredPDP from "./TailoredPDP";
 import FabricPDP from "./FabricPDP";
 import "../../styles/product.css";
 
-export default function ProductPageClient({ product }: { product: Product }) {
+export default function ProductPageClient({
+  product,
+  related,
+}: {
+  product: Product;
+  related: Product[];
+}) {
   const router = useRouter();
   const isFabric = product.kind === "fabric";
 
@@ -26,7 +32,7 @@ export default function ProductPageClient({ product }: { product: Product }) {
 
       {isFabric
         ? <FabricPDP product={product} />
-        : <TailoredPDP product={product} setCurrentSlug={switchProduct} />}
+        : <TailoredPDP product={product} setCurrentSlug={switchProduct} related={related} />}
     </>
   );
 }

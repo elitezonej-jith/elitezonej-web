@@ -4,7 +4,9 @@ import MobileNav from "./MobileNav";
 import CartDrawer from "./CartDrawer";
 import SearchToggle from "./SearchToggle";
 import WishlistHeaderLink from "./WishlistHeaderLink";
-import { NAV } from "./nav-data";
+import { listProductsForPage } from "../../lib/storefront/catalogue";
+import { getStorefrontNav } from "../../lib/storefront/nav";
+import { getSiteSettings } from "../../lib/storefront/site-settings";
 
 // Filled-outline icons in the FontAwesome Pro Light visual family —
 // the same icon set Disturbia uses on its header. These are common
@@ -57,25 +59,28 @@ export function BagIcon() {
 }
 
 export default function Header() {
+  const nav = getStorefrontNav();
+  const products = listProductsForPage();
+  const s = getSiteSettings();
   return (
     <header className="site">
       {/* Row 1 — utility row */}
       <div className="header-top">
         <div className="header-left">
-          <MobileNav />
+          <MobileNav nav={nav} currencyLabel={`${s.currency} ${s.currencySymbol}`} />
           <Link className="util-link util-account" href="/account">
             <PersonIcon /> <span className="util-text">My Account</span>
           </Link>
           <button className="util-link util-currency" aria-label="Choose currency">
-            INR/₹ <ChevronDown />
+            {s.currency}/{s.currencySymbol} <ChevronDown />
           </button>
         </div>
 
         <div className="brand">
-          <Link href="/" className="brand-logo-link" aria-label="Elite Zone J — home">
+          <Link href="/" className="brand-logo-link" aria-label={`${s.brandName} — home`}>
             <Image
               src="/logo/wordmark-trimmed.png"
-              alt="Elite Zone J"
+              alt={s.brandName}
               width={892}
               height={116}
               priority
@@ -85,7 +90,7 @@ export default function Header() {
         </div>
 
         <div className="header-right">
-          <SearchToggle />
+          <SearchToggle products={products} />
           <WishlistHeaderLink />
           <CartDrawer />
         </div>
@@ -94,7 +99,7 @@ export default function Header() {
       {/* Row 2 — primary navigation */}
       <nav className="header-nav">
         <ul className="nav-primary">
-          {NAV.map((cat) => (
+          {nav.map((cat) => (
             <li key={cat.label} className={cat.groups ? "has-mega" : undefined}>
               <Link
                 href={cat.href}

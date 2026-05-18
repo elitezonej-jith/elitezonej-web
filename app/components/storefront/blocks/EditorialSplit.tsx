@@ -1,9 +1,9 @@
 import EditorialSplitView from "../../EditorialSplit";
-import { PRODUCTS } from "@/lib/products";
+import { listProductsForPage } from "@/lib/storefront/catalogue";
 
-// Byte-parity wrapper: renders the real <EditorialSplit> (image one side,
-// 6-up product grid the other) with the same static catalog the original
-// homepage used: PRODUCTS.filter(gender).slice(0, limit).
+// Renders the real <EditorialSplit> (image one side, 6-up product grid the
+// other) from the LIVE DB catalogue (static-index ordered) with the same
+// gender/limit semantics as before.
 export default function EditorialSplit({
   title,
   ctaLabel,
@@ -23,7 +23,7 @@ export default function EditorialSplit({
   gender?: string;
   limit?: number;
 }) {
-  let products = PRODUCTS;
+  let products = listProductsForPage();
   if (gender) products = products.filter((p) => p.gender === gender);
   const sliced = products.slice(0, limit ?? 6);
   return (

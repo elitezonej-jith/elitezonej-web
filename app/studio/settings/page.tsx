@@ -38,25 +38,27 @@ export default async function SettingsPage() {
           )}
         </div>
         <div className="stu-stack">
-          <section className="stu-card">
-            <header className="stu-card__head"><h3>Team</h3></header>
-            <div className="stu-card__body--flush">
-              <div className="stu-tbl-wrap">
-                <table className="stu-tbl">
-                  <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
-                  <tbody>
-                    {users.map((u) => (
-                      <tr key={u.id}>
-                        <td><strong>{u.name}</strong>{u.id === me.id ? " · you" : ""}</td>
-                        <td>{u.email}</td>
-                        <td><StatusTag tone={u.role === "owner" ? "brand" : "info"} label={u.role.toUpperCase()} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+          {me.role === "owner" && (
+            <section className="stu-card">
+              <header className="stu-card__head"><h3>Team</h3></header>
+              <div className="stu-card__body--flush">
+                <div className="stu-tbl-wrap">
+                  <table className="stu-tbl">
+                    <thead><tr><th>Name</th><th>Email</th><th>Role</th></tr></thead>
+                    <tbody>
+                      {users.map((u) => (
+                        <tr key={u.id}>
+                          <td><strong>{u.name}</strong>{u.id === me.id ? " · you" : ""}</td>
+                          <td>{u.email}</td>
+                          <td><StatusTag tone={u.role === "owner" ? "brand" : "info"} label={u.role.toUpperCase()} /></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
           <section className="stu-card">
             <header className="stu-card__head"><h3>Activity log</h3></header>
             <div className="stu-card__body" style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 380, overflow: "auto" }}>

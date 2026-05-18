@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Product, PRODUCTS } from "@/lib/products";
+import type { Product } from "@/lib/products";
 import { fmtINR } from "@/lib/format";
 import { ANGLES, ANGLE_LABELS, imgSrc } from "@/lib/images";
 import { useCart, lineId } from "../../components/CartProvider";
@@ -15,9 +15,10 @@ import Lightbox from "./Lightbox";
 type Props = {
   product: Product;
   setCurrentSlug: (slug: string) => void;
+  related: Product[];
 };
 
-export default function TailoredPDP({ product, setCurrentSlug }: Props) {
+export default function TailoredPDP({ product, setCurrentSlug, related }: Props) {
   const { addItem } = useCart();
   const [angleIdx, setAngleIdx] = useState(0);
   const [sizeOn, setSizeOn] = useState("");
@@ -55,7 +56,7 @@ export default function TailoredPDP({ product, setCurrentSlug }: Props) {
     setDeliveryDate(d.toLocaleDateString("en-IN", { weekday: "long", day: "2-digit", month: "long" }));
   }, []);
 
-  const others = PRODUCTS.filter(p => p.slug !== product.slug).slice(0, 3);
+  const others = related;
   const lightboxImages = ANGLES.map((a, i) => ({
     src: imgSrc(product.slug, a),
     alt: `${product.name} ${ANGLE_LABELS[i]}`,

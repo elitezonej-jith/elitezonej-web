@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import SearchOverlay from "./SearchOverlay";
+import type { Product } from "@/lib/products";
 
-export default function SearchToggle() {
+export default function SearchToggle({ products }: { products: Product[] }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -14,7 +15,7 @@ export default function SearchToggle() {
         </svg>
         <span className="icon-label">Search</span>
       </button>
-      <SearchOverlay open={open} onClose={() => setOpen(false)} />
+      <SearchOverlay open={open} onClose={() => setOpen(false)} products={products} />
     </>
   );
 }

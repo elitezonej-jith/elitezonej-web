@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import NewsletterForm from "./NewsletterForm";
 import FooterAccordion from "./FooterAccordion";
+import { getSiteSettings } from "../../lib/storefront/site-settings";
 
 // Social icons drawn in their conventional brand-recognisable silhouettes.
 // Generic shapes — not pixel-copies of any brand's mark file. We render in
@@ -66,14 +67,15 @@ function RatingBadge() {
 }
 
 export default function Footer({ minimal = false }: { minimal?: boolean }) {
+  const s = getSiteSettings();
   if (minimal) {
     return (
       <footer className="site site--minimal">
         <div className="foot-bottom-min">
           <Link href="/" className="foot-logo-link">
-            <Image src="/logo/lockup-trimmed.png" alt="Elite Zone J" width={860} height={227} style={{ height: "26px", width: "auto", display: "block" }} />
+            <Image src="/logo/lockup-trimmed.png" alt={s.brandName} width={860} height={227} style={{ height: "26px", width: "auto", display: "block" }} />
           </Link>
-          <span>© 2026 Elite Zone J</span>
+          <span>© 2026 {s.brandName}</span>
           <span>Visa · Mastercard · UPI · Net Banking · COD</span>
           <span>Designed and tailored in India</span>
         </div>
@@ -105,10 +107,10 @@ export default function Footer({ minimal = false }: { minimal?: boolean }) {
           </FooterAccordion>
 
           <FooterAccordion title="Company" className="foot-col-center">
-            <Link href="/" className="foot-logo-link" aria-label="Elite Zone J">
+            <Link href="/" className="foot-logo-link" aria-label={s.brandName}>
               <Image
                 src="/logo/lockup-trimmed.png"
-                alt="Elite Zone J"
+                alt={s.brandName}
                 width={860}
                 height={227}
                 className="foot-logo-img"
@@ -142,10 +144,10 @@ export default function Footer({ minimal = false }: { minimal?: boolean }) {
         {/* Mobile-only condensed strip — replaces the 3 stacked accordions
             with a single editorial block: logo, inline middot links, social. */}
         <div className="foot-mobile" aria-label="Footer">
-          <Link href="/" className="foot-mobile__logo" aria-label="Elite Zone J">
+          <Link href="/" className="foot-mobile__logo" aria-label={s.brandName}>
             <Image
               src="/logo/lockup-trimmed.png"
-              alt="Elite Zone J"
+              alt={s.brandName}
               width={860}
               height={227}
               className="foot-mobile__logo-img"
@@ -169,7 +171,7 @@ export default function Footer({ minimal = false }: { minimal?: boolean }) {
 
         <div className="foot-bottom">
           <div className="foot-bottom__copy">
-            © 2026 Elite Zone J · All rights reserved
+            © 2026 {s.brandName} · All rights reserved
           </div>
         </div>
       </footer>

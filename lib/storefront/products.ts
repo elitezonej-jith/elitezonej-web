@@ -39,7 +39,7 @@ function _getProduct(slug: string): StorefrontProduct | null {
   return decorate(product);
 }
 
-type ListFilter = {
+export type ListFilter = {
   gender?: "men" | "women" | "unisex";
   category?: string;
   sub?: string;

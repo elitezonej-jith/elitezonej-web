@@ -43,8 +43,12 @@ export default async function SettingsPage() {
         </>
       )}
 
-      <SectionRule kicker="Roll" title="Operators on the workbook" />
-      <UsersTable users={users} meId={me.id} canManage={me.role === "owner"} />
+      {me.role === "owner" && (
+        <>
+          <SectionRule kicker="Roll" title="Operators on the workbook" />
+          <UsersTable users={users} meId={me.id} canManage />
+        </>
+      )}
 
       <SectionRule kicker="Audit" title="The trail" />
       <div className="adm-panel adm-panel--ledger">
