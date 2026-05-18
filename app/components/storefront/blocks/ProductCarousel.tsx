@@ -1,38 +1,38 @@
-import Link from "next/link";
-import ProductCard from "../../ProductCard";
-import type { StorefrontProduct } from "../../../../lib/storefront/products";
-import type { Product } from "@/lib/products";
+import CarouselShowcase from "../../CarouselShowcase";
+import { PRODUCTS } from "@/lib/products";
 
-type RC = Record<string, unknown>;
-
+// Byte-parity wrapper: renders the real <CarouselShowcase> (the "New In" /
+// "Festive Edit" side-heading product row) using the same static catalog and
+// filter the original homepage used: PRODUCTS.filter(gender).slice(0, limit).
 export default function ProductCarousel({
-  title, cta, products,
+  title,
+  ctaLabel,
+  ctaHref,
+  headingSide,
+  gender,
+  category,
+  limit,
 }: {
-  title: string; cta?: RC; products: StorefrontProduct[];
+  title: string;
+  ctaLabel?: string;
+  ctaHref: string;
+  headingSide?: "left" | "right";
+  gender?: string;
+  category?: string;
+  limit?: number;
 }) {
-  if (!products.length) return null;
+  let products = PRODUCTS;
+  if (gender) products = products.filter((p) => p.gender === gender);
+  if (category) products = products.filter((p) => p.category === category);
+  const sliced = products.slice(0, limit ?? 6);
+  if (!sliced.length) return null;
   return (
-    <section style={{ padding: "64px 5vw 48px" }}>
-      <header style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 24, gap: 16 }}>
-        <h2 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: "clamp(24px, 3vw, 36px)", fontWeight: 500, margin: 0 }}>
-          {title}
-        </h2>
-        {cta?.href ? (
-          <Link href={String(cta.href)}
-                style={{ fontSize: 11, letterSpacing: "0.18em", textTransform: "uppercase", color: "#7A1C1C", textDecoration: "none", borderBottom: "1px solid currentColor", paddingBottom: 3 }}>
-            {String(cta.label ?? "View all")} →
-          </Link>
-        ) : null}
-      </header>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(auto-fill, minmax(240px, 1fr))`,
-        gap: "24px 16px",
-      }}>
-        {products.map((prod) => (
-          <ProductCard key={prod.slug} p={prod as unknown as Product} />
-        ))}
-      </div>
-    </section>
+    <CarouselShowcase
+      title={title}
+      ctaLabel={ctaLabel}
+      ctaHref={ctaHref}
+      products={sliced}
+      headingSide={headingSide}
+    />
   );
 }

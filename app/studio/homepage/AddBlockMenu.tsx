@@ -5,6 +5,7 @@ import { useModalA11y } from "../../components/useModalA11y";
 import { IconPlus } from "../components/Icons";
 
 const OPTIONS: Array<{ value: string; label: string; sub: string }> = [
+  { value: "announce_bar", label: "Announce bar", sub: "Scrolling ticker above the header" },
   { value: "hero_grid", label: "Hero grid", sub: "Three image tiles, top of page" },
   { value: "hero_banner", label: "Hero banner", sub: "Single full-width image with text" },
   { value: "product_carousel", label: "Product carousel", sub: "Auto from filter (e.g. featured, new)" },
@@ -16,6 +17,7 @@ const OPTIONS: Array<{ value: string; label: string; sub: string }> = [
   { value: "bespoke_teaser", label: "Bespoke teaser", sub: "Quiet text block with CTA" },
   { value: "trust_strip", label: "Trust strip", sub: "Free shipping / mending / etc." },
   { value: "category_grid", label: "Category grid", sub: "Browse by category" },
+  { value: "promo_modal", label: "Promo modal", sub: "15%-off sticker + popup form" },
   { value: "custom_html", label: "Custom HTML", sub: "Free-form markup" },
 ];
 

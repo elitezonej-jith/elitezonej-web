@@ -1,26 +1,58 @@
-type Step = { kicker?: unknown; title?: unknown; body?: unknown; image?: unknown };
+import Link from "next/link";
+import Reveal from "../../Reveal";
 
-export default function ProcessStrip({ steps }: { steps: Step[] }) {
-  if (!steps.length) return null;
+type RC = Record<string, unknown>;
+
+// Byte-parity wrapper: renders the original "How it's made" process strip
+// (.process-strip) exactly as it appeared on the homepage.
+export default function ProcessStrip({ cfg }: { cfg: RC }) {
+  const panes = (cfg.panes as RC[]) ?? [];
+  const titlePre = String(cfg.titlePre ?? "");
+  const titleEm = String(cfg.titleEm ?? "");
+  const titlePost = String(cfg.titlePost ?? "");
+  const kicker = String(cfg.kicker ?? "");
+  const hint = String(cfg.hint ?? "");
+  const footText = String(cfg.footText ?? "");
+  const ctaLabel = String(cfg.ctaLabel ?? "");
+  const ctaHref = String(cfg.ctaHref ?? "");
+  const ariaLabel = String(cfg.ariaLabel ?? "How it's made");
+  if (!panes.length) return null;
   return (
-    <section style={{ padding: "64px 5vw 48px", background: "#F2EDE4" }}>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(220px, 1fr))`, gap: 32 }}>
-        {steps.map((s, i) => {
-          const image = String(s.image ?? "");
-          return (
-            <div key={i}>
-              {image && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={image} alt="" style={{ width: "100%", aspectRatio: "4/3", objectFit: "cover", display: "block" }} />
-              )}
-              <div style={{ padding: "16px 0 0" }}>
-                {s.kicker ? <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: "#7A1C1C" }}>{String(s.kicker)}</span> : null}
-                <h3 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: 22, fontWeight: 500, margin: "8px 0 6px" }}>{String(s.title ?? "")}</h3>
-                {s.body ? <p style={{ fontSize: 14, color: "#55493E", margin: 0, maxWidth: "32ch" }}>{String(s.body)}</p> : null}
-              </div>
+    <section className="process-strip" aria-label={ariaLabel}>
+      <div className="process-strip__head">
+        <Reveal as="div" className="process-strip__lead">
+          <h2 className="process-strip__title">
+            {titlePre}<em>{titleEm}</em>{titlePost}
+          </h2>
+          <p className="process-strip__kicker">{kicker}</p>
+          <span className="process-strip__rule" aria-hidden="true" />
+        </Reveal>
+        <span className="process-strip__hint t-mono-xs" aria-hidden="true">
+          <span className="dot" />
+          {hint}
+        </span>
+      </div>
+
+      <div className="process-strip__rail" tabIndex={0} aria-roledescription="carousel">
+        {panes.map((p, i) => (
+          <article className="process-pane" key={i}>
+            <div
+              className={`process-pane__photo ${String(p.photoClass ?? "")}`}
+              role="img"
+              aria-label={String(p.photoAria ?? "")}
+            />
+            <div className="process-pane__body">
+              <span className="process-pane__step t-mono-xs">{String(p.step ?? "")}</span>
+              <h3>{String(p.title ?? "")}</h3>
+              <p>{String(p.body ?? "")}</p>
             </div>
-          );
-        })}
+          </article>
+        ))}
+      </div>
+
+      <div className="process-strip__foot">
+        <span className="t-mono-xs">{footText}</span>
+        <Link className="btn btn-secondary" href={ctaHref}>{ctaLabel}</Link>
       </div>
     </section>
   );

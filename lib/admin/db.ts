@@ -86,6 +86,49 @@ function ensureDefaultAdmin(db: Database.Database): void {
     );
 }
 
+// Studio-defaults seed version tracking. The parity homepage seed lives in
+// seed-studio.ts (SEED_VERSION). On a version bump, existing dev DBs get the
+// new parity blocks by wiping + re-seeding studio defaults once.
+function getSeedVersion(db: Database.Database): number {
+  try {
+    const r = db
+      .prepare("SELECT value FROM settings WHERE key = 'home_seed_version'")
+      .get() as { value: string } | undefined;
+    return r ? Number(r.value) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function setSeedVersion(db: Database.Database, v: number): void {
+  db.prepare(
+    "INSERT INTO settings (key, value) VALUES ('home_seed_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+  ).run(String(v));
+}
+
+function reseedStudioIfStale(db: Database.Database): void {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { seedStudioDefaults, SEED_VERSION } =
+    require("./seed-studio") as typeof import("./seed-studio");
+  const blockCount = (db
+    .prepare("SELECT COUNT(*) as n FROM homepage_blocks")
+    .get() as { n: number }).n;
+  if (blockCount > 0 && getSeedVersion(db) >= SEED_VERSION) return;
+  // Dev-only parity refresh: studio defaults (homepage blocks + sample banners
+  // + welcome notice) are regenerated as a set so the homepage stays 1:1 with
+  // the intended design after a seed bump.
+  const tx = db.transaction(() => {
+    db.exec("DELETE FROM homepage_blocks; DELETE FROM banners; DELETE FROM notices;");
+    seedStudioDefaults(db);
+    setSeedVersion(db, SEED_VERSION);
+  });
+  try {
+    tx();
+  } catch (e) {
+    console.warn("[db] studio reseed skipped:", (e as Error).message);
+  }
+}
+
 // On Vercel (and any serverless host with a read-only filesystem) we cannot
 // write a SQLite file, so fall back to an in-memory DB that re-seeds on every
 // cold start. The UI behaves identically; mutations just don't survive a
@@ -141,20 +184,14 @@ function open(): Database.Database {
     seedFromCatalog(db);
     const { seedFixtures } = require("./seed-fixtures");
     seedFixtures(db);
-    const { seedStudioDefaults } = require("./seed-studio");
+    const { seedStudioDefaults, SEED_VERSION } =
+      require("./seed-studio") as typeof import("./seed-studio");
     seedStudioDefaults(db);
+    setSeedVersion(db, SEED_VERSION);
   } else {
-    // Schema v2 may have been added on an older DB — top up homepage_blocks /
-    // banners / notices defaults idempotently.
-    const blockCount = (db.prepare("SELECT COUNT(*) as n FROM homepage_blocks").get() as { n: number }).n;
-    if (blockCount === 0) {
-      try {
-        const { seedStudioDefaults } = require("./seed-studio");
-        seedStudioDefaults(db);
-      } catch {
-        /* no-op */
-      }
-    }
+    // Existing DB: refresh studio defaults if the parity seed version moved
+    // (or the homepage has no blocks yet after a schema-v2 upgrade).
+    reseedStudioIfStale(db);
   }
 
   return db;

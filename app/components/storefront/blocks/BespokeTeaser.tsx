@@ -1,27 +1,27 @@
 import Link from "next/link";
+import Reveal from "../../Reveal";
 
 type RC = Record<string, unknown>;
 
-export default function BespokeTeaser({
-  headline, body, cta,
-}: {
-  headline: string; body: string; cta?: RC;
-}) {
+// Byte-parity wrapper: renders the original bespoke teaser (.bespoke-teaser)
+// exactly as it appeared on the homepage.
+export default function BespokeTeaser({ cfg }: { cfg: RC }) {
+  const ix = String(cfg.ix ?? "");
+  const headlinePre = String(cfg.headlinePre ?? "");
+  const headlineEm = String(cfg.headlineEm ?? "");
+  const body = String(cfg.body ?? "");
+  const ctaLabel = String(cfg.ctaLabel ?? "");
+  const ctaHref = String(cfg.ctaHref ?? "");
   return (
-    <section style={{ padding: "80px 5vw", background: "#FAF7F2", textAlign: "center" }}>
-      <h2 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: "clamp(26px, 3vw, 40px)", lineHeight: 1.1, fontWeight: 500, margin: 0, maxWidth: "32ch", marginLeft: "auto", marginRight: "auto" }}>
-        {headline}
-      </h2>
-      {body && <p style={{ marginTop: 14, fontSize: 16, color: "#55493E", maxWidth: "52ch", margin: "14px auto 0" }}>{body}</p>}
-      {cta?.href ? (
-        <div style={{ marginTop: 24 }}>
-          <Link href={String(cta.href)}
-                style={{ display: "inline-block", padding: "12px 28px", background: "#1A1613", color: "#FAF7F2",
-                         fontSize: 12, letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 500, textDecoration: "none" }}>
-            {String(cta.label ?? "Begin")}
-          </Link>
+    <section className="bespoke-teaser">
+      <div className="row">
+        <div>
+          <div className="ix t-mono-xs">{ix}</div>
+          <Reveal as="h3">{headlinePre}<em>{headlineEm}</em></Reveal>
+          <Reveal as="p" delay={1} className="t-body-lg">{body}</Reveal>
         </div>
-      ) : null}
+        <Link className="btn btn-lg" href={ctaHref}>{ctaLabel}</Link>
+      </div>
     </section>
   );
 }

@@ -1,10 +1,15 @@
 // Server component — reads homepage_blocks from the admin DB and renders the
-// matching component per block. Drives the entire homepage from /studio/homepage.
+// matching component per block, fully driving the homepage from
+// /studio/homepage. Site chrome (Header/Footer) is fixed and placed here so
+// the DOM/visual order matches the original hardcoded homepage exactly:
+//   announce_bar block(s) → <Header/> → promo_modal block(s) →
+//   remaining blocks in sort order → <Footer/>
 
 import { listBlocks, type HomepageBlockResolved } from "../../../lib/admin/repos/homepage";
-import { listProducts } from "../../../lib/storefront/products";
 import { listFlashSales } from "../../../lib/admin/repos/flash-sales";
 import { listBanners } from "../../../lib/admin/repos/banners";
+import Header from "../Header";
+import Footer from "../Footer";
 import HeroGridDynamic from "./blocks/HeroGridDynamic";
 import BannerCarousel from "./blocks/BannerCarousel";
 import ProductCarousel from "./blocks/ProductCarousel";
@@ -18,7 +23,8 @@ import BespokeTeaser from "./blocks/BespokeTeaser";
 import CategoryGrid from "./blocks/CategoryGrid";
 import FlashSaleBanner from "./blocks/FlashSaleBanner";
 import CustomHtml from "./blocks/CustomHtml";
-import type { StorefrontProduct } from "../../../lib/storefront/products";
+import AnnounceBar from "./blocks/AnnounceBar";
+import PromoModalBlock from "./blocks/PromoModalBlock";
 
 type RC = Record<string, unknown>;
 
@@ -27,12 +33,26 @@ export default function HomepageRenderer() {
   const liveSale = listFlashSales({ onlyLive: true })[0];
   const banners = listBanners({ onlyPublished: true });
 
+  const announce = blocks.filter((b) => b.type === "announce_bar");
+  const promos = blocks.filter((b) => b.type === "promo_modal");
+  const rest = blocks.filter(
+    (b) => b.type !== "announce_bar" && b.type !== "promo_modal",
+  );
+
   return (
     <>
       {liveSale && <FlashSaleBanner sale={liveSale} />}
-      {blocks.map((b) => (
+      {announce.map((b) => (
         <Block key={b.id} block={b} banners={banners} />
       ))}
+      <Header />
+      {promos.map((b) => (
+        <Block key={b.id} block={b} banners={banners} />
+      ))}
+      {rest.map((b) => (
+        <Block key={b.id} block={b} banners={banners} />
+      ))}
+      <Footer />
     </>
   );
 }
@@ -45,41 +65,63 @@ function Block({
 }) {
   const cfg = block.config as RC;
   switch (block.type) {
+    case "announce_bar":
+      return <AnnounceBar cfg={cfg} />;
+    case "promo_modal":
+      return <PromoModalBlock cfg={cfg} />;
     case "hero_grid":
-      return <HeroGridDynamic tiles={(cfg.tiles as Array<RC>) ?? []} />;
+      return <HeroGridDynamic tiles={(cfg.tiles as RC[]) ?? []} />;
     case "hero_banner":
     case "full_banner":
-      return <FullBanner title={String(cfg.headline ?? "")} body={String(cfg.body ?? "")} image={String(cfg.image ?? "")} cta={cfg.cta as RC} variant={block.type} />;
+      return <FullBanner cfg={cfg} />;
     case "banner_carousel":
       return <BannerCarousel banners={banners} autoplay={Number(cfg.autoplay_seconds ?? 6)} />;
     case "product_carousel": {
       const f = (cfg.filter as RC) ?? {};
-      const prods = listProducts({
-        kind: (f.kind as "tailored" | "fabric" | undefined) || undefined,
-        gender: (f.gender as "men" | "women" | "unisex" | undefined) || undefined,
-        category: (f.category as string | undefined) || undefined,
-        featured: f.featured === true,
-        limit: Number(f.limit ?? 6),
-      });
-      return <ProductCarousel title={block.title} cta={cfg.cta as RC} products={prods as unknown as StorefrontProduct[]} />;
+      const cta = (cfg.cta as RC) ?? {};
+      return (
+        <ProductCarousel
+          title={block.title}
+          ctaLabel={cfg.ctaLabel ? String(cfg.ctaLabel) : (cta.label ? String(cta.label) : undefined)}
+          ctaHref={String(cfg.ctaHref ?? cta.href ?? "/collection")}
+          headingSide={(cfg.headingSide as "left" | "right" | undefined) ?? "left"}
+          gender={f.gender ? String(f.gender) : undefined}
+          category={f.category ? String(f.category) : undefined}
+          limit={Number(f.limit ?? 6)}
+        />
+      );
     }
-    case "editorial_split":
-      return <EditorialSplit
-                image={String(cfg.image ?? "")}
-                headline={String(cfg.headline ?? "")}
-                body={String(cfg.body ?? "")}
-                link={cfg.link as RC}
-                align={(cfg.align as "left" | "right" | undefined) ?? "left"} />;
+    case "editorial_split": {
+      const f = (cfg.filter as RC) ?? {};
+      return (
+        <EditorialSplit
+          title={String(cfg.title ?? block.title)}
+          ctaLabel={String(cfg.ctaLabel ?? "")}
+          ctaHref={String(cfg.ctaHref ?? "")}
+          image={String(cfg.image ?? "")}
+          imageAlt={String(cfg.imageAlt ?? "")}
+          imageSide={(cfg.imageSide as "left" | "right" | undefined) ?? "left"}
+          gender={f.gender ? String(f.gender) : undefined}
+          limit={Number(f.limit ?? 6)}
+        />
+      );
+    }
     case "service_cards":
-      return <ServiceCards cards={(cfg.cards as Array<RC>) ?? []} />;
+      return (
+        <ServiceCards
+          cards={(cfg.items as RC[]) ?? (cfg.cards as RC[]) ?? []}
+          heading={cfg.heading ? String(cfg.heading) : undefined}
+          meta={cfg.meta ? String(cfg.meta) : undefined}
+        />
+      );
     case "process_strip":
-      return <ProcessStrip steps={(cfg.steps as Array<RC>) ?? []} />;
+      return <ProcessStrip cfg={cfg} />;
     case "trust_strip":
-      return <TrustStrip items={(cfg.items as Array<RC>) ?? []} />;
+      return <TrustStrip />;
     case "wedding_editorial":
-      return <WeddingEditorial image={String(cfg.image ?? "")} headline={String(cfg.headline ?? "")} body={String(cfg.body ?? "")} cta={cfg.cta as RC} />;
+      return <WeddingEditorial cfg={cfg} />;
     case "bespoke_teaser":
-      return <BespokeTeaser headline={String(cfg.headline ?? "")} body={String(cfg.body ?? "")} cta={cfg.cta as RC} />;
+      return <BespokeTeaser cfg={cfg} />;
     case "category_grid":
       return <CategoryGrid categories={(cfg.categories as Array<RC>) ?? []} />;
     case "custom_html":

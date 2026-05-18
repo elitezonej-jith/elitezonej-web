@@ -3,7 +3,18 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const TILES = [
+export type HeroTile = {
+  eyebrow: string;
+  title: string;
+  sub: string;
+  cta: string;
+  href: string;
+  img: string;
+  pos: string;
+  veil: string;
+};
+
+const DEFAULT_TILES: HeroTile[] = [
   {
     eyebrow: "House · 2026",
     title: "Premium\nCollection",
@@ -34,12 +45,13 @@ const TILES = [
     pos: "center center",
     veil: "right",
   },
-] as const;
+];
 
 const SLIDE_MS = 5000;
 const RESUME_AFTER_MS = 8000;
 
-export default function HeroGrid() {
+export default function HeroGrid({ tiles = DEFAULT_TILES }: { tiles?: HeroTile[] }) {
+  const TILES = tiles.length ? tiles : DEFAULT_TILES;
   const railRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [progress, setProgress] = useState(0); // 0–1, fills active dot

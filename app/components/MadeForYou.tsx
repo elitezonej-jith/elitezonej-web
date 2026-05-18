@@ -4,7 +4,17 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Reveal from "./Reveal";
 
-const ITEMS = [
+export type MadeForYouItem = {
+  href: string;
+  photo: string;
+  alt: string;
+  eyebrow: string;
+  title: string;
+  body: string;
+  cta: string;
+};
+
+const DEFAULT_ITEMS: MadeForYouItem[] = [
   {
     href: "/bespoke",
     photo: "mfy-1",
@@ -32,12 +42,21 @@ const ITEMS = [
     body: "Premium cotton, poplin, and linen. Cut to your measurements, delivered in five days. From ₹2,800.",
     cta: "Order yours",
   },
-] as const;
+];
 
 const SLIDE_MS = 5000;
 const RESUME_AFTER_MS = 8000;
 
-export default function MadeForYou() {
+export default function MadeForYou({
+  items,
+  heading = "Made for you",
+  meta = "Section · 01",
+}: {
+  items?: MadeForYouItem[];
+  heading?: string;
+  meta?: string;
+}) {
+  const ITEMS = items && items.length ? items : DEFAULT_ITEMS;
   const railRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -208,8 +227,8 @@ export default function MadeForYou() {
     <section className="mfy">
       <div className="container mfy-container">
         <div className="sec-head">
-          <Reveal as="h2" className="t-display-lg">Made for you</Reveal>
-          <span className="meta t-mono-xs">Section · 01</span>
+          <Reveal as="h2" className="t-display-lg">{heading}</Reveal>
+          <span className="meta t-mono-xs">{meta}</span>
         </div>
 
         <div className="grid mfy-rail" ref={railRef} role="region" aria-roledescription="carousel" aria-label="Made for you services">

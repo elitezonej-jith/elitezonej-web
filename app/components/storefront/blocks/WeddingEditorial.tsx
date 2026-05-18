@@ -1,33 +1,33 @@
 import Link from "next/link";
+import Reveal from "../../Reveal";
 
 type RC = Record<string, unknown>;
 
-export default function WeddingEditorial({
-  image, headline, body, cta,
-}: {
-  image: string; headline: string; body: string; cta?: RC;
-}) {
+// Byte-parity wrapper: renders the original "The Wedding Wardrobe" editorial
+// section (.editorial) exactly as it appeared on the homepage.
+export default function WeddingEditorial({ cfg }: { cfg: RC }) {
+  const ix = String(cfg.ix ?? "");
+  const headlinePre = String(cfg.headlinePre ?? "");
+  const headlineEm = String(cfg.headlineEm ?? "");
+  const headlinePost = String(cfg.headlinePost ?? "");
+  const paras = (cfg.paras as unknown[])?.map(String) ?? [];
+  const ctaLabel = String(cfg.ctaLabel ?? "");
+  const ctaHref = String(cfg.ctaHref ?? "");
+  const signed = String(cfg.signed ?? "");
+  const imgAria = String(cfg.imgAria ?? "");
   return (
-    <section style={{ position: "relative", width: "100%", aspectRatio: "21/9", maxHeight: "70vh", overflow: "hidden", background: "#1A1613" }}>
-      {image && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={image} alt="" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-      )}
-      <div style={{
-        position: "absolute", inset: 0,
-        display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "flex-start",
-        padding: "6%", color: "#FAF7F2",
-        background: "linear-gradient(120deg, rgba(0,0,0,0.45), rgba(0,0,0,0.05))",
-      }}>
-        <h2 style={{ fontFamily: '"Cormorant Garamond", serif', fontSize: "clamp(28px, 4vw, 56px)", fontWeight: 500, margin: 0, lineHeight: 1.05 }}>{headline}</h2>
-        {body && <p style={{ marginTop: 12, maxWidth: "60ch", fontSize: 15 }}>{body}</p>}
-        {cta?.href ? (
-          <Link href={String(cta.href)}
-                style={{ marginTop: 22, padding: "12px 24px", background: "#FAF7F2", color: "#1A1613",
-                         fontSize: 12, letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 500, textDecoration: "none" }}>
-            {String(cta.label ?? "Shop")}
-          </Link>
-        ) : null}
+    <section className="editorial" id="editorial">
+      <div className="img" role="img" aria-label={imgAria}></div>
+      <div className="copy">
+        <div className="ix t-mono-xs">{ix}</div>
+        <Reveal as="h3">{headlinePre}<em>{headlineEm}</em>{headlinePost}</Reveal>
+        {paras.map((p, i) => (
+          <Reveal as="p" key={i} delay={(i + 1) as 1 | 2 | 3 | 4} className="t-body">
+            {p}
+          </Reveal>
+        ))}
+        <Link className="btn btn-secondary" href={ctaHref} style={{ alignSelf: "flex-start", marginTop: "var(--s-3)" }}>{ctaLabel}</Link>
+        <div className="signed t-mono-xs">{signed}</div>
       </div>
     </section>
   );

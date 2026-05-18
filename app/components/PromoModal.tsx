@@ -3,12 +3,45 @@
 import { useCallback, useEffect, useState } from "react";
 import { useModalA11y } from "./useModalA11y";
 
-const COUNTRIES = [
+const DEFAULT_COUNTRIES = [
   "India", "United Kingdom", "United States", "United Arab Emirates",
   "Canada", "Australia", "Singapore", "Germany", "France", "Other",
 ];
 
-export default function PromoModal() {
+export type PromoModalProps = {
+  stickerLabel?: string;
+  heading?: string;
+  deck?: string;
+  submitLabel?: string;
+  finePrint?: string;
+  successHeading?: string;
+  successBody?: string;
+  countries?: string[];
+};
+
+// Split a multi-line string into React nodes joined by <br/>, preserving the
+// original markup (the static homepage used literal <br/> between lines).
+function withBreaks(text: string): React.ReactNode {
+  const parts = text.split("\n");
+  return parts.map((p, i) => (
+    <span key={i}>
+      {p}
+      {i < parts.length - 1 ? <br /> : null}
+    </span>
+  ));
+}
+
+export default function PromoModal({
+  stickerLabel = "15% OFF",
+  heading = "Take 15% off\nyour first order",
+  deck = "Join the Elite Zone J mailing list\nfor exclusive VIP offers and more.",
+  submitLabel = "Subscribe and save 15%",
+  finePrint = "*15% off your first order is valid on full-priced items only and cannot be used in conjunction with sale items or any other promotional codes.",
+  successHeading = "Welcome.",
+  successBody = "Thanks for joining — we'll email your 15% code to {email} shortly.",
+  countries = DEFAULT_COUNTRIES,
+}: PromoModalProps = {}) {
+  const COUNTRIES = countries.length ? countries : DEFAULT_COUNTRIES;
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [email, setEmail] = useState("");
@@ -50,7 +83,7 @@ export default function PromoModal() {
             onClick={() => setOpen(true)}
             aria-label="Open 15% off offer"
           >
-            15% OFF
+            {stickerLabel}
           </button>
           <button
             className="promo-sticker-dismiss"
@@ -85,15 +118,21 @@ export default function PromoModal() {
 
         {submitted ? (
           <div className="promo-thanks">
-            <h2>Welcome.</h2>
-            <p>Thanks for joining — we&apos;ll email your 15% code to {email} shortly.</p>
+            <h2>{successHeading}</h2>
+            <p>
+              {successBody.split("{email}").map((seg, i, arr) => (
+                <span key={i}>
+                  {seg}
+                  {i < arr.length - 1 ? email : null}
+                </span>
+              ))}
+            </p>
           </div>
         ) : (
           <form className="promo-form" onSubmit={onSubmit}>
-            <h2>Take 15% off<br/>your first order</h2>
+            <h2>{withBreaks(heading)}</h2>
             <p className="promo-deck">
-              Join the Elite Zone J mailing list<br/>
-              for exclusive VIP offers and more.
+              {withBreaks(deck)}
             </p>
             <input
               type="email" required placeholder="Email"
@@ -117,9 +156,9 @@ export default function PromoModal() {
                 onBlur={e => { if (!e.target.value) e.target.type = "text"; }}
               />
             </div>
-            <button type="submit" className="promo-submit">Subscribe and save 15%</button>
+            <button type="submit" className="promo-submit">{submitLabel}</button>
             <p className="promo-fineprint">
-              *15% off your first order is valid on full-priced items only and cannot be used in conjunction with sale items or any other promotional codes.
+              {finePrint}
             </p>
           </form>
         )}

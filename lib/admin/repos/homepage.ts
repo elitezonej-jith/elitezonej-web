@@ -6,6 +6,7 @@ export type HomepageBlockType =
   | "product_carousel" | "editorial_split" | "service_cards"
   | "process_strip" | "full_banner" | "trust_strip"
   | "wedding_editorial" | "bespoke_teaser" | "category_grid"
+  | "announce_bar" | "promo_modal"
   | "custom_html";
 
 export type HomepageBlock = {

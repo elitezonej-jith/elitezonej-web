@@ -12,7 +12,8 @@ import { logAudit } from "../../../lib/admin/repos/audit";
 const VALID_TYPES: HomepageBlockType[] = [
   "hero_grid","hero_banner","banner_carousel","product_carousel",
   "editorial_split","service_cards","process_strip","full_banner",
-  "trust_strip","wedding_editorial","bespoke_teaser","category_grid","custom_html",
+  "trust_strip","wedding_editorial","bespoke_teaser","category_grid",
+  "announce_bar","promo_modal","custom_html",
 ];
 
 const NewBlockSchema = z.object({
@@ -119,6 +120,19 @@ function defaultConfigFor(type: HomepageBlockType): Record<string, unknown> {
       return { headline: "From sketch to fitting in seven days.", body: "", cta: { label: "Begin a fitting", href: "/bespoke" } };
     case "category_grid":
       return { categories: [] };
+    case "announce_bar":
+      return { ariaLabel: "", items: [{ text: "", accent: "" }] };
+    case "promo_modal":
+      return {
+        stickerLabel: "15% OFF",
+        heading: "Take 15% off\nyour first order",
+        deck: "Join the Elite Zone J mailing list\nfor exclusive VIP offers and more.",
+        submitLabel: "Subscribe and save 15%",
+        finePrint: "*15% off your first order is valid on full-priced items only and cannot be used in conjunction with sale items or any other promotional codes.",
+        successHeading: "Welcome.",
+        successBody: "Thanks for joining — we'll email your 15% code to {email} shortly.",
+        countries: ["India", "United Kingdom", "United States", "Other"],
+      };
     case "banner_carousel":
       return { autoplay_seconds: 6 };
     case "custom_html":
