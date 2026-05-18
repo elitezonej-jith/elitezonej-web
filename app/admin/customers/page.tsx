@@ -6,6 +6,7 @@ import EmptyState from "../components/EmptyState";
 import Folio from "../components/Folio";
 import FilterBar from "../components/FilterBar";
 import { rupees, dateShort } from "../../../lib/admin/format";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Customers · Atelier" };
@@ -20,6 +21,7 @@ function buildHref(qs: Record<string, string | undefined>): string {
 }
 
 export default async function CustomersListPage({ searchParams }: SP) {
+  await requireUser();
   const sp = await searchParams;
   const q = sp.q;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);

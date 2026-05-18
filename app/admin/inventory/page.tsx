@@ -5,6 +5,7 @@ import EditorsNote from "../components/EditorsNote";
 import StatusPill from "../components/StatusPill";
 import EmptyState from "../components/EmptyState";
 import { getSetting } from "../../../lib/admin/repos/settings";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Inventory · Atelier" };
@@ -12,6 +13,7 @@ export const metadata = { title: "Inventory · Atelier" };
 type SP = { searchParams: Promise<{ kind?: string }> };
 
 export default async function InventoryPage({ searchParams }: SP) {
+  await requireUser();
   const sp = await searchParams;
   const kind = sp.kind === "fabric" ? "fabric" : "tailored";
   const rows = getStockMatrix({ kind });

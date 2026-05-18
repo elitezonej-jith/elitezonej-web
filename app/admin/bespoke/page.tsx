@@ -8,6 +8,7 @@ import Folio from "../components/Folio";
 import FilterBar, { type FilterChip } from "../components/FilterBar";
 import { dateShort } from "../../../lib/admin/format";
 import type { BookingStatus } from "../../../lib/admin/types";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Bespoke · Atelier" };
@@ -23,6 +24,7 @@ function buildHref(qs: Record<string, string | undefined>): string {
 }
 
 export default async function BespokeListPage({ searchParams }: SP) {
+  await requireUser();
   const sp = await searchParams;
   const q = sp.q;
   const status = sp.status as BookingStatus | undefined;

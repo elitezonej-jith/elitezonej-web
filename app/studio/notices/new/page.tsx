@@ -1,10 +1,12 @@
 import Link from "next/link";
 import PageHead from "../../components/PageHead";
 import NoticeForm from "../[id]/NoticeForm";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const metadata = { title: "New notice · Studio" };
 
-export default function NewNoticePage() {
+export default async function NewNoticePage() {
+  await requireUser("/studio/login");
   return (
     <div className="stu-page stu-page--narrow">
       <PageHead title="New notice" sub="Pick a type, write the message, and decide when it should run."

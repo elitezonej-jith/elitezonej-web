@@ -8,6 +8,7 @@ import FilterBar, { type Chip } from "../components/FilterBar";
 import { dateShort } from "../../../lib/admin/format";
 import { IconScissors } from "../components/Icons";
 import type { BookingStatus } from "../../../lib/admin/types";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Bespoke leads · Studio" };
@@ -22,6 +23,7 @@ function href(qs: Record<string, string | undefined>): string {
 }
 
 export default async function BespokePage({ searchParams }: SP) {
+  await requireUser("/studio/login");
   const sp = await searchParams;
   const status = sp.status as BookingStatus | undefined;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);

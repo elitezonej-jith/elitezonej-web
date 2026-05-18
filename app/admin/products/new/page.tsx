@@ -2,10 +2,12 @@ import Link from "next/link";
 import PageHead from "../../components/PageHead";
 import EditorsNote from "../../components/EditorsNote";
 import NewProductForm from "./NewProductForm";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const metadata = { title: "New piece · Atelier" };
 
-export default function NewProductPage() {
+export default async function NewProductPage() {
+  await requireUser();
   return (
     <div className="adm-page">
       <EditorsNote body="A blank entry. Fill in the fundamentals — name, slug, price — and revise the rest after the photoshoot lands." />

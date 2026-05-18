@@ -4,11 +4,13 @@ import { getCustomer, getCustomerOrders } from "../../../../lib/admin/repos/cust
 import PageHead from "../../components/PageHead";
 import StatusTag from "../../components/StatusTag";
 import { rupees, dateShort } from "../../../../lib/admin/format";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 type Params = { params: Promise<{ id: string }> };
 
 export default async function CustomerDetailPage({ params }: Params) {
+  await requireUser("/studio/login");
   const { id } = await params;
   const c = getCustomer(Number(id));
   if (!c) notFound();

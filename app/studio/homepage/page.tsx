@@ -6,6 +6,7 @@ import { FlashToast } from "../components/Toast";
 import HomepageList from "./HomepageList";
 import AddBlockMenu from "./AddBlockMenu";
 import { IconLayers } from "../components/Icons";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Homepage · Studio" };
@@ -13,6 +14,7 @@ export const metadata = { title: "Homepage · Studio" };
 type SP = { searchParams: Promise<{ flash?: string }> };
 
 export default async function HomepagePage({ searchParams }: SP) {
+  await requireUser("/studio/login");
   const blocks = listBlocks();
   const sp = await searchParams;
   return (

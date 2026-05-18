@@ -5,11 +5,13 @@ import PageHead from "../../components/PageHead";
 import StatusTag from "../../components/StatusTag";
 import OrderControls from "./OrderControls";
 import { rupees, dateTime } from "../../../../lib/admin/format";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 type Params = { params: Promise<{ id: string }> };
 
 export default async function OrderDetailPage({ params }: Params) {
+  await requireUser("/studio/login");
   const { id } = await params;
   const order = getOrder(id);
   if (!order) notFound();

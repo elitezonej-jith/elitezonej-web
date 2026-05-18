@@ -6,6 +6,7 @@ import StatusTag from "../../components/StatusTag";
 import { FlashToast } from "../../components/Toast";
 import CategoryForm from "./CategoryForm";
 import CategoryDangerZone from "./CategoryDangerZone";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,7 @@ type Cat = {
 };
 
 export default async function EditCategoryPage({ params, searchParams }: Params) {
+  await requireUser("/studio/login");
   const { id } = await params;
   const { saved } = await searchParams;
   const cat = getDb().prepare("SELECT * FROM categories WHERE id = ?").get(Number(id)) as Cat | undefined;

@@ -9,12 +9,14 @@ import StatusTag from "../../components/StatusTag";
 import { FlashToast } from "../../components/Toast";
 import OfferForm from "./OfferForm";
 import OfferDangerZone from "./OfferDangerZone";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ code: string }>; searchParams: Promise<{ saved?: string }> };
 
 export default async function EditOfferPage({ params, searchParams }: Params) {
+  await requireUser("/studio/login");
   const { code } = await params;
   const { saved } = await searchParams;
   const promo = getPromotion(code.toUpperCase());

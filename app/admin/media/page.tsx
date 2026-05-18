@@ -3,6 +3,7 @@ import PageHead from "../components/PageHead";
 import EditorsNote from "../components/EditorsNote";
 import EmptyState from "../components/EmptyState";
 import FilterBar from "../components/FilterBar";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Media · Atelier" };
@@ -16,6 +17,7 @@ function bytesToKb(b: number): string {
 }
 
 export default async function MediaPage({ searchParams }: SP) {
+  await requireUser();
   const sp = await searchParams;
   const files = listMediaFiles({ q: sp.q });
 

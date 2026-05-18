@@ -9,12 +9,14 @@ import ProductEditor from "./ProductEditor";
 import InventoryEditor from "./InventoryEditor";
 import DangerZone from "./DangerZone";
 import { dateShort, rupees } from "../../../../lib/admin/format";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ slug: string }>, searchParams: Promise<{ saved?: string }> };
 
 export default async function ProductEditorPage({ params, searchParams }: Params) {
+  await requireUser();
   const { slug } = await params;
   const { saved } = await searchParams;
   const product = getProduct(slug);

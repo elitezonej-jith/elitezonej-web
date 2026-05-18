@@ -3,12 +3,14 @@ import { listProducts } from "../../../../lib/admin/repos/products";
 import { getDb } from "../../../../lib/admin/db";
 import PageHead from "../../components/PageHead";
 import OfferForm from "../[code]/OfferForm";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const metadata = { title: "New offer · Studio" };
 
 type Cat = { id: number; name: string; slug: string; parent_id: number | null };
 
-export default function NewOfferPage() {
+export default async function NewOfferPage() {
+  await requireUser("/studio/login");
   const products = listProducts({ status: "all", limit: 200 });
   const cats = getDb().prepare("SELECT id, name, slug, parent_id FROM categories ORDER BY name ASC").all() as Cat[];
   return (

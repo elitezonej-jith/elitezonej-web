@@ -11,12 +11,14 @@ import DangerZone from "../../products/[slug]/DangerZone";
 import FabricMetaForm from "./FabricMetaForm";
 import ColourwayMatrix from "./ColourwayMatrix";
 import { dateShort, rupees } from "../../../../lib/admin/format";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ slug: string }>; searchParams: Promise<{ saved?: string }> };
 
 export default async function FabricEditorPage({ params, searchParams }: Params) {
+  await requireUser();
   const { slug } = await params;
   const { saved } = await searchParams;
   const product = getProduct(slug);

@@ -7,12 +7,14 @@ import StatusTag from "../../components/StatusTag";
 import { FlashToast } from "../../components/Toast";
 import FlashSaleForm from "./FlashSaleForm";
 import FlashDangerZone from "./FlashDangerZone";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string }> };
 
 export default async function EditFlashSalePage({ params, searchParams }: Params) {
+  await requireUser("/studio/login");
   const { id } = await params;
   const { saved } = await searchParams;
   const sale = getFlashSale(Number(id));

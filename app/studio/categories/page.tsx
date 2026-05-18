@@ -5,6 +5,7 @@ import StatusTag from "../components/StatusTag";
 import EmptyState from "../components/EmptyState";
 import { FlashToast } from "../components/Toast";
 import { IconFolder, IconPlus, IconEdit } from "../components/Icons";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Categories · Studio" };
@@ -18,6 +19,7 @@ type Cat = {
 };
 
 export default async function CategoriesPage({ searchParams }: SP) {
+  await requireUser("/studio/login");
   const sp = await searchParams;
   const all = getDb().prepare("SELECT * FROM categories ORDER BY parent_id IS NULL DESC, parent_id ASC, sort_order ASC").all() as Cat[];
   const tops = all.filter((c) => c.parent_id === null);

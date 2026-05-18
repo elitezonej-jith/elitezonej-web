@@ -10,12 +10,14 @@ import { archiveProductAction, duplicateProductAction } from "../../actions/prod
 import ProductForm from "./ProductForm";
 import ProductImageManager from "./ProductImageManager";
 import ProductDangerZone from "./ProductDangerZone";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ slug: string }>; searchParams: Promise<{ saved?: string; flash?: string }> };
 
 export default async function ProductEditorPage({ params, searchParams }: Params) {
+  await requireUser("/studio/login");
   const { slug } = await params;
   const product = getProduct(slug);
   if (!product) notFound();

@@ -2,10 +2,12 @@ import Link from "next/link";
 import PageHead from "../../components/PageHead";
 import EditorsNote from "../../components/EditorsNote";
 import NewProductForm from "../../products/new/NewProductForm";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const metadata = { title: "New cloth · Atelier" };
 
-export default function NewFabricPage() {
+export default async function NewFabricPage() {
+  await requireUser();
   return (
     <div className="adm-page">
       <EditorsNote body="A new cloth begins as a draft entry. Add weight, mill, and at least one colourway from the editor once saved." />

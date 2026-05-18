@@ -5,11 +5,13 @@ import SectionRule from "../components/SectionRule";
 import EmptyState from "../components/EmptyState";
 import CategoryEditor from "./CategoryEditor";
 import NewCategoryForm from "./NewCategoryForm";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Categories · Atelier" };
 
-export default function CategoriesPage() {
+export default async function CategoriesPage() {
+  await requireUser();
   const cats = listCategories();
   const tops = cats.filter((c) => c.parent_id === null);
   const subs = cats.filter((c) => c.parent_id !== null);

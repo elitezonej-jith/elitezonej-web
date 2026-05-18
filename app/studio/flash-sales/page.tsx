@@ -6,6 +6,7 @@ import StatusTag from "../components/StatusTag";
 import { FlashToast } from "../components/Toast";
 import { dateTime } from "../../../lib/admin/format";
 import { IconBolt, IconPlus, IconEdit } from "../components/Icons";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Flash sales · Studio" };
@@ -13,6 +14,7 @@ export const metadata = { title: "Flash sales · Studio" };
 type SP = { searchParams: Promise<{ flash?: string }> };
 
 export default async function FlashSalesPage({ searchParams }: SP) {
+  await requireUser("/studio/login");
   const sp = await searchParams;
   const sales = listFlashSales();
   const now = Date.now();

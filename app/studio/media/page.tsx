@@ -4,6 +4,7 @@ import EmptyState from "../components/EmptyState";
 import { IconImage } from "../components/Icons";
 import MediaUploader from "./MediaUploader";
 import MediaTile from "./MediaTile";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Media · Studio" };
@@ -11,6 +12,7 @@ export const metadata = { title: "Media · Studio" };
 type SP = { searchParams: Promise<{ q?: string; folder?: string }> };
 
 export default async function MediaPage({ searchParams }: SP) {
+  await requireUser("/studio/login");
   const sp = await searchParams;
   const folders = listFolders();
   const assets = listAssets({ q: sp.q, folder: sp.folder });

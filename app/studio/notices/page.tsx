@@ -7,12 +7,14 @@ import { FlashToast } from "../components/Toast";
 import { toggleNoticeAction } from "../actions/notices";
 import { IconBell, IconPlus, IconEye, IconEyeOff, IconEdit } from "../components/Icons";
 import { dateShort } from "../../../lib/admin/format";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Notices · Studio" };
 type SP = { searchParams: Promise<{ flash?: string }> };
 
 export default async function NoticesPage({ searchParams }: SP) {
+  await requireUser("/studio/login");
   const all = listNotices();
   const sp = await searchParams;
   const groups: Array<{ key: "scroll" | "popup" | "festive"; label: string; sub: string }> = [

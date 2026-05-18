@@ -6,6 +6,7 @@ import Folio from "../components/Folio";
 import FilterBar from "../components/FilterBar";
 import { rupees, dateShort } from "../../../lib/admin/format";
 import { IconUser } from "../components/Icons";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Customers · Studio" };
@@ -14,6 +15,7 @@ const PAGE = 20;
 type SP = { searchParams: Promise<{ q?: string; page?: string }> };
 
 export default async function CustomersListPage({ searchParams }: SP) {
+  await requireUser("/studio/login");
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
   const items = listCustomers({ q: sp.q, limit: PAGE, offset: (page - 1) * PAGE });

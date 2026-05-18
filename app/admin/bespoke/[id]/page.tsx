@@ -7,11 +7,13 @@ import SectionRule from "../../components/SectionRule";
 import StatusPill from "../../components/StatusPill";
 import BookingControls from "./BookingControls";
 import { dateTime } from "../../../../lib/admin/format";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 type Params = { params: Promise<{ id: string }> };
 
 export default async function BookingDetailPage({ params }: Params) {
+  await requireUser();
   const { id } = await params;
   const booking = getBooking(Number(id));
   if (!booking) notFound();

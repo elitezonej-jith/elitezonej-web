@@ -7,12 +7,14 @@ import SectionRule from "../../components/SectionRule";
 import StatusPill from "../../components/StatusPill";
 import PromoForm from "../PromoForm";
 import PromoDelete from "./PromoDelete";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ code: string }>; searchParams: Promise<{ saved?: string }> };
 
 export default async function PromoEditorPage({ params, searchParams }: Params) {
+  await requireUser();
   const { code } = await params;
   const { saved } = await searchParams;
   const promo = getPromotion(code.toUpperCase());

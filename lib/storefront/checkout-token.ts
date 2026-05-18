@@ -25,9 +25,11 @@ function secret(): string {
   // acceptable here because in the documented serverless in-memory mode the
   // orders themselves do not survive a restart either.
   cachedSecret = randomBytes(32).toString("hex");
-  console.warn(
+  console.error(
     "[checkout-token] CHECKOUT_TOKEN_SECRET is not set — using an ephemeral " +
-      "per-process secret. Set CHECKOUT_TOKEN_SECRET for stable confirmation links.",
+      "per-process secret. In a multi-instance deployment, offline/mock " +
+      "confirmation links issued by one instance will FAIL on another. Set " +
+      "CHECKOUT_TOKEN_SECRET in any non-ephemeral deployment.",
   );
   return cachedSecret;
 }

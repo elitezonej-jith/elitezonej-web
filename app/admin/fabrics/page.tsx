@@ -7,6 +7,7 @@ import StatusPill from "../components/StatusPill";
 import EmptyState from "../components/EmptyState";
 import FilterBar, { type FilterChip } from "../components/FilterBar";
 import { rupees } from "../../../lib/admin/format";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Fabrics · Atelier" };
@@ -20,6 +21,7 @@ function buildHref(qs: Record<string, string | undefined>): string {
 }
 
 export default async function FabricsListPage({ searchParams }: SP) {
+  await requireUser();
   const sp = await searchParams;
   const q = sp.q ?? undefined;
   const status = (sp.status as "active" | "draft" | "archived" | "all" | undefined) ?? "all";

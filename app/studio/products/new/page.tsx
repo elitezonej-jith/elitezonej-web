@@ -1,10 +1,12 @@
 import Link from "next/link";
 import PageHead from "../../components/PageHead";
 import ProductForm from "../[slug]/ProductForm";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const metadata = { title: "New product · Studio" };
 
-export default function NewProductPage() {
+export default async function NewProductPage() {
+  await requireUser("/studio/login");
   return (
     <div className="stu-page">
       <PageHead title="Add a product" sub="Set the basics, then you can upload images and refine after saving."

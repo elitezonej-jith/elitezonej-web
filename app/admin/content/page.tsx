@@ -3,6 +3,7 @@ import PageHead from "../components/PageHead";
 import EditorsNote from "../components/EditorsNote";
 import SectionRule from "../components/SectionRule";
 import HomeSectionForm from "./HomeSectionForm";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Content · Atelier" };
@@ -15,7 +16,8 @@ const GROUPS: Array<{ kicker: string; title: string; prefixes: string[] }> = [
   { kicker: "Surface", title: "Banners",            prefixes: ["banner-"] },
 ];
 
-export default function ContentPage() {
+export default async function ContentPage() {
+  await requireUser();
   const all = listHomeSections();
 
   return (

@@ -10,11 +10,13 @@ import { rupees, rupeesShort, dateShort, deltaPct } from "../../lib/admin/format
 import {
   IconBag, IconCart, IconScissors, IconTag, IconImage, IconLayers, IconBell, IconSparkles, IconArrowRight, IconPlus,
 } from "./components/Icons";
+import { requireUser } from "../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Dashboard · Studio" };
 
-export default function StudioDashboardPage() {
+export default async function StudioDashboardPage() {
+  await requireUser("/studio/login");
   const kpis = getKpis();
   const revDelta = deltaPct(kpis.revenue30d, kpis.revenue30dPrior);
   const noSalesYet = kpis.revenue30d === 0 && kpis.revenue30dPrior === 0;

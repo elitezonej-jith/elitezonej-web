@@ -3,9 +3,9 @@ import Database from "better-sqlite3";
 import bcrypt from "bcryptjs";
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 
 const DEFAULT_ADMIN_EMAIL = "admin@elitezonej.com";
-const DEFAULT_ADMIN_PASSWORD = "admin123";
 const DEFAULT_ADMIN_NAME = "Studio Owner";
 
 declare global {
@@ -71,10 +71,19 @@ function ensureDefaultAdmin(db: Database.Database): void {
     .get(DEFAULT_ADMIN_EMAIL) as { id: number } | undefined;
   if (existing) return;
 
-  const hash = bcrypt.hashSync(DEFAULT_ADMIN_PASSWORD, 12);
+  // No committed secret. Use ADMIN_BOOTSTRAP_PASSWORD if provided, else mint a
+  // random one-time password and print it once so a fresh DB stays usable.
+  const envPw = process.env.ADMIN_BOOTSTRAP_PASSWORD;
+  const password =
+    envPw && envPw.length >= 8 ? envPw : crypto.randomBytes(18).toString("base64url");
+  const hash = bcrypt.hashSync(password, 12);
   db.prepare(
     `INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'owner')`,
   ).run(DEFAULT_ADMIN_EMAIL, hash, DEFAULT_ADMIN_NAME);
+  if (!envPw)
+    console.warn(
+      `[db] Seeded owner ${DEFAULT_ADMIN_EMAIL} with a GENERATED one-time password: ${password} — sign in and change it now (set ADMIN_BOOTSTRAP_PASSWORD to control this).`,
+    );
 }
 
 // On Vercel (and any serverless host with a read-only filesystem) we cannot

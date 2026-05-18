@@ -6,6 +6,7 @@ import EmptyState from "../components/EmptyState";
 import BannersList from "./BannersList";
 import { IconImage, IconPlus } from "../components/Icons";
 import { FlashToast } from "../components/Toast";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Banners · Studio" };
@@ -13,6 +14,7 @@ export const metadata = { title: "Banners · Studio" };
 type SP = { searchParams: Promise<{ flash?: string }> };
 
 export default async function BannersListPage({ searchParams }: SP) {
+  await requireUser("/studio/login");
   const banners = listBanners();
   const sp = await searchParams;
   void StatusTag;

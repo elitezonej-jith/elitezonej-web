@@ -61,10 +61,20 @@ export function verifyCheckoutSignature(args: {
   return safeEqualHex(expected, args.signature);
 }
 
+let warnedNoWebhookSecret = false;
+
 /** Verifies a webhook payload against the raw request body. */
 export function verifyWebhookSignature(rawBody: string, signature: string): boolean {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
-  if (!secret) return false;
+  if (!secret) {
+    if (!warnedNoWebhookSecret && process.env.RAZORPAY_KEY_ID) {
+      warnedNoWebhookSecret = true;
+      console.error(
+        "[razorpay] RAZORPAY_WEBHOOK_SECRET is unset while live Razorpay keys are configured — ALL webhooks are rejected and paid orders will never reconcile. Set RAZORPAY_WEBHOOK_SECRET.",
+      );
+    }
+    return false;
+  }
   const expected = createHmac("sha256", secret).update(rawBody).digest("hex");
   return safeEqualHex(expected, signature);
 }

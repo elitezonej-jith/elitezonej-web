@@ -2,7 +2,7 @@ import Link from "next/link";
 import {
   getKpis, getRevenueByDay, getLowStock, getRecentBookings, getTopSkus, getRecentOrders,
 } from "../../lib/admin/kpi";
-import { getCurrentUser } from "../../lib/admin/session";
+import { requireUser } from "../../lib/admin/session";
 import EditorsNote from "./components/EditorsNote";
 import KpiTile from "./components/KpiTile";
 import Sparkline from "./components/Sparkline";
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Atelier · Dashboard" };
 
 export default async function DashboardPage() {
-  const me = await getCurrentUser();
+  const me = await requireUser();
   const kpis = getKpis();
   const sparkline = getRevenueByDay(30);
   const lowStock = getLowStock(8);

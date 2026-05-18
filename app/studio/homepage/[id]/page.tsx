@@ -6,12 +6,14 @@ import StatusTag from "../../components/StatusTag";
 import { FlashToast } from "../../components/Toast";
 import BlockEditor from "./BlockEditor";
 import BlockDangerZone from "./BlockDangerZone";
+import { requireUser } from "../../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ saved?: string }> };
 
 export default async function EditBlockPage({ params, searchParams }: Params) {
+  await requireUser("/studio/login");
   const { id } = await params;
   const { saved } = await searchParams;
   const block = getBlock(Number(id));

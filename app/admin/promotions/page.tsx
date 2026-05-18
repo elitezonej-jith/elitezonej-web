@@ -5,6 +5,7 @@ import EditorsNote from "../components/EditorsNote";
 import StatusPill from "../components/StatusPill";
 import EmptyState from "../components/EmptyState";
 import { rupees, dateShort } from "../../../lib/admin/format";
+import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Promotions · Atelier" };
@@ -15,7 +16,8 @@ function formatValue(p: { type: string; value: number }) {
   return "Free ship";
 }
 
-export default function PromotionsPage() {
+export default async function PromotionsPage() {
+  await requireUser();
   const promos = listPromotions();
   return (
     <div className="adm-page">
