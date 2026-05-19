@@ -105,7 +105,28 @@ export default function Header() {
                 href={cat.href}
                 className={cat.sale ? "nav-sale" : undefined}
                 aria-haspopup={cat.groups ? "true" : undefined}
-              >{cat.label}</Link>
+              >
+                {cat.label}
+                {cat.groups && (
+                  <svg
+                    className="nav-caret"
+                    aria-hidden="true"
+                    focusable="false"
+                    viewBox="0 0 10 6"
+                    width="10"
+                    height="6"
+                  >
+                    <path
+                      d="M1 1l4 4 4-4"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </Link>
               {cat.groups && (
                 <div className="mega">
                   <div className="row">

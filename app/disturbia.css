@@ -71,9 +71,14 @@
 ::selection { background: var(--ink); color: var(--paper); }
 html { color-scheme: light; }
 
-/* Safety net for horizontal overflow at small viewports */
+/* Safety net for horizontal overflow at small viewports.
+   Uses `clip`, not `hidden`: `overflow-x: hidden` forces the computed
+   `overflow-y` to `auto`, which turns <body> into a scroll container
+   and defeats `position: sticky` on descendants (Admin/Studio sidebars).
+   `clip` clips identically without establishing a scroll container, so
+   sticky resolves against the viewport again. */
 html, body {
-  overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100vw;
 }
 
@@ -606,6 +611,25 @@ header.site {
 .header-nav .nav-primary > li > a.nav-sale:hover { color: var(--sale) !important; }
 .header-nav .nav-primary > li > a.nav-sale:hover::after { background: var(--sale); }
 
+/* Dropdown affordance — a real chevron element (decorative,
+   aria-hidden) on items that open a mega panel. Sized to the nav
+   typographic scale, tinted with the link's currentColor, and rotated
+   180° while the panel is open (hover / focus-within). Same easing
+   language as the rest of the nav. */
+.header-nav .nav-primary > li > a .nav-caret {
+  display: inline-block;
+  margin-left: 6px;
+  vertical-align: middle;
+  color: currentColor;
+  transition: transform 0.45s cubic-bezier(.785,.135,.15,.86);
+}
+.header-nav .nav-primary > li.has-mega:hover > a .nav-caret,
+.header-nav .nav-primary > li.has-mega:focus-within > a .nav-caret,
+.header-nav .nav-primary > li > a:hover .nav-caret,
+.header-nav .nav-primary > li > a:focus-visible .nav-caret {
+  transform: rotate(180deg);
+}
+
 @media (max-width: 1100px) {
   .header-nav { padding: 14px 32px; }
   .header-nav .nav-primary > li > a { font-size: 13px; letter-spacing: 0.18em; }
@@ -674,11 +698,35 @@ header.site {
   position: relative;
   z-index: 2;
 }
-/* Persist nav-link underline + colour while the mega menu is open */
+/* Dropdown items: globals.css renders a CSS caret on
+   `.nav-primary li.has-mega > a::after` at specificity (0,3,3), which
+   outweighs the disturbia underline `::after` at (0,2,3). Since an
+   element has only one ::after, on MEN/WOMEN the "underline" was really
+   that rotated 5px square — globals' rotate(225deg) hover state is what
+   made it revolve. We now ship a real chevron element (.nav-caret), so
+   reclaim ::after here purely as the underline, identical to plain nav
+   items. Specificity ties globals at (0,3,3); disturbia loads after
+   globals.css so the tie resolves to these rules. */
+.header-nav .nav-primary > li.has-mega > a::after {
+  border: 0;
+  width: auto;
+  height: 1.5px;
+  margin-left: 0;
+  display: block;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+.header-nav .nav-primary > li.has-mega > a:hover::after,
+.header-nav .nav-primary > li.has-mega > a:focus-visible::after,
+.header-nav .nav-primary > li.has-mega > a.active::after,
 .header-nav .nav-primary > li.has-mega:hover > a::after,
 .header-nav .nav-primary > li.has-mega:focus-within > a::after {
-  width: 100%;
-  left: 0;
+  transform: scaleX(1);
+}
+/* Un-hover (and mega closed): retract off the right edge, matching
+   plain nav items. */
+.header-nav .nav-primary > li.has-mega:not(:hover):not(:focus-within) > a:not(:hover):not(:focus-visible):not(.active)::after {
+  transform-origin: right center;
 }
 
 /* Mega menu typography polish */
