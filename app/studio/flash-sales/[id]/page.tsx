@@ -17,9 +17,9 @@ export default async function EditFlashSalePage({ params, searchParams }: Params
   await requireUser("/studio/login");
   const { id } = await params;
   const { saved } = await searchParams;
-  const sale = getFlashSale(Number(id));
+  const sale = await getFlashSale(Number(id));
   if (!sale) notFound();
-  const promos = listPromotions();
+  const promos = await listPromotions();
   return (
     <div className="stu-page stu-page--narrow">
       <FlashToast flash={saved ? "Flash sale saved" : undefined} />

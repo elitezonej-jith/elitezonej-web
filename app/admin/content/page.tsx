@@ -18,7 +18,7 @@ const GROUPS: Array<{ kicker: string; title: string; prefixes: string[] }> = [
 
 export default async function ContentPage() {
   await requireUser();
-  const all = listHomeSections();
+  const all = await listHomeSections();
 
   return (
     <div className="adm-page">

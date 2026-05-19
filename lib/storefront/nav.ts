@@ -1,5 +1,5 @@
 import "server-only";
-import { getDb } from "../admin/db";
+import { sql } from "../admin/db";
 import { NAV, type NavCategory, type NavGroup } from "../../app/components/nav-data";
 import { CAT_DATA, SUBCATS, type SubcatMeta } from "../subcats";
 
@@ -16,12 +16,12 @@ import { CAT_DATA, SUBCATS, type SubcatMeta } from "../subcats";
 
 type DbCat = { name: string; enabled: number };
 
-function loadDbCats(): Map<string, DbCat> {
+async function loadDbCats(): Promise<Map<string, DbCat>> {
   const map = new Map<string, DbCat>();
   try {
-    const rows = getDb()
-      .prepare("SELECT slug, name, gender, enabled FROM categories")
-      .all() as Array<{ slug: string; name: string; gender: string | null; enabled: number }>;
+    const rows = await sql.all<{ slug: string; name: string; gender: string | null; enabled: number }>(
+      "SELECT slug, name, gender, enabled FROM categories",
+    );
     for (const r of rows) {
       map.set(`${r.gender ?? ""}:${r.slug}`, { name: r.name, enabled: r.enabled });
     }
@@ -69,8 +69,8 @@ function resolve(href: string, label: string, db: Map<string, DbCat>):
   return null;
 }
 
-export function getStorefrontNav(): NavCategory[] {
-  const db = loadDbCats();
+export async function getStorefrontNav(): Promise<NavCategory[]> {
+  const db = await loadDbCats();
   if (db.size === 0) return NAV;
   const out: NavCategory[] = [];
   for (const cat of NAV) {
@@ -98,10 +98,10 @@ export function getStorefrontNav(): NavCategory[] {
 // Collection-page heading. Title reflects a genuine rename; "stand" (marketing
 // sub-copy) and the `empty` flag always come from the static metadata, which
 // has no DB column (per the approved scoped decision).
-export function getCategoryMeta(cat: string, sub: string): SubcatMeta {
+export async function getCategoryMeta(cat: string, sub: string): Promise<SubcatMeta> {
   const fromSub = sub ? SUBCATS[cat]?.[sub] : undefined;
   const base: SubcatMeta = fromSub ?? CAT_DATA[cat] ?? { title: "Collection", stand: "" };
-  const db = loadDbCats();
+  const db = await loadDbCats();
   if (db.size === 0) return base;
   const slug = sub || cat;
   const gender = sub ? cat : null;

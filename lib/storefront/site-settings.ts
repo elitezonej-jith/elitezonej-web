@@ -19,10 +19,10 @@ const FALLBACK: SiteSettings = {
   currencySymbol: "₹",
 };
 
-export function getSiteSettings(): SiteSettings {
+export async function getSiteSettings(): Promise<SiteSettings> {
   let s: Record<string, string> = {};
   try {
-    s = getSettings();
+    s = await getSettings();
   } catch {
     /* no DB / ephemeral cold start — use fallbacks */
   }

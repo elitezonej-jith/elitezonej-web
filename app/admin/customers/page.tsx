@@ -27,8 +27,8 @@ export default async function CustomersListPage({ searchParams }: SP) {
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
 
-  const items = listCustomers({ q, limit: PAGE_SIZE, offset });
-  const total = countCustomers({ q });
+  const items = await listCustomers({ q, limit: PAGE_SIZE, offset });
+  const total = await countCustomers({ q });
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (

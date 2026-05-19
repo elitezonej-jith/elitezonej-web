@@ -21,10 +21,10 @@ export default async function FabricEditorPage({ params, searchParams }: Params)
   await requireUser();
   const { slug } = await params;
   const { saved } = await searchParams;
-  const product = getProduct(slug);
+  const product = await getProduct(slug);
   if (!product || product.kind !== "fabric") notFound();
-  const meta = getFabricMeta(slug);
-  const colours = listFabricColours(slug);
+  const meta = await getFabricMeta(slug);
+  const colours = await listFabricColours(slug);
 
   return (
     <div className="adm-page">

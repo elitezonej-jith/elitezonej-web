@@ -4,7 +4,7 @@ import { listProductsForPage } from "@/lib/storefront/catalogue";
 // Renders the real <CarouselShowcase> ("New In" / "Festive Edit" side-heading
 // product row) from the LIVE DB catalogue (static-index ordered, so the order
 // matches the original) with the same gender/category/limit semantics.
-export default function ProductCarousel({
+export default async function ProductCarousel({
   title,
   ctaLabel,
   ctaHref,
@@ -21,7 +21,7 @@ export default function ProductCarousel({
   category?: string;
   limit?: number;
 }) {
-  let products = listProductsForPage();
+  let products = await listProductsForPage();
   if (gender) products = products.filter((p) => p.gender === gender);
   if (category) products = products.filter((p) => p.category === category);
   const sliced = products.slice(0, limit ?? 6);

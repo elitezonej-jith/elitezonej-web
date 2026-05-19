@@ -41,11 +41,11 @@ export async function saveNoticeAction(_prev: NoticeSaveState, fd: FormData): Pr
   };
   let savedId = id;
   if (id) {
-    updateNotice(id, data);
-    logAudit({ user_id: me.id, action: "update_notice", entity: "notice", entity_id: String(id) });
+    await updateNotice(id, data);
+    await logAudit({ user_id: me.id, action: "update_notice", entity: "notice", entity_id: String(id) });
   } else {
-    savedId = createNotice(data);
-    logAudit({ user_id: me.id, action: "create_notice", entity: "notice", entity_id: String(savedId) });
+    savedId = await createNotice(data);
+    await logAudit({ user_id: me.id, action: "create_notice", entity: "notice", entity_id: String(savedId) });
   }
   revalidatePath("/studio/notices");
   revalidatePath("/");
@@ -56,8 +56,8 @@ export async function deleteNoticeAction(fd: FormData): Promise<void> {
   const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
-  deleteNotice(id);
-  logAudit({ user_id: me.id, action: "delete_notice", entity: "notice", entity_id: String(id) });
+  await deleteNotice(id);
+  await logAudit({ user_id: me.id, action: "delete_notice", entity: "notice", entity_id: String(id) });
   revalidatePath("/studio/notices");
   revalidatePath("/");
   redirect("/studio/notices?flash=Notice%20removed");
@@ -68,8 +68,8 @@ export async function toggleNoticeAction(fd: FormData): Promise<void> {
   const id = Number(fd.get("id") ?? 0);
   const enabled = String(fd.get("enabled") ?? "0") === "1" ? 1 : 0;
   if (!id) return;
-  updateNotice(id, { enabled });
-  logAudit({ user_id: me.id, action: "toggle_notice", entity: "notice", entity_id: String(id), payload: { enabled } });
+  await updateNotice(id, { enabled });
+  await logAudit({ user_id: me.id, action: "toggle_notice", entity: "notice", entity_id: String(id), payload: { enabled } });
   revalidatePath("/studio/notices");
   revalidatePath("/");
 }

@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = getProductForPage(slug);
+  const product = await getProductForPage(slug);
   if (!product) notFound();
 
   // Schema.org Product structured data — eligible for rich results in
@@ -42,6 +42,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     },
   };
 
+  const related = (await listProductsForPage()).filter((p) => p.slug !== slug).slice(0, 3);
+
   return (
     <>
       <script
@@ -52,7 +54,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <main>
         <ProductPageClient
           product={product}
-          related={listProductsForPage().filter((p) => p.slug !== slug).slice(0, 3)}
+          related={related}
         />
       </main>
       <TrustStrip />
@@ -63,7 +65,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const p = getProductForPage(slug);
+  const p = await getProductForPage(slug);
   if (!p) return { title: "Not found — Elite Zone J" };
   return { title: `${p.name} — Elite Zone J`, description: p.line };
 }

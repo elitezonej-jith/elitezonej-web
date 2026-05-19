@@ -15,7 +15,7 @@ type SP = { searchParams: Promise<{ flash?: string }> };
 
 export default async function NoticesPage({ searchParams }: SP) {
   await requireUser("/studio/login");
-  const all = listNotices();
+  const all = await listNotices();
   const sp = await searchParams;
   const groups: Array<{ key: "scroll" | "popup" | "festive"; label: string; sub: string }> = [
     { key: "scroll", label: "Scrolling tickers", sub: "Top of every page" },

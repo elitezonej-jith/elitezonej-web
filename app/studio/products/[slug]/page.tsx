@@ -19,11 +19,11 @@ type Params = { params: Promise<{ slug: string }>; searchParams: Promise<{ saved
 export default async function ProductEditorPage({ params, searchParams }: Params) {
   await requireUser("/studio/login");
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = await getProduct(slug);
   if (!product) notFound();
   const { saved, flash } = await searchParams;
-  const meta = getMeta(slug);
-  const images = listImages(slug);
+  const meta = await getMeta(slug);
+  const images = await listImages(slug);
   const fallback = images.length === 0 ? fallbackImages(slug) : [];
 
   return (

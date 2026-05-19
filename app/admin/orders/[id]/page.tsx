@@ -16,9 +16,9 @@ type Params = { params: Promise<{ id: string }> };
 export default async function OrderDetailPage({ params }: Params) {
   await requireUser();
   const { id } = await params;
-  const order = getOrder(id);
+  const order = await getOrder(id);
   if (!order) notFound();
-  const items = getOrderItems(id);
+  const items = await getOrderItems(id);
 
   return (
     <div className="adm-page">

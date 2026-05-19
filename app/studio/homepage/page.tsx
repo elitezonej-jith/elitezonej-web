@@ -15,7 +15,7 @@ type SP = { searchParams: Promise<{ flash?: string }> };
 
 export default async function HomepagePage({ searchParams }: SP) {
   await requireUser("/studio/login");
-  const blocks = listBlocks();
+  const blocks = await listBlocks();
   const sp = await searchParams;
   return (
     <div className="stu-page">

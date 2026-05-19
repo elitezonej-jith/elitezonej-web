@@ -64,7 +64,7 @@ async function reqMeta() {
 }
 
 async function setSessionCookie(customerId: number, ip: string, ua: string | null) {
-  const sess = startSession(customerId, ip, ua);
+  const sess = await startSession(customerId, ip, ua);
   const c = await cookies();
   c.set(CUSTOMER_SESSION_COOKIE, sess.id, {
     ...CUSTOMER_COOKIE_OPTIONS,
@@ -95,7 +95,7 @@ export async function signUpAction(_prev: AuthState, fd: FormData): Promise<Auth
 
   let customerId: number;
   try {
-    customerId = createAccount({
+    customerId = await createAccount({
       email: parsed.data.email,
       first_name: parsed.data.first_name,
       last_name: parsed.data.last_name,
@@ -110,7 +110,7 @@ export async function signUpAction(_prev: AuthState, fd: FormData): Promise<Auth
   }
 
   await setSessionCookie(customerId, ip, ua);
-  logAudit({
+  await logAudit({
     user_id: null,
     action: "customer_signup",
     entity: "customer",
@@ -135,7 +135,7 @@ export async function signInAction(_prev: AuthState, fd: FormData): Promise<Auth
     return { error: `Too many attempts. Try again in ${Math.ceil(rl.retryAfterSec / 60)} min.`, values: { email } };
   }
 
-  const account = getCustomerAuthByEmail(parsed.data.email);
+  const account = await getCustomerAuthByEmail(parsed.data.email);
   const hashForCompare = account?.password_hash ?? DUMMY_HASH;
   const ok = await verifyPassword(parsed.data.password, hashForCompare);
   if (!account || !account.password_hash || !ok) {
@@ -145,7 +145,7 @@ export async function signInAction(_prev: AuthState, fd: FormData): Promise<Auth
   resetRateLimit(rlKey);
   purgeExpiredCustomerSessions(); // opportunistic cleanup of abandoned expired rows
   await setSessionCookie(account.id, ip, ua);
-  logAudit({
+  await logAudit({
     user_id: null,
     action: "customer_signin",
     entity: "customer",
@@ -182,7 +182,7 @@ export async function updateProfileAction(_prev: AuthState, fd: FormData): Promi
   getDb()
     .prepare("UPDATE customers SET first_name = ?, last_name = ?, phone = ?, city = ? WHERE id = ?")
     .run(parsed.data.first_name, parsed.data.last_name, parsed.data.phone || null, parsed.data.city || null, me.id);
-  logAudit({
+  await logAudit({
     user_id: null,
     action: "customer_profile_update",
     entity: "customer",

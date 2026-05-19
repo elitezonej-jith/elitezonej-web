@@ -13,7 +13,7 @@ type Params = { params: Promise<{ id: string }> };
 export default async function BookingPage({ params }: Params) {
   await requireUser("/studio/login");
   const { id } = await params;
-  const b = getBooking(Number(id));
+  const b = await getBooking(Number(id));
   if (!b) notFound();
   return (
     <div className="stu-page">

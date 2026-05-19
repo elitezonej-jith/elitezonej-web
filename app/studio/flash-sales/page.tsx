@@ -16,7 +16,7 @@ type SP = { searchParams: Promise<{ flash?: string }> };
 export default async function FlashSalesPage({ searchParams }: SP) {
   await requireUser("/studio/login");
   const sp = await searchParams;
-  const sales = listFlashSales();
+  const sales = await listFlashSales();
   const now = Date.now();
   return (
     <div className="stu-page">

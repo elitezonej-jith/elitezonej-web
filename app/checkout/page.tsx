@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export default async function CheckoutPage() {
   const me = await getCurrentCustomer();
-  const savedAddresses = me ? listAddressesForCustomer(me.id) : [];
+  const savedAddresses = me ? await listAddressesForCustomer(me.id) : [];
   const defaultAddressId =
     savedAddresses.find((a) => a.is_default === 1)?.id ?? null;
 

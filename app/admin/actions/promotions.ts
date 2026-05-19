@@ -25,7 +25,7 @@ export async function savePromoAction(_prev: PromoState, fd: FormData): Promise<
   const parsed = PromoSchema.safeParse(Object.fromEntries(fd.entries()));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   const v = parsed.data;
-  upsertPromotion({
+  await upsertPromotion({
     code: v.code.toUpperCase(),
     type: v.type,
     value: v.value,
@@ -36,7 +36,7 @@ export async function savePromoAction(_prev: PromoState, fd: FormData): Promise<
     status: v.status,
     description: v.description ?? null,
   });
-  logAudit({ user_id: me.id, action: "save_promo", entity: "promotion", entity_id: v.code });
+  await logAudit({ user_id: me.id, action: "save_promo", entity: "promotion", entity_id: v.code });
   revalidatePath("/admin/promotions");
   redirect(`/admin/promotions/${v.code.toUpperCase()}?saved=1`);
 }
@@ -48,8 +48,8 @@ export async function setPromoStatusAction(fd: FormData): Promise<void> {
   const raw = String(fd.get("status") ?? "active");
   if (!code || !(STATUSES as readonly string[]).includes(raw)) return;
   const status = raw as (typeof STATUSES)[number];
-  setPromotionStatus(code, status);
-  logAudit({ user_id: me.id, action: "set_promo_status", entity: "promotion", entity_id: code, payload: { status } });
+  await setPromotionStatus(code, status);
+  await logAudit({ user_id: me.id, action: "set_promo_status", entity: "promotion", entity_id: code, payload: { status } });
   revalidatePath("/admin/promotions");
   revalidatePath(`/admin/promotions/${code}`);
 }
@@ -58,8 +58,8 @@ export async function deletePromoAction(fd: FormData): Promise<void> {
   const me = await requireUser();
   const code = String(fd.get("code") ?? "").toUpperCase();
   if (!code) return;
-  deletePromotion(code);
-  logAudit({ user_id: me.id, action: "delete_promo", entity: "promotion", entity_id: code });
+  await deletePromotion(code);
+  await logAudit({ user_id: me.id, action: "delete_promo", entity: "promotion", entity_id: code });
   revalidatePath("/admin/promotions");
   redirect("/admin/promotions");
 }

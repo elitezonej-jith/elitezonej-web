@@ -17,7 +17,7 @@ export default async function PromoEditorPage({ params, searchParams }: Params) 
   await requireUser();
   const { code } = await params;
   const { saved } = await searchParams;
-  const promo = getPromotion(code.toUpperCase());
+  const promo = await getPromotion(code.toUpperCase());
   if (!promo) notFound();
 
   return (

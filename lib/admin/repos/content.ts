@@ -1,22 +1,23 @@
 import "server-only";
-import { getDb } from "../db";
+import { sql } from "../db";
 import type { HomeSection } from "../types";
 
-export function listHomeSections(): HomeSection[] {
-  return getDb()
-    .prepare("SELECT * FROM home_sections ORDER BY sort_order ASC")
-    .all() as HomeSection[];
+export async function listHomeSections(): Promise<HomeSection[]> {
+  return sql.all<HomeSection>(
+    "SELECT * FROM home_sections ORDER BY sort_order ASC",
+  );
 }
 
-export function getHomeSection(key: string): HomeSection | null {
-  return (getDb().prepare("SELECT * FROM home_sections WHERE key = ?").get(key) as HomeSection | undefined) ?? null;
+export async function getHomeSection(key: string): Promise<HomeSection | null> {
+  return sql.get<HomeSection>("SELECT * FROM home_sections WHERE key = ?", [key]);
 }
 
-export function updateHomeSection(key: string, patch: Partial<HomeSection>): void {
-  const cols = ["title","kicker","body","image_path","link_text","link_href","sort_order","enabled","extras_json"];
-  const set = cols.filter((c) => c in patch).map((c) => `${c} = @${c}`);
-  if (!set.length) return;
-  getDb()
-    .prepare(`UPDATE home_sections SET ${set.join(", ")} WHERE key = @key`)
-    .run({ key, ...patch });
+export async function updateHomeSection(key: string, patch: Partial<HomeSection>): Promise<void> {
+  const cols = ["title","kicker","body","image_path","link_text","link_href","sort_order","enabled","extras_json"] as const;
+  const present = cols.filter((c) => c in patch);
+  if (!present.length) return;
+  const set = present.map((c) => `${c} = ?`);
+  const params = present.map((c) => (patch as Record<string, unknown>)[c]);
+  params.push(key);
+  await sql.run(`UPDATE home_sections SET ${set.join(", ")} WHERE key = ?`, params);
 }

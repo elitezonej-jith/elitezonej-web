@@ -49,22 +49,22 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
   }
 
   // Constant-time: always run bcrypt to avoid email-enumeration via timing.
-  const u = getUserByEmail(parsed.data.email);
+  const u = await getUserByEmail(parsed.data.email);
   const hashForCompare = u?.password_hash ?? "$2a$12$invalidinvalidinvalidinvaliduO0000000000000000000000000000";
   const ok = await verifyPassword(parsed.data.password, hashForCompare);
   if (!u || !ok) return { error: "No account matches those credentials." };
 
   resetRateLimit(rlKey);
-  purgeExpiredSessions(); // opportunistic cleanup of abandoned expired rows
+  await purgeExpiredSessions(); // opportunistic cleanup of abandoned expired rows
 
-  const sess = createSession(u.id);
+  const sess = await createSession(u.id);
   const c = await cookies();
   c.set(SESSION_COOKIE, sess.id, {
     ...SESSION_COOKIE_OPTIONS,
     expires: new Date(sess.expires_at),
   });
   touchLogin(u.id);
-  logAudit({ user_id: u.id, action: "sign_in", entity: "user", entity_id: String(u.id) });
+  await logAudit({ user_id: u.id, action: "sign_in", entity: "user", entity_id: String(u.id) });
 
   redirect(safeNextPath(parsed.data.next, "/admin"));
 }
@@ -72,13 +72,13 @@ export async function signInAction(_prev: ActionState, formData: FormData): Prom
 export async function signOutAction(): Promise<void> {
   const c = await cookies();
   const sid = c.get(SESSION_COOKIE)?.value;
-  if (sid) destroySession(sid);
+  if (sid) await destroySession(sid);
   c.delete(SESSION_COOKIE);
   redirect("/admin/login");
 }
 
 export async function bootstrapOwnerAction(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  if (countUsers() > 0) return { error: "Setup already complete." };
+  if ((await countUsers()) > 0) return { error: "Setup already complete." };
   const parsed = BootstrapSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -88,14 +88,14 @@ export async function bootstrapOwnerAction(_prev: ActionState, formData: FormDat
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
   const hash = await hashPassword(parsed.data.password);
-  const id = createUser({ email: parsed.data.email, password_hash: hash, name: parsed.data.name, role: "owner" });
-  const sess = createSession(id);
+  const id = await createUser({ email: parsed.data.email, password_hash: hash, name: parsed.data.name, role: "owner" });
+  const sess = await createSession(id);
   const c = await cookies();
   c.set(SESSION_COOKIE, sess.id, {
     ...SESSION_COOKIE_OPTIONS,
     expires: new Date(sess.expires_at),
   });
-  logAudit({ user_id: id, action: "bootstrap_owner", entity: "user", entity_id: String(id) });
+  await logAudit({ user_id: id, action: "bootstrap_owner", entity: "user", entity_id: String(id) });
   redirect("/admin");
 }
 
@@ -115,10 +115,10 @@ export async function inviteUserAction(_prev: ActionState, formData: FormData): 
     role: formData.get("role"),
   });
   if (!parsed.success) return { error: "Invalid input — email, name, password ≥ 8 chars." };
-  if (getUserByEmail(parsed.data.email)) return { error: "Email already exists." };
+  if (await getUserByEmail(parsed.data.email)) return { error: "Email already exists." };
   const hash = await hashPassword(parsed.data.password);
-  const id = createUser({ ...parsed.data, password_hash: hash });
-  logAudit({ user_id: me.id, action: "invite_user", entity: "user", entity_id: String(id), payload: { email: parsed.data.email, role: parsed.data.role } });
+  const id = await createUser({ ...parsed.data, password_hash: hash });
+  await logAudit({ user_id: me.id, action: "invite_user", entity: "user", entity_id: String(id), payload: { email: parsed.data.email, role: parsed.data.role } });
   return { ok: true };
 }
 
@@ -127,7 +127,7 @@ export async function changePasswordAction(_prev: ActionState, formData: FormDat
   const current = String(formData.get("current") ?? "");
   const next = String(formData.get("next") ?? "");
   if (next.length < 8) return { error: "New password must be at least 8 characters." };
-  const u = getUserAuthById(me.id);
+  const u = await getUserAuthById(me.id);
   if (!u) return { error: "Account not found." };
   const ok = await verifyPassword(current, u.password_hash);
   if (!ok) return { error: "Current password incorrect." };
@@ -136,14 +136,14 @@ export async function changePasswordAction(_prev: ActionState, formData: FormDat
   // Revoke every outstanding session for this user (a leaked/old session must
   // not survive a password change), then rotate a fresh one so the operator
   // who just changed it stays signed in on this device.
-  destroyAllSessionsForUser(me.id);
-  const sess = createSession(me.id);
+  await destroyAllSessionsForUser(me.id);
+  const sess = await createSession(me.id);
   const c = await cookies();
   c.set(SESSION_COOKIE, sess.id, {
     ...SESSION_COOKIE_OPTIONS,
     expires: new Date(sess.expires_at),
   });
-  logAudit({ user_id: me.id, action: "change_password", entity: "user", entity_id: String(me.id) });
+  await logAudit({ user_id: me.id, action: "change_password", entity: "user", entity_id: String(me.id) });
   return { ok: true };
 }
 
@@ -151,14 +151,14 @@ export async function deleteUserAction(formData: FormData): Promise<void> {
   const me = await requireRole("owner");
   const id = Number(formData.get("id"));
   if (!id) return;
-  const target = getUserById(id);
+  const target = await getUserById(id);
   if (!target) return;
   if (target.id === me.id) return;
   // Prevent deleting the only owner.
   if (target.role === "owner") {
-    const owners = (await import("../../../lib/admin/repos/users")).listUsers().filter((u) => u.role === "owner");
+    const owners = (await (await import("../../../lib/admin/repos/users")).listUsers()).filter((u) => u.role === "owner");
     if (owners.length <= 1) return;
   }
   (await import("../../../lib/admin/repos/users")).deleteUser(id);
-  logAudit({ user_id: me.id, action: "delete_user", entity: "user", entity_id: String(id) });
+  await logAudit({ user_id: me.id, action: "delete_user", entity: "user", entity_id: String(id) });
 }

@@ -18,7 +18,7 @@ export const metadata = {
 export default async function StudioLayout({ children }: { children: ReactNode }) {
   const c = await cookies();
   const sid = c.get(SESSION_COOKIE)?.value;
-  const me = sid ? getSessionUser(sid) : null;
+  const me = sid ? await getSessionUser(sid) : null;
 
   // Login + setup pages render bare (no shell). proxy.ts has already gated
   // unauthenticated visitors away from anything else.
@@ -27,10 +27,10 @@ export default async function StudioLayout({ children }: { children: ReactNode }
   }
 
   const counts = {
-    products: countProducts({ status: "all" }),
-    bookingsNew: countBookings({ status: "new" }),
-    ordersOpen: countOrders({ status: "new" }) + countOrders({ status: "confirmed" }) + countOrders({ status: "in_atelier" }),
-    bannersDraft: listBanners().filter((b) => b.status !== "published" || b.enabled === 0).length,
+    products: await countProducts({ status: "all" }),
+    bookingsNew: await countBookings({ status: "new" }),
+    ordersOpen: (await countOrders({ status: "new" })) + (await countOrders({ status: "confirmed" })) + (await countOrders({ status: "in_atelier" })),
+    bannersDraft: (await listBanners()).filter((b) => b.status !== "published" || b.enabled === 0).length,
   };
 
   return (

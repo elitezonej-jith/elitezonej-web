@@ -16,7 +16,7 @@ export default async function EditBlockPage({ params, searchParams }: Params) {
   await requireUser("/studio/login");
   const { id } = await params;
   const { saved } = await searchParams;
-  const block = getBlock(Number(id));
+  const block = await getBlock(Number(id));
   if (!block) notFound();
   return (
     <div className="stu-page">

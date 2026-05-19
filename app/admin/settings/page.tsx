@@ -16,9 +16,9 @@ export const metadata = { title: "Settings · Atelier" };
 
 export default async function SettingsPage() {
   const me = await requireUser();
-  const settings = getSettings();
-  const users = listUsers();
-  const log = listAudit(40);
+  const settings = await getSettings();
+  const users = await listUsers();
+  const log = await listAudit(40);
 
   return (
     <div className="adm-page">

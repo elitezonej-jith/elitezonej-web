@@ -1,5 +1,5 @@
 import "server-only";
-import { getDb } from "../db";
+import { sql } from "../db";
 
 export type FlashSale = {
   id: number;
@@ -13,43 +13,52 @@ export type FlashSale = {
   created_at: string;
 };
 
-export function listFlashSales(opts?: { onlyLive?: boolean }): FlashSale[] {
-  const db = getDb();
+export async function listFlashSales(opts?: { onlyLive?: boolean }): Promise<FlashSale[]> {
   if (opts?.onlyLive) {
-    return db
-      .prepare(
-        `SELECT * FROM flash_sales
+    return sql.all<FlashSale>(
+      `SELECT * FROM flash_sales
          WHERE enabled = 1
-           AND (starts_at IS NULL OR datetime(starts_at) <= datetime('now'))
-           AND datetime(ends_at) >= datetime('now')
-         ORDER BY datetime(ends_at) ASC`,
-      )
-      .all() as FlashSale[];
+           AND (starts_at IS NULL OR starts_at <= CURRENT_TIMESTAMP)
+           AND ends_at >= CURRENT_TIMESTAMP
+         ORDER BY ends_at ASC`,
+    );
   }
-  return db.prepare("SELECT * FROM flash_sales ORDER BY datetime(ends_at) DESC").all() as FlashSale[];
+  return sql.all<FlashSale>("SELECT * FROM flash_sales ORDER BY ends_at DESC");
 }
 
-export function getFlashSale(id: number): FlashSale | null {
-  return (getDb().prepare("SELECT * FROM flash_sales WHERE id = ?").get(id) as FlashSale | undefined) ?? null;
+export async function getFlashSale(id: number): Promise<FlashSale | null> {
+  return sql.get<FlashSale>("SELECT * FROM flash_sales WHERE id = ?", [id]);
 }
 
 export type FlashSaleInput = Omit<FlashSale, "id" | "created_at">;
 
-export function createFlashSale(input: FlashSaleInput): number {
-  const r = getDb().prepare(`
-    INSERT INTO flash_sales (title, subtitle, promo_code, banner_image, starts_at, ends_at, enabled)
-    VALUES (@title, @subtitle, @promo_code, @banner_image, @starts_at, @ends_at, @enabled)
-  `).run(input);
-  return Number(r.lastInsertRowid);
+export async function createFlashSale(input: FlashSaleInput): Promise<number> {
+  const r = await sql.run(
+    `INSERT INTO flash_sales (title, subtitle, promo_code, banner_image, starts_at, ends_at, enabled)
+     VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+    [
+      input.title,
+      input.subtitle,
+      input.promo_code,
+      input.banner_image,
+      input.starts_at,
+      input.ends_at,
+      input.enabled,
+    ],
+  );
+  return Number(r.rows[0].id);
 }
 
-export function updateFlashSale(id: number, patch: Partial<FlashSale>): void {
-  const cols = ["title","subtitle","promo_code","banner_image","starts_at","ends_at","enabled"];
-  const set = cols.filter((c) => c in patch).map((c) => `${c} = @${c}`);
-  if (!set.length) return;
-  getDb().prepare(`UPDATE flash_sales SET ${set.join(", ")} WHERE id = @id`).run({ id, ...patch });
+export async function updateFlashSale(id: number, patch: Partial<FlashSale>): Promise<void> {
+  const cols = ["title","subtitle","promo_code","banner_image","starts_at","ends_at","enabled"] as const;
+  const present = cols.filter((c) => c in patch);
+  if (!present.length) return;
+  const set = present.map((c) => `${c} = ?`);
+  const params = present.map((c) => (patch as Record<string, unknown>)[c]);
+  params.push(id);
+  await sql.run(`UPDATE flash_sales SET ${set.join(", ")} WHERE id = ?`, params);
 }
 
-export function deleteFlashSale(id: number): void {
-  getDb().prepare("DELETE FROM flash_sales WHERE id = ?").run(id);
+export async function deleteFlashSale(id: number): Promise<void> {
+  await sql.run("DELETE FROM flash_sales WHERE id = ?", [id]);
 }

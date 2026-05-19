@@ -25,8 +25,15 @@ export default async function FabricsListPage({ searchParams }: SP) {
   const sp = await searchParams;
   const q = sp.q ?? undefined;
   const status = (sp.status as "active" | "draft" | "archived" | "all" | undefined) ?? "all";
-  const items = listProducts({ q, status, kind: "fabric", limit: 100 });
-  const total = countProducts({ q, status, kind: "fabric" });
+  const items = await listProducts({ q, status, kind: "fabric", limit: 100 });
+  const total = await countProducts({ q, status, kind: "fabric" });
+  const rows = await Promise.all(
+    items.map(async (p) => ({
+      p,
+      meta: await getFabricMeta(p.slug),
+      colours: await listFabricColours(p.slug),
+    })),
+  );
 
   const chips: FilterChip[] = [
     { key: "all", label: "All", active: status === "all" || !sp.status, href: buildHref({ q }) },
@@ -68,9 +75,7 @@ export default async function FabricsListPage({ searchParams }: SP) {
                 </tr>
               </thead>
               <tbody>
-                {items.map((p) => {
-                  const meta = getFabricMeta(p.slug);
-                  const colours = listFabricColours(p.slug);
+                {rows.map(({ p, meta, colours }) => {
                   return (
                     <tr key={p.slug}>
                       <td>

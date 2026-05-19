@@ -16,7 +16,7 @@ export default async function EditBannerPage({ params, searchParams }: Params) {
   await requireUser("/studio/login");
   const { id } = await params;
   const { saved } = await searchParams;
-  const banner = getBanner(Number(id));
+  const banner = await getBanner(Number(id));
   if (!banner) notFound();
   return (
     <div className="stu-page">

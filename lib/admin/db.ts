@@ -197,7 +197,116 @@ function open(): Database.Database {
   return db;
 }
 
+
 export function getDb(): Database.Database {
+  if (process.env.DB_DRIVER === "postgres") {
+    throw new Error("getDb() is not available in Postgres mode. Use async sql.");
+  }
   if (!global.__ezj_admin_db) global.__ezj_admin_db = open();
   return global.__ezj_admin_db;
 }
+
+import { sql as pgSql, toPg } from "../db/sql";
+
+type Params = readonly unknown[];
+
+/**
+ * Driver-agnostic async data interface. Repos are written against this so the
+ * SQLite (local dev) and Postgres (preview/prod) paths are behaviourally
+ * identical. Inserts that need the new id MUST use `… RETURNING id` (works on
+ * both better-sqlite3 ≥ the bundled version and Postgres) — never
+ * `lastInsertRowid`, which has no Postgres equivalent.
+ */
+export interface SqlClient {
+  get<T = Record<string, unknown>>(text: string, params?: Params): Promise<T | null>;
+  all<T = Record<string, unknown>>(text: string, params?: Params): Promise<T[]>;
+  run(
+    text: string,
+    params?: Params,
+  ): Promise<{ count: number; rows: Record<string, unknown>[] }>;
+  tx<T>(fn: (t: SqlClient) => Promise<T>): Promise<T>;
+}
+
+const sqliteSql: SqlClient = {
+  async get<T = Record<string, unknown>>(text: string, params: Params = []): Promise<T | null> {
+    return (getDb().prepare(text).get(...params) as T) ?? null;
+  },
+  async all<T = Record<string, unknown>>(text: string, params: Params = []): Promise<T[]> {
+    return getDb().prepare(text).all(...params) as T[];
+  },
+  async run(
+    text: string,
+    params: Params = [],
+  ): Promise<{ count: number; rows: Record<string, unknown>[] }> {
+    const stmt = getDb().prepare(text);
+    // `stmt.reader` is true when the statement yields rows — i.e. it has a
+    // RETURNING clause. better-sqlite3 only surfaces those rows via .all()/
+    // .get(); .run() would silently drop them, breaking every id-returning
+    // INSERT on the SQLite path. Mirror the Postgres shim's { count, rows }.
+    if (stmt.reader) {
+      const rows = stmt.all(...params) as Record<string, unknown>[];
+      return { count: rows.length, rows };
+    }
+    const res = stmt.run(...params);
+    return { count: res.changes, rows: [] };
+  },
+  async tx<T>(fn: (t: SqlClient) => Promise<T>): Promise<T> {
+    // SQLite path is single-process LOCAL DEV ONLY (locked decision: prod is
+    // DB_DRIVER=postgres). better-sqlite3 is synchronous and there is one
+    // shared connection, so BEGIN IMMEDIATE takes the write lock up front and
+    // the body runs to completion before any other request can write. Genuine
+    // multi-instance transactional integrity rides on the Postgres tx
+    // (postgres.js `begin`), not this.
+    const db = getDb();
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      const res = await fn(sqliteSql);
+      db.exec("COMMIT");
+      return res;
+    } catch (e) {
+      db.exec("ROLLBACK");
+      throw e;
+    }
+  },
+};
+
+// Postgres path. `pgSql` (lib/db/sql.ts) already exposes get/all/run, but its
+// `tx` hands the callback a postgres.js TransactionSql (tagged-template), not a
+// SqlClient. Adapt that transaction handle into a SqlClient so repo
+// transaction bodies are written once, driver-agnostically — same `toPg`
+// (?→$n) rewrite as the non-tx path, single source of truth in lib/db/sql.ts.
+const pgClient: SqlClient = {
+  get: pgSql.get,
+  all: pgSql.all,
+  run: pgSql.run,
+  tx<T>(fn: (t: SqlClient) => Promise<T>): Promise<T> {
+    return pgSql.tx(async (t) => {
+      const txClient: SqlClient = {
+        async get<R = Record<string, unknown>>(text: string, params: Params = []) {
+          const rows = await t.unsafe(toPg(text), params as unknown as never[]);
+          return ((rows[0] as R) ?? null) as R | null;
+        },
+        async all<R = Record<string, unknown>>(text: string, params: Params = []) {
+          const rows = await t.unsafe(toPg(text), params as unknown as never[]);
+          return rows as unknown as R[];
+        },
+        async run(text: string, params: Params = []) {
+          const res = await t.unsafe(toPg(text), params as unknown as never[]);
+          return {
+            count: res.count ?? res.length,
+            rows: res as unknown as Record<string, unknown>[],
+          };
+        },
+        tx() {
+          // Postgres.js does support savepoints, but the repo layer never
+          // nests sql.tx — fail loud rather than silently flatten.
+          throw new Error("Nested sql.tx() is not supported.");
+        },
+      };
+      return fn(txClient);
+    });
+  },
+};
+
+export const sql: SqlClient =
+  process.env.DB_DRIVER === "postgres" ? pgClient : sqliteSql;

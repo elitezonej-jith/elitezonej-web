@@ -5,8 +5,8 @@ import "../styles/admin.css";
 
 export const metadata = { title: "First-run setup · Elite Zone J Atelier" };
 
-export default function SetupPage() {
-  if (countUsers() > 0) notFound();
+export default async function SetupPage() {
+  if ((await countUsers()) > 0) notFound();
   return (
     <main className="adm-auth">
       <div className="adm-auth-stage">

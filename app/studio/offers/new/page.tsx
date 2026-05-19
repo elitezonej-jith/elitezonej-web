@@ -11,7 +11,7 @@ type Cat = { id: number; name: string; slug: string; parent_id: number | null };
 
 export default async function NewOfferPage() {
   await requireUser("/studio/login");
-  const products = listProducts({ status: "all", limit: 200 });
+  const products = await listProducts({ status: "all", limit: 200 });
   const cats = getDb().prepare("SELECT id, name, slug, parent_id FROM categories ORDER BY name ASC").all() as Cat[];
   return (
     <div className="stu-page">

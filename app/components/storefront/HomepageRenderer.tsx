@@ -29,11 +29,11 @@ import PromoModalBlock from "./blocks/PromoModalBlock";
 
 type RC = Record<string, unknown>;
 
-export default function HomepageRenderer() {
-  const blocks = listBlocks({ onlyEnabled: true });
-  const liveSale = listFlashSales({ onlyLive: true })[0];
-  const banners = listBanners({ onlyPublished: true });
-  const { brandName } = getSiteSettings();
+export default async function HomepageRenderer() {
+  const blocks = await listBlocks({ onlyEnabled: true });
+  const liveSale = (await listFlashSales({ onlyLive: true }))[0];
+  const banners = await listBanners({ onlyPublished: true });
+  const { brandName } = await getSiteSettings();
 
   const announce = blocks.filter((b) => b.type === "announce_bar");
   const promos = blocks.filter((b) => b.type === "promo_modal");

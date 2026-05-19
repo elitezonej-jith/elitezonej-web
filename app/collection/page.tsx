@@ -21,11 +21,11 @@ export default async function CollectionPage({
 
   // Rename-aware headings via the DB categories overlay. The crumb/empty-state
   // fallback chains and the "stand" copy stay identical to the static behaviour.
-  const meta = getCategoryMeta(cat, sub);
-  const parentTitle = CAT_DATA[cat] ? getCategoryMeta(cat, "").title : "";
+  const meta = await getCategoryMeta(cat, sub);
+  const parentTitle = CAT_DATA[cat] ? (await getCategoryMeta(cat, "")).title : "";
   const hasSub = !!(sub && SUBCATS[cat]?.[sub]);
 
-  const products = listProductsForPage();
+  const products = await listProductsForPage();
 
   return (
     <>

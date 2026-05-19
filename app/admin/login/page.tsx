@@ -9,7 +9,7 @@ export const metadata = { title: "Sign in · Elite Zone J Atelier" };
 type SP = { searchParams: Promise<{ next?: string }> };
 
 export default async function LoginPage({ searchParams }: SP) {
-  if (countUsers() === 0) redirect("/admin/setup");
+  if ((await countUsers()) === 0) redirect("/admin/setup");
   const me = await getCurrentUser();
   if (me) redirect("/admin");
   const sp = await searchParams;

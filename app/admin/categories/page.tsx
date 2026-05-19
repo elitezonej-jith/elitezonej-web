@@ -12,7 +12,7 @@ export const metadata = { title: "Categories · Atelier" };
 
 export default async function CategoriesPage() {
   await requireUser();
-  const cats = listCategories();
+  const cats = await listCategories();
   const tops = cats.filter((c) => c.parent_id === null);
   const subs = cats.filter((c) => c.parent_id !== null);
 

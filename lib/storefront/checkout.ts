@@ -1,5 +1,5 @@
 import "server-only";
-import { getDb } from "../admin/db";
+import { sql } from "../admin/db";
 
 // ── Tunables ────────────────────────────────────────────────────────────────
 // Elite Zone J ships complimentary; tax is price-inclusive. Both are overridable
@@ -51,6 +51,17 @@ type ProductRow = {
   category: string;
 };
 
+// Postgres (postgres.js) returns numeric/bigint columns as strings; SQLite
+// returns numbers. Normalise the money/stock fields we do arithmetic or
+// comparisons on so behaviour is identical on both drivers. Number(x) is an
+// exact no-op for values already numeric.
+function num(v: unknown): number {
+  return Number(v ?? 0);
+}
+function numOrNull(v: unknown): number | null {
+  return v == null ? null : Number(v);
+}
+
 function effectiveUnitPrice(p: ProductRow): number {
   return p.sale_price != null && p.sale_price > 0 && p.sale_price < p.price
     ? p.sale_price
@@ -64,22 +75,14 @@ function effectiveUnitPrice(p: ProductRow): number {
  * authoritative stock check + decrement happens in `fulfilOrderPaid()` inside
  * a transaction at payment time.
  */
-export function priceCart(lines: CartLineInput[], promoCode?: string | null): PriceResult {
+export async function priceCart(
+  lines: CartLineInput[],
+  promoCode?: string | null,
+): Promise<PriceResult> {
   if (!Array.isArray(lines) || lines.length === 0) {
     return { ok: false, error: "Your bag is empty." };
   }
   if (lines.length > 50) return { ok: false, error: "Too many items in one order." };
-
-  const db = getDb();
-  const getProduct = db.prepare(
-    "SELECT slug, name, price, sale_price, kind, status, category FROM products WHERE slug = ?",
-  );
-  const getInv = db.prepare(
-    "SELECT stock, oos_flag FROM inventory WHERE product_slug = ? AND size = ?",
-  );
-  const getColour = db.prepare(
-    "SELECT stock_meters FROM fabric_colours WHERE product_slug = ? AND name = ?",
-  );
 
   const priced: PricedLine[] = [];
   for (const raw of lines) {
@@ -88,11 +91,19 @@ export function priceCart(lines: CartLineInput[], promoCode?: string | null): Pr
     if (!slug || !Number.isFinite(qty) || qty <= 0) {
       return { ok: false, error: "Invalid item in your bag." };
     }
-    const p = getProduct.get(slug) as ProductRow | undefined;
-    if (!p) return { ok: false, error: `“${slug}” is no longer available.` };
-    if (p.status !== "active") {
-      return { ok: false, error: `“${p.name}” is currently unavailable.` };
+    const pRow = await sql.get<ProductRow>(
+      "SELECT slug, name, price, sale_price, kind, status, category FROM products WHERE slug = ?",
+      [slug],
+    );
+    if (!pRow) return { ok: false, error: `“${slug}” is no longer available.` };
+    if (pRow.status !== "active") {
+      return { ok: false, error: `“${pRow.name}” is currently unavailable.` };
     }
+    const p: ProductRow = {
+      ...pRow,
+      price: num(pRow.price),
+      sale_price: numOrNull(pRow.sale_price),
+    };
 
     const isFabric = p.kind === "fabric";
     const unit = effectiveUnitPrice(p);
@@ -100,10 +111,14 @@ export function priceCart(lines: CartLineInput[], promoCode?: string | null): Pr
     if (isFabric) {
       const colour = (raw.colour ?? "").toString().trim();
       if (!colour) return { ok: false, error: `Choose a colour for ${p.name}.` };
-      const c = getColour.get(slug, colour) as { stock_meters: number } | undefined;
+      const c = await sql.get<{ stock_meters: number }>(
+        "SELECT stock_meters FROM fabric_colours WHERE product_slug = ? AND name = ?",
+        [slug, colour],
+      );
       if (!c) return { ok: false, error: `${p.name} — colour “${colour}” unavailable.` };
-      if (c.stock_meters < qty) {
-        return { ok: false, error: `Only ${c.stock_meters}m of ${p.name} (${colour}) left.` };
+      const stockMeters = num(c.stock_meters);
+      if (stockMeters < qty) {
+        return { ok: false, error: `Only ${stockMeters}m of ${p.name} (${colour}) left.` };
       }
       priced.push({
         slug, name: p.name, qty, unit_price: unit, size: null, colour,
@@ -111,11 +126,12 @@ export function priceCart(lines: CartLineInput[], promoCode?: string | null): Pr
       });
     } else {
       const size = (raw.size ?? "").toString().trim() || null;
-      const inv = getInv.get(slug, size ?? "") as
-        | { stock: number; oos_flag: number }
-        | undefined;
+      const inv = await sql.get<{ stock: number; oos_flag: number }>(
+        "SELECT stock, oos_flag FROM inventory WHERE product_slug = ? AND size = ?",
+        [slug, size ?? ""],
+      );
       // No inventory row ⇒ untracked size; treat as unavailable to be safe.
-      if (!inv || inv.oos_flag === 1 || inv.stock < qty) {
+      if (!inv || num(inv.oos_flag) === 1 || num(inv.stock) < qty) {
         return { ok: false, error: `“${p.name}”${size ? ` (size ${size})` : ""} is out of stock.` };
       }
       priced.push({
@@ -132,7 +148,7 @@ export function priceCart(lines: CartLineInput[], promoCode?: string | null): Pr
   let appliedPromo: string | null = null;
   let waiveShipping = false;
   if (promoCode && promoCode.trim()) {
-    const v = validatePromo(promoCode.trim(), priced, subtotal);
+    const v = await validatePromo(promoCode.trim(), priced, subtotal);
     if (!v.ok) return { ok: false, error: v.error };
     discount = v.discount;
     waiveShipping = v.waiveShipping;
@@ -169,17 +185,25 @@ type PromoCheck =
   | { ok: true; code: string; discount: number; waiveShipping: boolean }
   | { ok: false; error: string };
 
-export function validatePromo(
+export async function validatePromo(
   code: string,
   lines: PricedLine[],
   subtotal: number,
-): PromoCheck {
-  const db = getDb();
-  const promo = db
-    .prepare("SELECT * FROM promotions WHERE code = ?")
-    .get(code) as PromoRow | undefined;
-  if (!promo) return { ok: false, error: "Invalid promo code." };
-  if (promo.status !== "active") return { ok: false, error: "This code is not active." };
+): Promise<PromoCheck> {
+  const promoRow = await sql.get<PromoRow>(
+    "SELECT * FROM promotions WHERE code = ?",
+    [code],
+  );
+  if (!promoRow) return { ok: false, error: "Invalid promo code." };
+  if (promoRow.status !== "active") return { ok: false, error: "This code is not active." };
+
+  const promo: PromoRow = {
+    ...promoRow,
+    value: num(promoRow.value),
+    min_total: num(promoRow.min_total),
+    usage_limit: numOrNull(promoRow.usage_limit),
+    usage_count: num(promoRow.usage_count),
+  };
 
   const now = Date.now();
   if (promo.starts_at && Date.parse(promo.starts_at) > now) {
@@ -197,9 +221,10 @@ export function validatePromo(
 
   // Targeting: if explicit product/category targets exist, the discount only
   // applies to the matching portion of the cart.
-  const targets = db
-    .prepare("SELECT target_type, target_id FROM offer_targets WHERE promo_code = ?")
-    .all(code) as Array<{ target_type: string; target_id: string }>;
+  const targets = await sql.all<{ target_type: string; target_id: string }>(
+    "SELECT target_type, target_id FROM offer_targets WHERE promo_code = ?",
+    [code],
+  );
   const scoped = targets.filter((t) => t.target_type !== "all" && t.target_id);
   let eligible = subtotal;
   if (scoped.length) {

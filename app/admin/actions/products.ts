@@ -84,9 +84,9 @@ export async function saveProductAction(_prev: ActionState, fd: FormData): Promi
     description: v.description?.trim() || null,
   };
 
-  const exists = !!getProduct(v.slug);
-  upsertProduct(input);
-  logAudit({
+  const exists = !!(await getProduct(v.slug));
+  await upsertProduct(input);
+  await logAudit({
     user_id: me.id,
     action: exists ? "update_product" : "create_product",
     entity: "product",
@@ -96,7 +96,7 @@ export async function saveProductAction(_prev: ActionState, fd: FormData): Promi
   // Re-derive default inventory rows for any new sizes that have no row yet.
   // (Keeps existing stock untouched on edit; on create gives sensible defaults.)
   if (!exists) {
-    setInventory(
+    await setInventory(
       v.slug,
       input.sizes.map((s) => ({ size: s, stock: 6, oos_flag: 0 })),
     );
@@ -114,8 +114,8 @@ export async function setProductStatusAction(fd: FormData): Promise<void> {
   const raw = String(fd.get("status") ?? "active");
   if (!slug || !(STATUSES as readonly string[]).includes(raw)) return;
   const status = raw as (typeof STATUSES)[number];
-  setStatus(slug, status);
-  logAudit({ user_id: me.id, action: "set_product_status", entity: "product", entity_id: slug, payload: { status } });
+  await setStatus(slug, status);
+  await logAudit({ user_id: me.id, action: "set_product_status", entity: "product", entity_id: slug, payload: { status } });
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${slug}`);
 }
@@ -124,8 +124,8 @@ export async function deleteProductAction(fd: FormData): Promise<void> {
   const me = await requireUser();
   const slug = String(fd.get("slug") ?? "");
   if (!slug) return;
-  deleteProduct(slug);
-  logAudit({ user_id: me.id, action: "delete_product", entity: "product", entity_id: slug });
+  await deleteProduct(slug);
+  await logAudit({ user_id: me.id, action: "delete_product", entity: "product", entity_id: slug });
   revalidatePath("/admin/products");
   revalidatePath(`/products/${slug}`);
   revalidatePath("/collection");
@@ -144,8 +144,8 @@ export async function saveInventoryAction(fd: FormData): Promise<void> {
     stock: oos[i] ? 0 : stocks[i] ?? 0,
     oos_flag: oos[i] ?? 0,
   }));
-  setInventory(slug, rows);
-  logAudit({ user_id: me.id, action: "set_inventory", entity: "product", entity_id: slug, payload: { rows } });
+  await setInventory(slug, rows);
+  await logAudit({ user_id: me.id, action: "set_inventory", entity: "product", entity_id: slug, payload: { rows } });
   revalidatePath(`/admin/products/${slug}`);
   revalidatePath("/admin/inventory");
 }

@@ -15,7 +15,7 @@ type Params = { params: Promise<{ id: string }> };
 export default async function BookingDetailPage({ params }: Params) {
   await requireUser();
   const { id } = await params;
-  const booking = getBooking(Number(id));
+  const booking = await getBooking(Number(id));
   if (!booking) notFound();
 
   return (

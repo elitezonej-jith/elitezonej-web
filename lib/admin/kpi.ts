@@ -1,5 +1,5 @@
 import "server-only";
-import { getDb } from "./db";
+import { sql } from "./db";
 
 export type Kpis = {
   revenue30d: number;
@@ -29,72 +29,75 @@ export type TopSku = {
   revenue: number;
 };
 
-export function getKpis(): Kpis {
-  const db = getDb();
-  const r30 = db
-    .prepare(
-      `SELECT COALESCE(SUM(total),0) as total, COUNT(*) as orders
-       FROM orders
-       WHERE status != 'cancelled' AND datetime(created_at) >= datetime('now','-30 days')`,
-    )
-    .get() as { total: number; orders: number };
+// SQLite stored ISO TEXT and Postgres stores timestamptz; an ISO-8601 string
+// compares correctly against both. Compute the rolling-window cutoffs in JS so
+// the SQL stays portable (no SQLite-only datetime('now','-N days')).
+function isoDaysAgo(days: number): string {
+  return new Date(Date.now() - days * 86400000).toISOString();
+}
 
-  const r60 = db
-    .prepare(
-      `SELECT COALESCE(SUM(total),0) as total
+export async function getKpis(): Promise<Kpis> {
+  const r30 = await sql.get<{ total: number | string; orders: number | string }>(
+    `SELECT COALESCE(SUM(total),0) as total, COUNT(*) as orders
+       FROM orders
+       WHERE status != 'cancelled' AND created_at >= ?`,
+    [isoDaysAgo(30)],
+  );
+
+  const r60 = await sql.get<{ total: number | string }>(
+    `SELECT COALESCE(SUM(total),0) as total
        FROM orders
        WHERE status != 'cancelled'
-         AND datetime(created_at) >= datetime('now','-60 days')
-         AND datetime(created_at) <  datetime('now','-30 days')`,
-    )
-    .get() as { total: number };
+         AND created_at >= ?
+         AND created_at <  ?`,
+    [isoDaysAgo(60), isoDaysAgo(30)],
+  );
 
-  const b30 = db
-    .prepare(
-      `SELECT COUNT(*) as n FROM bookings WHERE datetime(created_at) >= datetime('now','-30 days')`,
-    )
-    .get() as { n: number };
-  const bNew = db
-    .prepare(`SELECT COUNT(*) as n FROM bookings WHERE status = 'new'`)
-    .get() as { n: number };
+  const b30 = await sql.get<{ n: number | string }>(
+    `SELECT COUNT(*) as n FROM bookings WHERE created_at >= ?`,
+    [isoDaysAgo(30)],
+  );
+  const bNew = await sql.get<{ n: number | string }>(
+    `SELECT COUNT(*) as n FROM bookings WHERE status = 'new'`,
+  );
 
-  const thr = (db
-    .prepare("SELECT value FROM settings WHERE key = 'low_stock_threshold'")
-    .get() as { value: string } | undefined)?.value ?? "3";
-  const lowStock = db
-    .prepare(
-      `SELECT COUNT(*) as n FROM inventory WHERE stock <= ? AND oos_flag = 0`,
-    )
-    .get(Number(thr)) as { n: number };
-  const skus = db
-    .prepare("SELECT COUNT(*) as n FROM products WHERE status='active'")
-    .get() as { n: number };
+  const thrRow = await sql.get<{ value: string }>(
+    "SELECT value FROM settings WHERE key = 'low_stock_threshold'",
+  );
+  const thr = thrRow?.value ?? "3";
+  const lowStock = await sql.get<{ n: number | string }>(
+    `SELECT COUNT(*) as n FROM inventory WHERE stock <= ? AND oos_flag = 0`,
+    [Number(thr)],
+  );
+  const skus = await sql.get<{ n: number | string }>(
+    "SELECT COUNT(*) as n FROM products WHERE status='active'",
+  );
 
+  const revenue30d = Number(r30?.total ?? 0);
+  const orders30d = Number(r30?.orders ?? 0);
   return {
-    revenue30d: r30.total,
-    revenue30dPrior: r60.total,
-    orders30d: r30.orders,
-    aov30d: r30.orders ? Math.round(r30.total / r30.orders) : 0,
-    bookings30d: b30.n,
-    bookingsNew: bNew.n,
-    lowStockCount: lowStock.n,
-    totalActiveSkus: skus.n,
+    revenue30d,
+    revenue30dPrior: Number(r60?.total ?? 0),
+    orders30d,
+    aov30d: orders30d ? Math.round(revenue30d / orders30d) : 0,
+    bookings30d: Number(b30?.n ?? 0),
+    bookingsNew: Number(bNew?.n ?? 0),
+    lowStockCount: Number(lowStock?.n ?? 0),
+    totalActiveSkus: Number(skus?.n ?? 0),
   };
 }
 
-export function getRevenueByDay(days = 30): DailyPoint[] {
-  const db = getDb();
-  const rows = db
-    .prepare(
-      `SELECT substr(created_at,1,10) as day, COALESCE(SUM(total),0) as total
+export async function getRevenueByDay(days = 30): Promise<DailyPoint[]> {
+  const rows = await sql.all<{ day: string; total: number | string }>(
+    `SELECT substr(created_at,1,10) as day, COALESCE(SUM(total),0) as total
        FROM orders
-       WHERE status != 'cancelled' AND datetime(created_at) >= datetime('now',?)
+       WHERE status != 'cancelled' AND created_at >= ?
        GROUP BY day ORDER BY day ASC`,
-    )
-    .all(`-${days} days`) as DailyPoint[];
+    [isoDaysAgo(days)],
+  );
 
   // Fill missing days with zero so the sparkline doesn't compress.
-  const map = new Map(rows.map((r) => [r.day, r.total]));
+  const map = new Map(rows.map((r) => [r.day, Number(r.total)] as const));
   const out: DailyPoint[] = [];
   const today = new Date();
   for (let i = days - 1; i >= 0; i--) {
@@ -106,71 +109,89 @@ export function getRevenueByDay(days = 30): DailyPoint[] {
   return out;
 }
 
-export function getLowStock(limit = 8): LowStockRow[] {
-  const db = getDb();
-  const thr = (db
-    .prepare("SELECT value FROM settings WHERE key = 'low_stock_threshold'")
-    .get() as { value: string } | undefined)?.value ?? "3";
-  return db
-    .prepare(
-      `SELECT i.product_slug as slug, p.name as name, i.size, i.stock, p.kind
+export async function getLowStock(limit = 8): Promise<LowStockRow[]> {
+  const thrRow = await sql.get<{ value: string }>(
+    "SELECT value FROM settings WHERE key = 'low_stock_threshold'",
+  );
+  const thr = thrRow?.value ?? "3";
+  return sql.all<LowStockRow>(
+    `SELECT i.product_slug as slug, p.name as name, i.size, i.stock, p.kind
        FROM inventory i JOIN products p ON p.slug = i.product_slug
        WHERE i.oos_flag = 0 AND i.stock <= ?
        ORDER BY i.stock ASC, p.name ASC LIMIT ?`,
-    )
-    .all(Number(thr), limit) as LowStockRow[];
+    [Number(thr), limit],
+  );
 }
 
-export function getRecentBookings(limit = 5) {
-  const db = getDb();
-  return db
-    .prepare(
-      `SELECT id, first_name, last_name, city, service, status, created_at
-       FROM bookings ORDER BY datetime(created_at) DESC LIMIT ?`,
-    )
-    .all(limit) as Array<{
-      id: number;
-      first_name: string;
-      last_name: string;
-      city: string;
-      service: string;
-      status: string;
-      created_at: string;
-    }>;
+export async function getRecentBookings(limit = 5): Promise<Array<{
+  id: number;
+  first_name: string;
+  last_name: string;
+  city: string;
+  service: string;
+  status: string;
+  created_at: string;
+}>> {
+  return sql.all<{
+    id: number;
+    first_name: string;
+    last_name: string;
+    city: string;
+    service: string;
+    status: string;
+    created_at: string;
+  }>(
+    `SELECT id, first_name, last_name, city, service, status, created_at
+       FROM bookings ORDER BY created_at DESC LIMIT ?`,
+    [limit],
+  );
 }
 
-export function getTopSkus(days = 30, limit = 5): TopSku[] {
-  const db = getDb();
-  return db
-    .prepare(
-      `SELECT oi.product_slug as slug, p.name as name,
+export async function getTopSkus(days = 30, limit = 5): Promise<TopSku[]> {
+  const rows = await sql.all<{
+    slug: string;
+    name: string;
+    units: number | string;
+    revenue: number | string;
+  }>(
+    `SELECT oi.product_slug as slug, p.name as name,
               SUM(oi.qty) as units,
               SUM(oi.qty * oi.unit_price) as revenue
        FROM order_items oi
        JOIN orders o ON o.id = oi.order_id
        JOIN products p ON p.slug = oi.product_slug
        WHERE o.status != 'cancelled'
-         AND datetime(o.created_at) >= datetime('now', ?)
-       GROUP BY oi.product_slug
+         AND o.created_at >= ?
+       GROUP BY oi.product_slug, p.name
        ORDER BY revenue DESC LIMIT ?`,
-    )
-    .all(`-${days} days`, limit) as TopSku[];
+    [isoDaysAgo(days), limit],
+  );
+  return rows.map((r) => ({
+    slug: r.slug,
+    name: r.name,
+    units: Number(r.units),
+    revenue: Number(r.revenue),
+  }));
 }
 
-export function getRecentOrders(limit = 6) {
-  const db = getDb();
-  return db
-    .prepare(
-      `SELECT o.id, o.status, o.total, o.created_at,
+export async function getRecentOrders(limit = 6): Promise<Array<{
+  id: string;
+  status: string;
+  total: number;
+  created_at: string;
+  customer: string;
+}>> {
+  return sql.all<{
+    id: string;
+    status: string;
+    total: number;
+    created_at: string;
+    customer: string;
+  }>(
+    `SELECT o.id, o.status, o.total, o.created_at,
               c.first_name || ' ' || c.last_name as customer
        FROM orders o JOIN customers c ON c.id = o.customer_id
-       ORDER BY datetime(o.created_at) DESC LIMIT ?`,
-    )
-    .all(limit) as Array<{
-      id: string;
-      status: string;
-      total: number;
-      created_at: string;
-      customer: string;
-    }>;
+       ORDER BY o.created_at DESC LIMIT ?`,
+    [limit],
+  );
 }

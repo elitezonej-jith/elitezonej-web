@@ -35,15 +35,15 @@ export async function saveCategoryAction(_prev: CatSaveState, fd: FormData): Pro
   const enabled = v.enabled === "on" ? 1 : 0;
   let savedId = id;
   if (id) {
-    updateCategory(id, data);
+    await updateCategory(id, data);
     getDb().prepare("UPDATE categories SET image_path = ?, enabled = ? WHERE id = ?")
       .run(v.image_path, enabled, id);
-    logAudit({ user_id: me.id, action: "update_category", entity: "category", entity_id: String(id) });
+    await logAudit({ user_id: me.id, action: "update_category", entity: "category", entity_id: String(id) });
   } else {
-    savedId = createCategory(data);
+    savedId = await createCategory(data);
     getDb().prepare("UPDATE categories SET image_path = ?, enabled = ? WHERE id = ?")
       .run(v.image_path, enabled, savedId);
-    logAudit({ user_id: me.id, action: "create_category", entity: "category", entity_id: String(savedId) });
+    await logAudit({ user_id: me.id, action: "create_category", entity: "category", entity_id: String(savedId) });
   }
   revalidatePath("/studio/categories");
   revalidatePath("/");
@@ -54,8 +54,8 @@ export async function deleteCategoryAction(fd: FormData): Promise<void> {
   const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
-  deleteCategory(id);
-  logAudit({ user_id: me.id, action: "delete_category", entity: "category", entity_id: String(id) });
+  await deleteCategory(id);
+  await logAudit({ user_id: me.id, action: "delete_category", entity: "category", entity_id: String(id) });
   revalidatePath("/studio/categories");
   redirect("/studio/categories?flash=Category%20removed");
 }

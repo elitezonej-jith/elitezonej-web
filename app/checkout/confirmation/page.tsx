@@ -16,7 +16,7 @@ type Props = { searchParams: Promise<{ o?: string; t?: string }> };
 export default async function ConfirmationPage({ searchParams }: Props) {
   const { o, t } = await searchParams;
   if (!o) notFound();
-  const order = getOrder(o);
+  const order = await getOrder(o);
   if (!order) notFound();
 
   // Access control (closes the ?o= IDOR PII leak): either a valid short-lived
@@ -27,7 +27,7 @@ export default async function ConfirmationPage({ searchParams }: Props) {
   const ownerOk = !!customer && order.customer_id === customer.id;
   if (!tokenOk && !ownerOk) notFound();
 
-  const items = getOrderItems(o);
+  const items = await getOrderItems(o);
 
   const paid = order.payment_status === "paid";
 
@@ -38,7 +38,7 @@ export default async function ConfirmationPage({ searchParams }: Props) {
   if (paid && customer && ownerOk) {
     try {
       const [firstName, ...rest] = (order.ship_name || "").trim().split(/\s+/);
-      saveAddressFromOrder(customer.id, {
+      await saveAddressFromOrder(customer.id, {
         first_name: firstName ?? "",
         last_name: rest.join(" "),
         line1: order.ship_line1,

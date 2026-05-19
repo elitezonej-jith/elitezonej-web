@@ -30,8 +30,8 @@ export default async function BespokeListPage({ searchParams }: SP) {
   const status = sp.status as BookingStatus | undefined;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
-  const items = listBookings({ q, status, limit: PAGE_SIZE, offset });
-  const total = countBookings({ status });
+  const items = await listBookings({ q, status, limit: PAGE_SIZE, offset });
+  const total = await countBookings({ status });
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const chips: FilterChip[] = [

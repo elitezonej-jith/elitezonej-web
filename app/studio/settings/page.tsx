@@ -14,9 +14,9 @@ export const metadata = { title: "Settings · Studio" };
 
 export default async function SettingsPage() {
   const me = await requireUser();
-  const settings = getSettings();
-  const users = listUsers();
-  const log = listAudit(40);
+  const settings = await getSettings();
+  const users = await listUsers();
+  const log = await listAudit(40);
   return (
     <div className="stu-page">
       <PageHead title="Settings" sub="Brand details, your account, and team access." />

@@ -33,8 +33,8 @@ export default async function OrdersListPage({ searchParams }: SP) {
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
   const offset = (page - 1) * PAGE_SIZE;
 
-  const items = listOrders({ q, status, limit: PAGE_SIZE, offset });
-  const total = countOrders({ q, status });
+  const items = await listOrders({ q, status, limit: PAGE_SIZE, offset });
+  const total = await countOrders({ q, status });
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const chips: FilterChip[] = [

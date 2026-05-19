@@ -1,29 +1,30 @@
 import "server-only";
-import { getDb } from "../db";
+import { sql } from "../db";
 
-export function getSettings(): Record<string, string> {
-  const rows = getDb().prepare("SELECT key, value FROM settings").all() as Array<{ key: string; value: string }>;
+export async function getSettings(): Promise<Record<string, string>> {
+  const rows = await sql.all<{ key: string; value: string }>("SELECT key, value FROM settings");
   return Object.fromEntries(rows.map((r) => [r.key, r.value]));
 }
 
-export function getSetting(key: string): string | null {
-  const r = getDb().prepare("SELECT value FROM settings WHERE key = ?").get(key) as { value: string } | undefined;
+export async function getSetting(key: string): Promise<string | null> {
+  const r = await sql.get<{ value: string }>("SELECT value FROM settings WHERE key = ?", [key]);
   return r?.value ?? null;
 }
 
-export function setSetting(key: string, value: string): void {
-  getDb()
-    .prepare("INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value")
-    .run(key, value);
+export async function setSetting(key: string, value: string): Promise<void> {
+  await sql.run(
+    "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    [key, value],
+  );
 }
 
-export function setSettings(map: Record<string, string>): void {
-  const db = getDb();
-  const stmt = db.prepare(
-    "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
-  );
-  const tx = db.transaction(() => {
-    for (const [k, v] of Object.entries(map)) stmt.run(k, v);
+export async function setSettings(map: Record<string, string>): Promise<void> {
+  await sql.tx(async (t) => {
+    for (const [k, v] of Object.entries(map)) {
+      await t.run(
+        "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        [k, v],
+      );
+    }
   });
-  tx();
 }

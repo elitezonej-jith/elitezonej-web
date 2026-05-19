@@ -17,9 +17,9 @@ import {
 // Slugs absent from the static array sort after, by name.
 const STATIC_INDEX = new Map(STATIC_PRODUCTS.map((p, i) => [p.slug, i] as const));
 
-export function listProductsForPage(filter?: ListFilter): LegacyProduct[] {
-  const oosBySlug = getStockMap();
-  const out = listProducts(filter).map((p) => {
+export async function listProductsForPage(filter?: ListFilter): Promise<LegacyProduct[]> {
+  const oosBySlug = await getStockMap();
+  const out = (await listProducts(filter)).map((p) => {
     const legacy = adaptDbProduct(p);
     // Overlay DB-accurate out-of-stock onto the legacy sizes[] "-oos"
     // convention the catalogue UI already filters/renders on. Only authoritative

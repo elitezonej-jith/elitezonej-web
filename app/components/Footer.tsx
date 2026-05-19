@@ -66,8 +66,8 @@ function RatingBadge() {
   );
 }
 
-export default function Footer({ minimal = false }: { minimal?: boolean }) {
-  const s = getSiteSettings();
+export default async function Footer({ minimal = false }: { minimal?: boolean }) {
+  const s = await getSiteSettings();
   if (minimal) {
     return (
       <footer className="site site--minimal">

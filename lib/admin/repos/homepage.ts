@@ -1,5 +1,5 @@
 import "server-only";
-import { getDb } from "../db";
+import { sql } from "../db";
 
 export type HomepageBlockType =
   | "hero_grid" | "hero_banner" | "banner_carousel"
@@ -29,14 +29,13 @@ function resolve(b: HomepageBlock): HomepageBlockResolved {
   return { ...b, config };
 }
 
-export function listBlocks(opts?: { onlyEnabled?: boolean }): HomepageBlockResolved[] {
-  const db = getDb();
-  const sql = `SELECT * FROM homepage_blocks ${opts?.onlyEnabled ? "WHERE enabled = 1" : ""} ORDER BY sort_order ASC, id ASC`;
-  return (db.prepare(sql).all() as HomepageBlock[]).map(resolve);
+export async function listBlocks(opts?: { onlyEnabled?: boolean }): Promise<HomepageBlockResolved[]> {
+  const query = `SELECT * FROM homepage_blocks ${opts?.onlyEnabled ? "WHERE enabled = 1" : ""} ORDER BY sort_order ASC, id ASC`;
+  return (await sql.all<HomepageBlock>(query)).map(resolve);
 }
 
-export function getBlock(id: number): HomepageBlockResolved | null {
-  const r = getDb().prepare("SELECT * FROM homepage_blocks WHERE id = ?").get(id) as HomepageBlock | undefined;
+export async function getBlock(id: number): Promise<HomepageBlockResolved | null> {
+  const r = await sql.get<HomepageBlock>("SELECT * FROM homepage_blocks WHERE id = ?", [id]);
   return r ? resolve(r) : null;
 }
 
@@ -48,47 +47,53 @@ export type HomepageBlockInput = {
   enabled?: number;
 };
 
-export function createBlock(input: HomepageBlockInput): number {
-  const db = getDb();
-  const max = (db.prepare("SELECT COALESCE(MAX(sort_order),0) as m FROM homepage_blocks").get() as { m: number }).m;
-  const r = db.prepare(`
-    INSERT INTO homepage_blocks (type, title, kicker, config_json, sort_order, enabled)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(
-    input.type,
-    input.title ?? "",
-    input.kicker ?? "",
-    JSON.stringify(input.config ?? {}),
-    max + 10,
-    input.enabled ?? 1,
+export async function createBlock(input: HomepageBlockInput): Promise<number> {
+  const maxRow = await sql.get<{ m: number | string }>(
+    "SELECT COALESCE(MAX(sort_order),0) as m FROM homepage_blocks",
   );
-  return Number(r.lastInsertRowid);
+  const max = Number(maxRow?.m ?? 0);
+  const r = await sql.run(
+    `INSERT INTO homepage_blocks (type, title, kicker, config_json, sort_order, enabled)
+    VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
+    [
+      input.type,
+      input.title ?? "",
+      input.kicker ?? "",
+      JSON.stringify(input.config ?? {}),
+      max + 10,
+      input.enabled ?? 1,
+    ],
+  );
+  return Number(r.rows[0].id);
 }
 
-export function updateBlock(
+export async function updateBlock(
   id: number,
   patch: Partial<{ title: string; kicker: string; config: Record<string, unknown>; enabled: number }>,
-): void {
+): Promise<void> {
   const sets: string[] = [];
-  const params: Record<string, unknown> = { id };
-  if (patch.title !== undefined) { sets.push("title = @title"); params.title = patch.title; }
-  if (patch.kicker !== undefined) { sets.push("kicker = @kicker"); params.kicker = patch.kicker; }
-  if (patch.config !== undefined) { sets.push("config_json = @config_json"); params.config_json = JSON.stringify(patch.config); }
-  if (patch.enabled !== undefined) { sets.push("enabled = @enabled"); params.enabled = patch.enabled; }
+  const params: unknown[] = [];
+  if (patch.title !== undefined) { sets.push("title = ?"); params.push(patch.title); }
+  if (patch.kicker !== undefined) { sets.push("kicker = ?"); params.push(patch.kicker); }
+  if (patch.config !== undefined) { sets.push("config_json = ?"); params.push(JSON.stringify(patch.config)); }
+  if (patch.enabled !== undefined) { sets.push("enabled = ?"); params.push(patch.enabled); }
   if (!sets.length) return;
-  sets.push("updated_at = datetime('now')");
-  getDb().prepare(`UPDATE homepage_blocks SET ${sets.join(", ")} WHERE id = @id`).run(params);
+  sets.push("updated_at = CURRENT_TIMESTAMP");
+  params.push(id);
+  await sql.run(`UPDATE homepage_blocks SET ${sets.join(", ")} WHERE id = ?`, params);
 }
 
-export function deleteBlock(id: number): void {
-  getDb().prepare("DELETE FROM homepage_blocks WHERE id = ?").run(id);
+export async function deleteBlock(id: number): Promise<void> {
+  await sql.run("DELETE FROM homepage_blocks WHERE id = ?", [id]);
 }
 
-export function reorderBlocks(orderedIds: number[]): void {
-  const db = getDb();
-  const stmt = db.prepare("UPDATE homepage_blocks SET sort_order = ? WHERE id = ?");
-  const tx = db.transaction(() => {
-    orderedIds.forEach((id, i) => stmt.run((i + 1) * 10, id));
+export async function reorderBlocks(orderedIds: number[]): Promise<void> {
+  await sql.tx(async (t) => {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await t.run("UPDATE homepage_blocks SET sort_order = ? WHERE id = ?", [
+        (i + 1) * 10,
+        orderedIds[i],
+      ]);
+    }
   });
-  tx();
 }
