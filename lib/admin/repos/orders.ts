@@ -189,7 +189,23 @@ export async function fulfilOrderPaid(
         [orderId],
       );
       if (!order) return { ok: false, error: "Order not found." };
-      if (order.payment_status === "paid") return { ok: true, alreadyPaid: true };
+
+      // Atomic claim (RF-9). The original code relied on SQLite's implicit
+      // single-writer serialization to make concurrent confirm+webhook calls
+      // safe; Postgres (READ COMMITTED) has no such guarantee, so without
+      // this two racing transactions could each pass a `payment_status` read
+      // check and double-decrement stock / double-bump customer & promo
+      // totals. This conditional UPDATE is the first write: the row lock it
+      // takes means exactly ONE transaction flips the order away from
+      // 'paid'; the loser sees count === 0 and returns an idempotent no-op
+      // having touched nothing. Predicate is `<> 'paid'` (not `= 'pending'`)
+      // to preserve the original behaviour exactly — only an already-paid
+      // order short-circuits; any other state still fulfils as before.
+      const claim = await t.run(
+        "UPDATE orders SET status = 'confirmed', payment_status = 'paid', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND payment_status <> 'paid'",
+        [orderId],
+      );
+      if (claim.count === 0) return { ok: true, alreadyPaid: true };
 
       const items = await t.all<OrderItem>(
         "SELECT * FROM order_items WHERE order_id = ?",
@@ -226,10 +242,7 @@ export async function fulfilOrderPaid(
         }
       }
 
-      await t.run(
-        "UPDATE orders SET status = 'confirmed', payment_status = 'paid', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-        [orderId],
-      );
+      // Order row already transitioned by the atomic claim above.
 
       if (order.promo_code) {
         await t.run(

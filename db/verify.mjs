@@ -75,6 +75,26 @@ try {
   const ts = await sql`SELECT CURRENT_TIMESTAMP AS t`;
   check("CURRENT_TIMESTAMP resolves", ts[0].t instanceof Date, `t=${ts[0].t}`);
 
+  // 7b. RF-9 atomic claim under real concurrency. Two independent clients race
+  //     the exact claim UPDATE on one order row; Postgres must let EXACTLY ONE
+  //     win (count 1) and the other see count 0 — the property that prevents
+  //     concurrent confirm+webhook from double-fulfilling. Uses a transient
+  //     real table (temp tables aren't shared across connections), dropped after.
+  await sql`CREATE TABLE IF NOT EXISTS __ezj_claim_test (id int PRIMARY KEY, payment_status text)`;
+  await sql`INSERT INTO __ezj_claim_test (id, payment_status) VALUES (1, 'pending')
+            ON CONFLICT (id) DO UPDATE SET payment_status = 'pending'`;
+  const ca = postgres(url, { max: 1, prepare: false });
+  const cb = postgres(url, { max: 1, prepare: false });
+  const claimSql =
+    "UPDATE __ezj_claim_test SET payment_status = 'paid' WHERE id = 1 AND payment_status <> 'paid'";
+  const [ra, rb] = await Promise.all([ca.unsafe(claimSql), cb.unsafe(claimSql)]);
+  await ca.end({ timeout: 5 });
+  await cb.end({ timeout: 5 });
+  const counts = [ra.count, rb.count].sort();
+  check("RF-9 concurrent claim: exactly one winner", counts[0] === 0 && counts[1] === 1,
+    `counts=${JSON.stringify([ra.count, rb.count])}`);
+  await sql`DROP TABLE __ezj_claim_test`;
+
   // 8. Durability: write a marker, close the connection, reopen a NEW client,
   //    and read it back — proves data survives a fresh process/connection
   //    (the actual fix vs the old in-memory SQLite). Marker is then removed.
