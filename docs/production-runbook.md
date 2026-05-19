@@ -86,12 +86,44 @@ non-empty `schema_migrations`. Report these outputs back — that unblocks RF-1.
 
 ---
 
-## Phases 2–5
+## Phase 2 — async port (DONE, inert)
 
-Filled in as code lands. Each ring-fenced edit (RF-1…RF-8 in the approved
-plan) is implemented only after its own explicit sign-off, and only once
-Phase 1 is confirmed. Live payments stay disabled until Phase 4’s durability
-gate (replaces the `isEphemeralPersistence()` hard-disable).
+Full sync→async port landed behind `DB_DRIVER` (commit on
+`feat/postgres-migration`). `DB_DRIVER=sqlite` stays default → runtime
+unchanged. `npx tsc --noEmit` 0 errors; `npm run build` succeeds (SQLite path,
+22/22 static pages). Runtime parity/durability NOT yet proven — that is Phase 3.
+
+## Phase 3 — verify durability & parity (BLOCKING, owner-run for Postgres)
+
+Local SQLite path: verified via `npm run build` (green).
+
+Postgres path — run against the Neon **verify branch** (never production):
+
+```bash
+DATABASE_URL='<neon VERIFY-branch url>' npm run db:migrate   # if not already
+DATABASE_URL='<neon VERIFY-branch url>' npm run db:verify
+```
+
+`db:verify` (db/verify.mjs) asserts, with zero impact on real data
+(temp tables + a self-deleting marker):
+- migrations applied; payments/webhook/idempotency constraints exist;
+- guarded stock decrement affects 0 rows when insufficient (no oversell);
+- `CASE` floor clamp; `ON CONFLICT (pk) DO NOTHING` idempotency (count 1 then 0);
+- `RETURNING id`; `CURRENT_TIMESTAMP`;
+- durability: a row written, then read back over a brand-new connection.
+
+Expected: `N passed, 0 failed` (exit 0). Paste the output back.
+
+Still owed before Phase 4 sign-off: (a) re-confirm `db:seed` ran from THIS
+repo against the verify branch (owner user exists), (b) a full
+order→pay→webhook→reconcile lifecycle dry run with Razorpay **test** keys in a
+Preview deploy on `DB_DRIVER=postgres`. Both QA and Security must sign off.
+
+## Phases 4–5
+
+Live payments stay disabled until Phase 4’s durability gate (RF-7, replaces the
+`isEphemeralPersistence()` hard-disable) — gated on Phase 3 sign-off + explicit
+user approval.
 
 ## Rollback (authoritative, every phase ≤ 4)
 
