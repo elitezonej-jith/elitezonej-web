@@ -1,5 +1,5 @@
 import "server-only";
-import { getDb } from "../db";
+import { sql } from "../db";
 import type { Customer } from "../types";
 
 export type CustomerAuthRow = {
@@ -11,13 +11,10 @@ export type CustomerAuthRow = {
   password_hash: string | null;
 };
 
-export function getCustomerAuthByEmail(email: string): CustomerAuthRow | null {
-  return (
-    (getDb()
-      .prepare(
-        "SELECT id, email, first_name, last_name, phone, password_hash FROM customers WHERE email = ?",
-      )
-      .get(email.toLowerCase()) as CustomerAuthRow | undefined) ?? null
+export async function getCustomerAuthByEmail(email: string): Promise<CustomerAuthRow | null> {
+  return sql.get<CustomerAuthRow>(
+    "SELECT id, email, first_name, last_name, phone, password_hash FROM customers WHERE email = ?",
+    [email.toLowerCase()],
   );
 }
 
@@ -26,55 +23,55 @@ export function getCustomerAuthByEmail(email: string): CustomerAuthRow | null {
  * created at checkout with no password) in place. Returns the customer id.
  * Throws if the email already has a password (account exists).
  */
-export function createAccount(input: {
+export async function createAccount(input: {
   email: string;
   first_name: string;
   last_name: string;
   phone: string | null;
   password_hash: string;
-}): number {
-  const db = getDb();
+}): Promise<number> {
   const email = input.email.toLowerCase();
-  const existing = db
-    .prepare("SELECT id, password_hash FROM customers WHERE email = ?")
-    .get(email) as { id: number; password_hash: string | null } | undefined;
+  const existing = await sql.get<{ id: number | string; password_hash: string | null }>(
+    "SELECT id, password_hash FROM customers WHERE email = ?",
+    [email],
+  );
 
   if (existing) {
     if (existing.password_hash) {
       throw new Error("ACCOUNT_EXISTS");
     }
-    db.prepare(
+    await sql.run(
       `UPDATE customers SET password_hash = ?, first_name = ?, last_name = ?,
          phone = COALESCE(?, phone) WHERE id = ?`,
-    ).run(input.password_hash, input.first_name, input.last_name, input.phone, existing.id);
-    return existing.id;
+      [input.password_hash, input.first_name, input.last_name, input.phone, existing.id],
+    );
+    return Number(existing.id);
   }
 
-  const r = db
-    .prepare(
-      `INSERT INTO customers (email, first_name, last_name, phone, password_hash)
-       VALUES (?, ?, ?, ?, ?)`,
-    )
-    .run(email, input.first_name, input.last_name, input.phone, input.password_hash);
-  return Number(r.lastInsertRowid);
+  const r = await sql.run(
+    `INSERT INTO customers (email, first_name, last_name, phone, password_hash)
+     VALUES (?, ?, ?, ?, ?)
+     RETURNING id`,
+    [email, input.first_name, input.last_name, input.phone, input.password_hash],
+  );
+  return Number(r.rows[0].id);
 }
 
-export function setCustomerPassword(id: number, hash: string): void {
-  getDb().prepare("UPDATE customers SET password_hash = ? WHERE id = ?").run(hash, id);
+export async function setCustomerPassword(id: number, hash: string): Promise<void> {
+  await sql.run("UPDATE customers SET password_hash = ? WHERE id = ?", [hash, id]);
 }
 
-export function createCustomerSession(
+export async function createCustomerSession(
   customerId: number,
   ip: string | null,
   ua: string | null,
   sessionId: string,
   expiresAtIso: string,
-): void {
-  getDb()
-    .prepare(
-      `INSERT INTO customer_sessions (id, customer_id, expires_at, ip, ua) VALUES (?, ?, ?, ?, ?)`,
-    )
-    .run(sessionId, customerId, expiresAtIso, ip, ua);
+): Promise<void> {
+  await sql.run(
+    `INSERT INTO customer_sessions (id, customer_id, expires_at, ip, ua) VALUES (?, ?, ?, ?, ?)`,
+    [sessionId, customerId, expiresAtIso, ip, ua],
+  );
 }
 
 export type SessionCustomer = Omit<Customer, "total_orders" | "total_spent"> & {
@@ -82,34 +79,36 @@ export type SessionCustomer = Omit<Customer, "total_orders" | "total_spent"> & {
   total_spent: number;
 };
 
-export function getCustomerBySession(sessionId: string): SessionCustomer | null {
-  const db = getDb();
-  const row = db
-    .prepare(
-      `SELECT c.id, c.email, c.first_name, c.last_name, c.phone, c.city,
-              c.total_orders, c.total_spent, c.created_at, s.expires_at
-       FROM customer_sessions s JOIN customers c ON c.id = s.customer_id
-       WHERE s.id = ?`,
-    )
-    .get(sessionId) as
-    | (SessionCustomer & { expires_at: string })
-    | undefined;
+export async function getCustomerBySession(
+  sessionId: string,
+): Promise<SessionCustomer | null> {
+  const row = await sql.get<SessionCustomer & { expires_at: string }>(
+    `SELECT c.id, c.email, c.first_name, c.last_name, c.phone, c.city,
+            c.total_orders, c.total_spent, c.created_at, s.expires_at
+     FROM customer_sessions s JOIN customers c ON c.id = s.customer_id
+     WHERE s.id = ?`,
+    [sessionId],
+  );
   if (!row) return null;
   if (new Date(row.expires_at).getTime() < Date.now()) {
-    db.prepare("DELETE FROM customer_sessions WHERE id = ?").run(sessionId);
+    await sql.run("DELETE FROM customer_sessions WHERE id = ?", [sessionId]);
     return null;
   }
   const { expires_at: _omit, ...customer } = row;
   void _omit;
-  return customer;
+  // total_orders/total_spent are integer columns; Postgres returns them as
+  // strings — coerce so the typed number contract holds on both drivers.
+  return {
+    ...customer,
+    total_orders: Number(customer.total_orders),
+    total_spent: Number(customer.total_spent),
+  };
 }
 
-export function destroyCustomerSession(sessionId: string): void {
-  getDb().prepare("DELETE FROM customer_sessions WHERE id = ?").run(sessionId);
+export async function destroyCustomerSession(sessionId: string): Promise<void> {
+  await sql.run("DELETE FROM customer_sessions WHERE id = ?", [sessionId]);
 }
 
-export function purgeExpiredCustomerSessions(): void {
-  getDb()
-    .prepare("DELETE FROM customer_sessions WHERE datetime(expires_at) < datetime('now')")
-    .run();
+export async function purgeExpiredCustomerSessions(): Promise<void> {
+  await sql.run("DELETE FROM customer_sessions WHERE expires_at < CURRENT_TIMESTAMP");
 }

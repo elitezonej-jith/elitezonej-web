@@ -18,8 +18,8 @@ export async function setOrderStatusAction(fd: FormData): Promise<void> {
   const id = String(fd.get("id") ?? "");
   const status = StatusSchema.parse(String(fd.get("status") ?? "new"));
   if (!id) return;
-  setOrderStatus(id, status);
-  logAudit({ user_id: me.id, action: "set_order_status", entity: "order", entity_id: id, payload: { status } });
+  await setOrderStatus(id, status);
+  await logAudit({ user_id: me.id, action: "set_order_status", entity: "order", entity_id: id, payload: { status } });
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${id}`);
   redirect(`/admin/orders/${id}?flash=${encodeURIComponent(`Order ${id} → ${STATUS_LABEL[status]}`)}`);
@@ -30,8 +30,8 @@ export async function saveOrderNotesAction(fd: FormData): Promise<void> {
   const id = String(fd.get("id") ?? "");
   const notes = String(fd.get("notes") ?? "");
   if (!id) return;
-  setOrderNotes(id, notes);
-  logAudit({ user_id: me.id, action: "save_order_notes", entity: "order", entity_id: id });
+  await setOrderNotes(id, notes);
+  await logAudit({ user_id: me.id, action: "save_order_notes", entity: "order", entity_id: id });
   revalidatePath(`/admin/orders/${id}`);
   redirect(`/admin/orders/${id}?flash=${encodeURIComponent("Notes saved")}`);
 }

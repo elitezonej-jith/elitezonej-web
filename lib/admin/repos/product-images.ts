@@ -1,5 +1,5 @@
 import "server-only";
-import { getDb } from "../db";
+import { sql } from "../db";
 
 export type ProductImage = {
   id: number;
@@ -11,77 +11,81 @@ export type ProductImage = {
   is_hover: number;
 };
 
-export function listImages(slug: string): ProductImage[] {
-  return getDb()
-    .prepare("SELECT * FROM product_images WHERE product_slug = ? ORDER BY sort_order ASC, id ASC")
-    .all(slug) as ProductImage[];
+export async function listImages(slug: string): Promise<ProductImage[]> {
+  return sql.all<ProductImage>(
+    "SELECT * FROM product_images WHERE product_slug = ? ORDER BY sort_order ASC, id ASC",
+    [slug],
+  );
 }
 
-export function getThumbnail(slug: string): string | null {
-  const r = getDb()
-    .prepare(
-      `SELECT image_path FROM product_images
-       WHERE product_slug = ? AND is_thumbnail = 1
-       ORDER BY sort_order ASC LIMIT 1`,
-    )
-    .get(slug) as { image_path: string } | undefined;
+export async function getThumbnail(slug: string): Promise<string | null> {
+  const r = await sql.get<{ image_path: string }>(
+    `SELECT image_path FROM product_images
+     WHERE product_slug = ? AND is_thumbnail = 1
+     ORDER BY sort_order ASC LIMIT 1`,
+    [slug],
+  );
   if (r) return r.image_path;
   // fall back to first image
-  const f = getDb()
-    .prepare("SELECT image_path FROM product_images WHERE product_slug = ? ORDER BY sort_order ASC LIMIT 1")
-    .get(slug) as { image_path: string } | undefined;
+  const f = await sql.get<{ image_path: string }>(
+    "SELECT image_path FROM product_images WHERE product_slug = ? ORDER BY sort_order ASC LIMIT 1",
+    [slug],
+  );
   return f?.image_path ?? null;
 }
 
-export function addImage(slug: string, image_path: string, alt = ""): number {
-  const db = getDb();
-  const max = (db
-    .prepare("SELECT COALESCE(MAX(sort_order),0) as m FROM product_images WHERE product_slug = ?")
-    .get(slug) as { m: number }).m;
-  const r = db.prepare(`
-    INSERT INTO product_images (product_slug, image_path, alt, sort_order, is_thumbnail, is_hover)
-    VALUES (?, ?, ?, ?, 0, 0)
-  `).run(slug, image_path, alt, max + 10);
-  return Number(r.lastInsertRowid);
+export async function addImage(slug: string, image_path: string, alt = ""): Promise<number> {
+  const maxRow = await sql.get<{ m: number | string }>(
+    "SELECT COALESCE(MAX(sort_order),0) as m FROM product_images WHERE product_slug = ?",
+    [slug],
+  );
+  const max = Number(maxRow?.m ?? 0);
+  const r = await sql.run(
+    `INSERT INTO product_images (product_slug, image_path, alt, sort_order, is_thumbnail, is_hover)
+    VALUES (?, ?, ?, ?, 0, 0) RETURNING id`,
+    [slug, image_path, alt, max + 10],
+  );
+  return Number(r.rows[0].id);
 }
 
-export function deleteImage(id: number, slug: string): void {
-  getDb()
-    .prepare("DELETE FROM product_images WHERE id = ? AND product_slug = ?")
-    .run(id, slug);
+export async function deleteImage(id: number, slug: string): Promise<void> {
+  await sql.run(
+    "DELETE FROM product_images WHERE id = ? AND product_slug = ?",
+    [id, slug],
+  );
 }
 
-export function setThumbnail(slug: string, id: number): void {
-  const db = getDb();
-  const tx = db.transaction(() => {
-    db.prepare("UPDATE product_images SET is_thumbnail = 0 WHERE product_slug = ?").run(slug);
-    db.prepare("UPDATE product_images SET is_thumbnail = 1 WHERE id = ?").run(id);
+export async function setThumbnail(slug: string, id: number): Promise<void> {
+  await sql.tx(async (t) => {
+    await t.run("UPDATE product_images SET is_thumbnail = 0 WHERE product_slug = ?", [slug]);
+    await t.run("UPDATE product_images SET is_thumbnail = 1 WHERE id = ?", [id]);
   });
-  tx();
 }
 
-export function setHover(slug: string, id: number): void {
-  const db = getDb();
-  const tx = db.transaction(() => {
-    db.prepare("UPDATE product_images SET is_hover = 0 WHERE product_slug = ?").run(slug);
-    db.prepare("UPDATE product_images SET is_hover = 1 WHERE id = ?").run(id);
+export async function setHover(slug: string, id: number): Promise<void> {
+  await sql.tx(async (t) => {
+    await t.run("UPDATE product_images SET is_hover = 0 WHERE product_slug = ?", [slug]);
+    await t.run("UPDATE product_images SET is_hover = 1 WHERE id = ?", [id]);
   });
-  tx();
 }
 
-export function reorderImages(slug: string, orderedIds: number[]): void {
-  const db = getDb();
-  const stmt = db.prepare("UPDATE product_images SET sort_order = ? WHERE id = ? AND product_slug = ?");
-  const tx = db.transaction(() => {
-    orderedIds.forEach((id, i) => stmt.run((i + 1) * 10, id, slug));
+export async function reorderImages(slug: string, orderedIds: number[]): Promise<void> {
+  await sql.tx(async (t) => {
+    for (let i = 0; i < orderedIds.length; i++) {
+      await t.run("UPDATE product_images SET sort_order = ? WHERE id = ? AND product_slug = ?", [
+        (i + 1) * 10,
+        orderedIds[i],
+        slug,
+      ]);
+    }
   });
-  tx();
 }
 
-export function updateAlt(id: number, alt: string, slug: string): void {
-  getDb()
-    .prepare("UPDATE product_images SET alt = ? WHERE id = ? AND product_slug = ?")
-    .run(alt, id, slug);
+export async function updateAlt(id: number, alt: string, slug: string): Promise<void> {
+  await sql.run(
+    "UPDATE product_images SET alt = ? WHERE id = ? AND product_slug = ?",
+    [alt, id, slug],
+  );
 }
 
 // On products that don't yet have any rows in product_images, derive a fallback

@@ -12,9 +12,9 @@ type Params = { params: Promise<{ id: string }> };
 export default async function CustomerDetailPage({ params }: Params) {
   await requireUser("/studio/login");
   const { id } = await params;
-  const c = getCustomer(Number(id));
+  const c = await getCustomer(Number(id));
   if (!c) notFound();
-  const orders = getCustomerOrders(c.id);
+  const orders = await getCustomerOrders(c.id);
   return (
     <div className="stu-page">
       <PageHead title={`${c.first_name} ${c.last_name}`} sub={c.email}

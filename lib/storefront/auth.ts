@@ -26,18 +26,20 @@ export async function verifyPassword(plain: string, hash: string): Promise<boole
   return bcrypt.compare(plain, hash);
 }
 
-export function startSession(
+export async function startSession(
   customerId: number,
   ip?: string | null,
   ua?: string | null,
-): { id: string; expires_at: string } {
+): Promise<{ id: string; expires_at: string }> {
   const id = randomBytes(32).toString("hex");
   const expires = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
-  createCustomerSession(customerId, ip ?? null, ua ?? null, id, expires.toISOString());
+  await createCustomerSession(customerId, ip ?? null, ua ?? null, id, expires.toISOString());
   return { id, expires_at: expires.toISOString() };
 }
 
-export function resolveCustomer(sessionId: string | undefined | null): SessionCustomer | null {
+export async function resolveCustomer(
+  sessionId: string | undefined | null,
+): Promise<SessionCustomer | null> {
   if (!sessionId) return null;
   return getCustomerBySession(sessionId);
 }

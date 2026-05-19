@@ -27,8 +27,8 @@ export default async function BespokePage({ searchParams }: SP) {
   const sp = await searchParams;
   const status = sp.status as BookingStatus | undefined;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
-  const items = listBookings({ q: sp.q, status, limit: PAGE, offset: (page - 1) * PAGE });
-  const total = countBookings({ status });
+  const items = await listBookings({ q: sp.q, status, limit: PAGE, offset: (page - 1) * PAGE });
+  const total = await countBookings({ status });
   const pages = Math.max(1, Math.ceil(total / PAGE));
   const chips: Chip[] = [
     { key: "all", label: "All", active: !sp.status, href: href({ q: sp.q }) },

@@ -4,8 +4,8 @@ import SetupForm from "./SetupForm";
 
 export const metadata = { title: "Get started · Studio" };
 
-export default function StudioSetupPage() {
-  if (countUsers() > 0) notFound();
+export default async function StudioSetupPage() {
+  if ((await countUsers()) > 0) notFound();
   return (
     <main className="stu-auth stu">
       <div className="stu-auth-card">

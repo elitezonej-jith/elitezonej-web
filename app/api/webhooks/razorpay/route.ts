@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   // Idempotency: one row per provider event id. A retry/replay is a no-op.
   const eventId =
     req.headers.get("x-razorpay-event-id") ?? `sig:${sig.slice(0, 64)}`;
-  if (!recordWebhookEvent(eventId, "razorpay", event.event ?? null)) {
+  if (!(await recordWebhookEvent(eventId, "razorpay", event.event ?? null))) {
     return NextResponse.json({ received: true, duplicate: true });
   }
 
@@ -45,10 +45,10 @@ export async function POST(req: NextRequest) {
   const gatewayCurrency = pe?.currency ?? oe?.currency ?? null;
 
   if (event.event === "payment.failed" && providerOrderId) {
-    const payment = getPaymentByProviderOrderId(providerOrderId);
+    const payment = await getPaymentByProviderOrderId(providerOrderId);
     if (payment) {
-      markOrderPaymentFailed(payment.order_id);
-      logAudit({
+      await markOrderPaymentFailed(payment.order_id);
+      await logAudit({
         user_id: null,
         action: "payment_failed_webhook",
         entity: "order",
@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
     (event.event === "payment.captured" || event.event === "order.paid") &&
     providerOrderId
   ) {
-    const payment = getPaymentByProviderOrderId(providerOrderId);
+    const payment = await getPaymentByProviderOrderId(providerOrderId);
     if (payment) {
       // Reconcile amount/currency — the signature does NOT cover the amount,
       // so a partial/mismatched capture must not fulfil the full order.
@@ -72,7 +72,7 @@ export async function POST(req: NextRequest) {
       const currencyOk =
         !gatewayCurrency || gatewayCurrency === payment.currency;
       if (!amountOk || !currencyOk) {
-        logAudit({
+        await logAudit({
           user_id: null,
           action: "payment_amount_mismatch_webhook",
           entity: "order",
@@ -91,8 +91,8 @@ export async function POST(req: NextRequest) {
       }
 
       // Idempotent — safe even if the client callback already fulfilled it.
-      const r = fulfilOrderPaid(payment.order_id, { providerPaymentId: paymentId });
-      logAudit({
+      const r = await fulfilOrderPaid(payment.order_id, { providerPaymentId: paymentId });
+      await logAudit({
         user_id: null,
         action: r.ok ? "order_paid_webhook" : "order_paid_webhook_failed",
         entity: "order",

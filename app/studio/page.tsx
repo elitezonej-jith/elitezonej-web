@@ -17,16 +17,16 @@ export const metadata = { title: "Dashboard · Studio" };
 
 export default async function StudioDashboardPage() {
   await requireUser("/studio/login");
-  const kpis = getKpis();
+  const kpis = await getKpis();
   const revDelta = deltaPct(kpis.revenue30d, kpis.revenue30dPrior);
   const noSalesYet = kpis.revenue30d === 0 && kpis.revenue30dPrior === 0;
-  const recentProducts = listProducts({ status: "all", limit: 6 });
-  const banners = listBanners();
-  const notices = listNotices().slice(0, 3);
-  const offers = listPromotions().slice(0, 3);
-  const recentBookings = getRecentBookings(4);
-  const recentOrders = getRecentOrders(4);
-  const sparkline = getRevenueByDay(30);
+  const recentProducts = await listProducts({ status: "all", limit: 6 });
+  const banners = await listBanners();
+  const notices = (await listNotices()).slice(0, 3);
+  const offers = (await listPromotions()).slice(0, 3);
+  const recentBookings = await getRecentBookings(4);
+  const recentOrders = await getRecentOrders(4);
+  const sparkline = await getRevenueByDay(30);
   const sparkSum = sparkline.reduce((a, p) => a + p.total, 0);
   void sparkSum;
 

@@ -23,7 +23,7 @@ export async function saveSettingsAction(fd: FormData): Promise<void> {
   for (const [k, v] of fd.entries()) {
     if (typeof v === "string" && ALLOWED_SETTING_KEYS.has(k)) map[k] = v;
   }
-  setSettings(map);
-  logAudit({ user_id: me.id, action: "save_settings", entity: "settings", entity_id: null, payload: { keys: Object.keys(map) } });
+  await setSettings(map);
+  await logAudit({ user_id: me.id, action: "save_settings", entity: "settings", entity_id: null, payload: { keys: Object.keys(map) } });
   revalidatePath("/admin/settings");
 }

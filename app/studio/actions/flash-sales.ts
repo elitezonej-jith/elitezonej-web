@@ -32,11 +32,11 @@ export async function saveFlashSaleAction(_prev: FlashState, fd: FormData): Prom
   };
   let savedId = id;
   if (id) {
-    updateFlashSale(id, data);
-    logAudit({ user_id: me.id, action: "update_flash_sale", entity: "flash_sale", entity_id: String(id) });
+    await updateFlashSale(id, data);
+    await logAudit({ user_id: me.id, action: "update_flash_sale", entity: "flash_sale", entity_id: String(id) });
   } else {
-    savedId = createFlashSale(data);
-    logAudit({ user_id: me.id, action: "create_flash_sale", entity: "flash_sale", entity_id: String(savedId) });
+    savedId = await createFlashSale(data);
+    await logAudit({ user_id: me.id, action: "create_flash_sale", entity: "flash_sale", entity_id: String(savedId) });
   }
   revalidatePath("/studio/flash-sales");
   revalidatePath("/");
@@ -47,8 +47,8 @@ export async function deleteFlashSaleAction(fd: FormData): Promise<void> {
   const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
-  deleteFlashSale(id);
-  logAudit({ user_id: me.id, action: "delete_flash_sale", entity: "flash_sale", entity_id: String(id) });
+  await deleteFlashSale(id);
+  await logAudit({ user_id: me.id, action: "delete_flash_sale", entity: "flash_sale", entity_id: String(id) });
   revalidatePath("/studio/flash-sales");
   redirect("/studio/flash-sales?flash=Flash%20sale%20removed");
 }

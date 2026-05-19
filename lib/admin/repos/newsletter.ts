@@ -1,32 +1,41 @@
 import "server-only";
-import { getDb } from "../db";
+import { sql } from "../db";
 import type { NewsletterSubscriber } from "../types";
 
 /** Idempotent on email — a re-subscribe re-activates a previously opted-out row. */
-export function subscribe(email: string, source = "footer"): "new" | "exists" | "resubscribed" {
-  const db = getDb();
-  const existing = db
-    .prepare("SELECT id, status FROM newsletter_subscribers WHERE email = ?")
-    .get(email) as { id: number; status: string } | undefined;
+export async function subscribe(
+  email: string,
+  source = "footer",
+): Promise<"new" | "exists" | "resubscribed"> {
+  const existing = await sql.get<{ id: number; status: string }>(
+    "SELECT id, status FROM newsletter_subscribers WHERE email = ?",
+    [email],
+  );
   if (existing) {
     if (existing.status === "subscribed") return "exists";
-    db.prepare("UPDATE newsletter_subscribers SET status = 'subscribed' WHERE id = ?").run(existing.id);
+    await sql.run(
+      "UPDATE newsletter_subscribers SET status = 'subscribed' WHERE id = ?",
+      [existing.id],
+    );
     return "resubscribed";
   }
-  db.prepare("INSERT INTO newsletter_subscribers (email, source) VALUES (?, ?)").run(email, source);
+  await sql.run(
+    "INSERT INTO newsletter_subscribers (email, source) VALUES (?, ?)",
+    [email, source],
+  );
   return "new";
 }
 
-export function listSubscribers(limit = 200): NewsletterSubscriber[] {
-  return getDb()
-    .prepare("SELECT * FROM newsletter_subscribers ORDER BY datetime(created_at) DESC LIMIT ?")
-    .all(limit) as NewsletterSubscriber[];
+export async function listSubscribers(limit = 200): Promise<NewsletterSubscriber[]> {
+  return sql.all<NewsletterSubscriber>(
+    "SELECT * FROM newsletter_subscribers ORDER BY created_at DESC LIMIT ?",
+    [limit],
+  );
 }
 
-export function countSubscribers(): number {
-  return (
-    getDb()
-      .prepare("SELECT COUNT(*) AS n FROM newsletter_subscribers WHERE status = 'subscribed'")
-      .get() as { n: number }
-  ).n;
+export async function countSubscribers(): Promise<number> {
+  const row = await sql.get<{ n: number | string }>(
+    "SELECT COUNT(*) AS n FROM newsletter_subscribers WHERE status = 'subscribed'",
+  );
+  return Number(row?.n ?? 0);
 }

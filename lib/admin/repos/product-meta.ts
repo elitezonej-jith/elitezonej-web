@@ -1,5 +1,5 @@
 import "server-only";
-import { getDb } from "../db";
+import { sql } from "../db";
 
 export type ProductMeta = {
   product_slug: string;
@@ -13,10 +13,11 @@ export type ProductMeta = {
   og_image_path: string;
 };
 
-export function getMeta(slug: string): ProductMeta {
-  const r = getDb().prepare("SELECT * FROM product_meta WHERE product_slug = ?").get(slug) as
-    | ProductMeta
-    | undefined;
+export async function getMeta(slug: string): Promise<ProductMeta> {
+  const r = await sql.get<ProductMeta>(
+    "SELECT * FROM product_meta WHERE product_slug = ?",
+    [slug],
+  );
   return (
     r ?? {
       product_slug: slug,
@@ -32,15 +33,13 @@ export function getMeta(slug: string): ProductMeta {
   );
 }
 
-export function upsertMeta(meta: ProductMeta): void {
-  getDb()
-    .prepare(
-      `INSERT INTO product_meta
+export async function upsertMeta(meta: ProductMeta): Promise<void> {
+  await sql.run(
+    `INSERT INTO product_meta
          (product_slug, is_featured, is_trending, is_new_arrival,
           short_description, long_description, meta_title, meta_description, og_image_path)
        VALUES
-         (@product_slug, @is_featured, @is_trending, @is_new_arrival,
-          @short_description, @long_description, @meta_title, @meta_description, @og_image_path)
+         (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(product_slug) DO UPDATE SET
          is_featured       = excluded.is_featured,
          is_trending       = excluded.is_trending,
@@ -50,39 +49,46 @@ export function upsertMeta(meta: ProductMeta): void {
          meta_title        = excluded.meta_title,
          meta_description  = excluded.meta_description,
          og_image_path     = excluded.og_image_path`,
-    )
-    .run(meta);
+    [
+      meta.product_slug,
+      meta.is_featured,
+      meta.is_trending,
+      meta.is_new_arrival,
+      meta.short_description,
+      meta.long_description,
+      meta.meta_title,
+      meta.meta_description,
+      meta.og_image_path,
+    ],
+  );
 }
 
-export function listFeatured(limit = 12): Array<{ slug: string }> {
-  return getDb()
-    .prepare(
-      `SELECT pm.product_slug as slug FROM product_meta pm
+export async function listFeatured(limit = 12): Promise<Array<{ slug: string }>> {
+  return sql.all<{ slug: string }>(
+    `SELECT pm.product_slug as slug FROM product_meta pm
        JOIN products p ON p.slug = pm.product_slug
        WHERE pm.is_featured = 1 AND p.status = 'active'
        ORDER BY p.updated_at DESC LIMIT ?`,
-    )
-    .all(limit) as Array<{ slug: string }>;
+    [limit],
+  );
 }
 
-export function listTrending(limit = 12): Array<{ slug: string }> {
-  return getDb()
-    .prepare(
-      `SELECT pm.product_slug as slug FROM product_meta pm
+export async function listTrending(limit = 12): Promise<Array<{ slug: string }>> {
+  return sql.all<{ slug: string }>(
+    `SELECT pm.product_slug as slug FROM product_meta pm
        JOIN products p ON p.slug = pm.product_slug
        WHERE pm.is_trending = 1 AND p.status = 'active'
        ORDER BY p.updated_at DESC LIMIT ?`,
-    )
-    .all(limit) as Array<{ slug: string }>;
+    [limit],
+  );
 }
 
-export function listNewArrivals(limit = 12): Array<{ slug: string }> {
-  return getDb()
-    .prepare(
-      `SELECT pm.product_slug as slug FROM product_meta pm
+export async function listNewArrivals(limit = 12): Promise<Array<{ slug: string }>> {
+  return sql.all<{ slug: string }>(
+    `SELECT pm.product_slug as slug FROM product_meta pm
        JOIN products p ON p.slug = pm.product_slug
        WHERE pm.is_new_arrival = 1 AND p.status = 'active'
        ORDER BY p.updated_at DESC LIMIT ?`,
-    )
-    .all(limit) as Array<{ slug: string }>;
+    [limit],
+  );
 }

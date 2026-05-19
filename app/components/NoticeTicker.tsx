@@ -11,8 +11,8 @@ function targetMatches(notice: { target_paths: string }, pathname: string): bool
   return list.some((prefix) => pathname === prefix || pathname.startsWith(prefix.replace(/\/$/, "") + "/"));
 }
 
-export default function NoticeTicker({ pathname = "/" }: { pathname?: string }) {
-  const notices = listNotices({ onlyLive: true, type: "scroll" })
+export default async function NoticeTicker({ pathname = "/" }: { pathname?: string }) {
+  const notices = (await listNotices({ onlyLive: true, type: "scroll" }))
     .filter((n) => targetMatches(n, pathname));
   if (notices.length === 0) return null;
   // Compose a single ticker out of all live scroll notices, separated.

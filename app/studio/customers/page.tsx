@@ -18,8 +18,8 @@ export default async function CustomersListPage({ searchParams }: SP) {
   await requireUser("/studio/login");
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
-  const items = listCustomers({ q: sp.q, limit: PAGE, offset: (page - 1) * PAGE });
-  const total = countCustomers({ q: sp.q });
+  const items = await listCustomers({ q: sp.q, limit: PAGE, offset: (page - 1) * PAGE });
+  const total = await countCustomers({ q: sp.q });
   const pages = Math.max(1, Math.ceil(total / PAGE));
   return (
     <div className="stu-page">

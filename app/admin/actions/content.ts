@@ -40,7 +40,7 @@ export async function saveHomeSectionAction(fd: FormData): Promise<void> {
   if (!parsed.success) return;
   const { key, ...rest } = parsed.data;
   const patch = { ...rest, enabled: rest.enabled ? 1 : 0 };
-  updateHomeSection(key, patch);
-  logAudit({ user_id: me.id, action: "update_home_section", entity: "home_section", entity_id: key });
+  await updateHomeSection(key, patch);
+  await logAudit({ user_id: me.id, action: "update_home_section", entity: "home_section", entity_id: key });
   revalidatePath("/admin/content");
 }

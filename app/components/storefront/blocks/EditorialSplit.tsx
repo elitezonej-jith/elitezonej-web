@@ -4,7 +4,7 @@ import { listProductsForPage } from "@/lib/storefront/catalogue";
 // Renders the real <EditorialSplit> (image one side, 6-up product grid the
 // other) from the LIVE DB catalogue (static-index ordered) with the same
 // gender/limit semantics as before.
-export default function EditorialSplit({
+export default async function EditorialSplit({
   title,
   ctaLabel,
   ctaHref,
@@ -23,7 +23,7 @@ export default function EditorialSplit({
   gender?: string;
   limit?: number;
 }) {
-  let products = listProductsForPage();
+  let products = await listProductsForPage();
   if (gender) products = products.filter((p) => p.gender === gender);
   const sliced = products.slice(0, limit ?? 6);
   return (

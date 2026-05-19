@@ -1,7 +1,7 @@
 import "server-only";
 import bcrypt from "bcryptjs";
 import { randomBytes } from "node:crypto";
-import { getDb } from "./db";
+import { sql } from "./db";
 import type { Role, User } from "./types";
 
 const SESSION_COST = 12;
@@ -20,32 +20,29 @@ export function newSessionId(): string {
   return randomBytes(32).toString("hex");
 }
 
-export function createSession(userId: number, ip?: string | null, ua?: string | null): { id: string; expires_at: string } {
+export async function createSession(userId: number, ip?: string | null, ua?: string | null): Promise<{ id: string; expires_at: string }> {
   const id = newSessionId();
   const expires = new Date(Date.now() + SESSION_TTL_DAYS * 24 * 60 * 60 * 1000);
-  getDb()
-    .prepare(
-      `INSERT INTO sessions (id, user_id, expires_at, ip, ua) VALUES (?, ?, ?, ?, ?)`,
-    )
-    .run(id, userId, expires.toISOString(), ip ?? null, ua ?? null);
+  await sql.run(
+    `INSERT INTO sessions (id, user_id, expires_at, ip, ua) VALUES (?, ?, ?, ?, ?)`,
+    [id, userId, expires.toISOString(), ip ?? null, ua ?? null],
+  );
   return { id, expires_at: expires.toISOString() };
 }
 
-export function getSessionUser(sessionId: string | undefined | null): User | null {
+export async function getSessionUser(sessionId: string | undefined | null): Promise<User | null> {
   if (!sessionId) return null;
-  const db = getDb();
-  const row = db
-    .prepare(
-      `SELECT u.id, u.email, u.name, u.role, u.created_at, u.last_login_at, s.expires_at
-       FROM sessions s JOIN users u ON u.id = s.user_id
-       WHERE s.id = ?`,
-    )
-    .get(sessionId) as
-      | { id: number; email: string; name: string; role: Role; created_at: string; last_login_at: string | null; expires_at: string }
-      | undefined;
+  const row = await sql.get<
+    { id: number; email: string; name: string; role: Role; created_at: string; last_login_at: string | null; expires_at: string }
+  >(
+    `SELECT u.id, u.email, u.name, u.role, u.created_at, u.last_login_at, s.expires_at
+     FROM sessions s JOIN users u ON u.id = s.user_id
+     WHERE s.id = ?`,
+    [sessionId],
+  );
   if (!row) return null;
   if (new Date(row.expires_at).getTime() < Date.now()) {
-    db.prepare("DELETE FROM sessions WHERE id = ?").run(sessionId);
+    await sql.run("DELETE FROM sessions WHERE id = ?", [sessionId]);
     return null;
   }
   return {
@@ -75,16 +72,14 @@ export function safeNextPath(next: string | null | undefined, prefix: "/admin" |
   return next;
 }
 
-export function destroySession(sessionId: string): void {
-  getDb().prepare("DELETE FROM sessions WHERE id = ?").run(sessionId);
+export async function destroySession(sessionId: string): Promise<void> {
+  await sql.run("DELETE FROM sessions WHERE id = ?", [sessionId]);
 }
 
-export function destroyAllSessionsForUser(userId: number): void {
-  getDb().prepare("DELETE FROM sessions WHERE user_id = ?").run(userId);
+export async function destroyAllSessionsForUser(userId: number): Promise<void> {
+  await sql.run("DELETE FROM sessions WHERE user_id = ?", [userId]);
 }
 
-export function purgeExpiredSessions(): void {
-  getDb()
-    .prepare("DELETE FROM sessions WHERE datetime(expires_at) < datetime('now')")
-    .run();
+export async function purgeExpiredSessions(): Promise<void> {
+  await sql.run("DELETE FROM sessions WHERE expires_at < CURRENT_TIMESTAMP");
 }

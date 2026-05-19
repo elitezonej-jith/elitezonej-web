@@ -28,12 +28,12 @@ export async function addBlockAction(fd: FormData): Promise<void> {
   const me = parsed.data.type === "custom_html"
     ? await requireRole("owner")
     : await requireUser("/studio/login");
-  const id = createBlock({
+  const id = await createBlock({
     type: parsed.data.type as HomepageBlockType,
     title: parsed.data.title,
     config: defaultConfigFor(parsed.data.type as HomepageBlockType),
   });
-  logAudit({ user_id: me.id, action: "create_block", entity: "homepage_block", entity_id: String(id), payload: { type: parsed.data.type } });
+  await logAudit({ user_id: me.id, action: "create_block", entity: "homepage_block", entity_id: String(id), payload: { type: parsed.data.type } });
   revalidatePath("/studio/homepage");
   revalidatePath("/");
   redirect(`/studio/homepage/${id}`);
@@ -43,8 +43,8 @@ export async function deleteBlockAction(fd: FormData): Promise<void> {
   const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
-  deleteBlock(id);
-  logAudit({ user_id: me.id, action: "delete_block", entity: "homepage_block", entity_id: String(id) });
+  await deleteBlock(id);
+  await logAudit({ user_id: me.id, action: "delete_block", entity: "homepage_block", entity_id: String(id) });
   revalidatePath("/studio/homepage");
   revalidatePath("/");
   redirect("/studio/homepage?flash=Section%20removed");
@@ -55,8 +55,8 @@ export async function toggleBlockAction(fd: FormData): Promise<void> {
   const id = Number(fd.get("id") ?? 0);
   const enabled = String(fd.get("enabled") ?? "0") === "1" ? 1 : 0;
   if (!id) return;
-  updateBlock(id, { enabled });
-  logAudit({ user_id: me.id, action: "toggle_home_block", entity: "home_block", entity_id: String(id), payload: { enabled } });
+  await updateBlock(id, { enabled });
+  await logAudit({ user_id: me.id, action: "toggle_home_block", entity: "home_block", entity_id: String(id), payload: { enabled } });
   revalidatePath("/studio/homepage");
   revalidatePath("/");
 }
@@ -65,7 +65,7 @@ export async function reorderBlocksAction(fd: FormData): Promise<void> {
   await requireUser("/studio/login");
   const ordered = String(fd.get("ordered") ?? "").split(",").map((n) => Number(n)).filter(Boolean);
   if (!ordered.length) return;
-  reorderBlocks(ordered);
+  await reorderBlocks(ordered);
   revalidatePath("/studio/homepage");
   revalidatePath("/");
 }
@@ -74,7 +74,7 @@ export async function saveBlockConfigAction(fd: FormData): Promise<void> {
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
   // Editing a raw-HTML block is owner-only (XSS-sensitive).
-  const existing = getBlock(id);
+  const existing = await getBlock(id);
   const me = existing?.type === "custom_html"
     ? await requireRole("owner")
     : await requireUser("/studio/login");
@@ -83,8 +83,8 @@ export async function saveBlockConfigAction(fd: FormData): Promise<void> {
   const configRaw = String(fd.get("config_json") ?? "{}");
   let config: Record<string, unknown> = {};
   try { config = JSON.parse(configRaw); } catch { /* keep empty */ }
-  updateBlock(id, { title, kicker, config });
-  logAudit({ user_id: me.id, action: "update_block", entity: "homepage_block", entity_id: String(id) });
+  await updateBlock(id, { title, kicker, config });
+  await logAudit({ user_id: me.id, action: "update_block", entity: "homepage_block", entity_id: String(id) });
   revalidatePath(`/studio/homepage/${id}`);
   revalidatePath("/studio/homepage");
   revalidatePath("/");

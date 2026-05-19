@@ -1,7 +1,7 @@
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
-import { getDb } from "../db";
+import { sql } from "../db";
 
 export type MediaAsset = {
   id: number;
@@ -16,24 +16,24 @@ export type MediaAsset = {
   created_at: string;
 };
 
-export function listAssets(opts?: { folder?: string; q?: string }): MediaAsset[] {
+export async function listAssets(opts?: { folder?: string; q?: string }): Promise<MediaAsset[]> {
   const where: string[] = [];
   const params: unknown[] = [];
   if (opts?.folder) { where.push("folder = ?"); params.push(opts.folder); }
   if (opts?.q) { where.push("(path LIKE ? OR alt LIKE ?)"); params.push(`%${opts.q}%`, `%${opts.q}%`); }
-  const sql = `SELECT * FROM media_assets ${where.length ? "WHERE " + where.join(" AND ") : ""}
-               ORDER BY datetime(created_at) DESC`;
-  return getDb().prepare(sql).all(...params) as MediaAsset[];
+  const query = `SELECT * FROM media_assets ${where.length ? "WHERE " + where.join(" AND ") : ""}
+               ORDER BY created_at DESC`;
+  return sql.all<MediaAsset>(query, params);
 }
 
-export function listFolders(): string[] {
-  const rows = getDb()
-    .prepare("SELECT DISTINCT folder FROM media_assets ORDER BY folder ASC")
-    .all() as Array<{ folder: string }>;
+export async function listFolders(): Promise<string[]> {
+  const rows = await sql.all<{ folder: string }>(
+    "SELECT DISTINCT folder FROM media_assets ORDER BY folder ASC",
+  );
   return rows.map((r) => r.folder);
 }
 
-export function recordAsset(input: {
+export async function recordAsset(input: {
   path: string;
   alt?: string;
   folder?: string;
@@ -42,37 +42,49 @@ export function recordAsset(input: {
   bytes?: number;
   mime?: string;
   uploaded_by?: number | null;
-}): number {
-  const r = getDb().prepare(`
-    INSERT OR REPLACE INTO media_assets
+}): Promise<number> {
+  const r = await sql.run(
+    `INSERT INTO media_assets
       (path, alt, folder, width, height, bytes, mime, uploaded_by)
     VALUES
-      (@path, @alt, @folder, @width, @height, @bytes, @mime, @uploaded_by)
-  `).run({
-    path: input.path,
-    alt: input.alt ?? "",
-    folder: input.folder ?? "uploads",
-    width: input.width ?? null,
-    height: input.height ?? null,
-    bytes: input.bytes ?? null,
-    mime: input.mime ?? "image/webp",
-    uploaded_by: input.uploaded_by ?? null,
-  });
-  return Number(r.lastInsertRowid);
+      (?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(path) DO UPDATE SET
+      alt         = excluded.alt,
+      folder      = excluded.folder,
+      width       = excluded.width,
+      height      = excluded.height,
+      bytes       = excluded.bytes,
+      mime        = excluded.mime,
+      uploaded_by = excluded.uploaded_by
+    RETURNING id`,
+    [
+      input.path,
+      input.alt ?? "",
+      input.folder ?? "uploads",
+      input.width ?? null,
+      input.height ?? null,
+      input.bytes ?? null,
+      input.mime ?? "image/webp",
+      input.uploaded_by ?? null,
+    ],
+  );
+  return Number(r.rows[0].id);
 }
 
-export function deleteAsset(id: number): void {
-  const db = getDb();
-  const row = db.prepare("SELECT path FROM media_assets WHERE id = ?").get(id) as { path: string } | undefined;
+export async function deleteAsset(id: number): Promise<void> {
+  const row = await sql.get<{ path: string }>(
+    "SELECT path FROM media_assets WHERE id = ?",
+    [id],
+  );
   if (!row) return;
   // Try to remove the on-disk file (don't break if it's already gone)
   try {
     const abs = path.resolve(process.cwd(), "public", row.path.replace(/^\//, ""));
     if (abs.startsWith(path.resolve(process.cwd(), "public", "uploads"))) fs.unlinkSync(abs);
   } catch { /* */ }
-  db.prepare("DELETE FROM media_assets WHERE id = ?").run(id);
+  await sql.run("DELETE FROM media_assets WHERE id = ?", [id]);
 }
 
-export function setAlt(id: number, alt: string): void {
-  getDb().prepare("UPDATE media_assets SET alt = ? WHERE id = ?").run(alt, id);
+export async function setAlt(id: number, alt: string): Promise<void> {
+  await sql.run("UPDATE media_assets SET alt = ? WHERE id = ?", [alt, id]);
 }

@@ -19,10 +19,10 @@ export default async function EditOfferPage({ params, searchParams }: Params) {
   await requireUser("/studio/login");
   const { code } = await params;
   const { saved } = await searchParams;
-  const promo = getPromotion(code.toUpperCase());
+  const promo = await getPromotion(code.toUpperCase());
   if (!promo) notFound();
-  const targets = listTargets(promo.code);
-  const products = listProducts({ status: "all", limit: 200 });
+  const targets = await listTargets(promo.code);
+  const products = await listProducts({ status: "all", limit: 200 });
   const cats = getDb().prepare("SELECT id, name, slug, parent_id FROM categories ORDER BY name ASC").all() as Array<{ id: number; name: string; slug: string; parent_id: number | null }>;
   const featuredRow = getDb().prepare("SELECT is_featured FROM promotions WHERE code = ?").get(promo.code) as { is_featured: number } | undefined;
 

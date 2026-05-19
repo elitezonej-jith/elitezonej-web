@@ -58,10 +58,10 @@ export function BagIcon() {
   );
 }
 
-export default function Header() {
-  const nav = getStorefrontNav();
-  const products = listProductsForPage();
-  const s = getSiteSettings();
+export default async function Header() {
+  const nav = await getStorefrontNav();
+  const products = await listProductsForPage();
+  const s = await getSiteSettings();
   return (
     <header className="site">
       {/* Row 1 — utility row */}

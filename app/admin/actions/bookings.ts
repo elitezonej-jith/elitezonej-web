@@ -51,8 +51,8 @@ export async function submitBespokeBooking(_prev: PublicBookingState, fd: FormDa
     source: "web",
   };
 
-  const id = createBooking(input);
-  logAudit({ user_id: null, action: "create_booking", entity: "booking", entity_id: String(id), payload: { service: input.service, city: input.city } });
+  const id = await createBooking(input);
+  await logAudit({ user_id: null, action: "create_booking", entity: "booking", entity_id: String(id), payload: { service: input.service, city: input.city } });
   revalidatePath("/admin/bespoke");
   return { ok: true };
 }
@@ -64,8 +64,8 @@ export async function setBookingStatusAction(fd: FormData): Promise<void> {
   const raw = String(fd.get("status") ?? "new");
   if (!id || !(STATUSES as readonly string[]).includes(raw)) return;
   const status = raw as (typeof STATUSES)[number];
-  setBookingStatus(id, status);
-  logAudit({ user_id: me.id, action: "set_booking_status", entity: "booking", entity_id: String(id), payload: { status } });
+  await setBookingStatus(id, status);
+  await logAudit({ user_id: me.id, action: "set_booking_status", entity: "booking", entity_id: String(id), payload: { status } });
   revalidatePath("/admin/bespoke");
   revalidatePath(`/admin/bespoke/${id}`);
 }
@@ -74,7 +74,7 @@ export async function deleteBookingAction(fd: FormData): Promise<void> {
   const me = await requireUser();
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
-  deleteBooking(id);
-  logAudit({ user_id: me.id, action: "delete_booking", entity: "booking", entity_id: String(id) });
+  await deleteBooking(id);
+  await logAudit({ user_id: me.id, action: "delete_booking", entity: "booking", entity_id: String(id) });
   revalidatePath("/admin/bespoke");
 }

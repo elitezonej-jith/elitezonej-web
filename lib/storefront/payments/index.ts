@@ -4,7 +4,7 @@ import {
   createRazorpayOrder,
   publicKeyId,
 } from "./razorpay";
-import { isEphemeralPersistence } from "../../admin/db";
+import { isDurablePersistence } from "../../admin/db";
 
 export type ProviderName = "razorpay" | "offline";
 
@@ -28,13 +28,14 @@ export async function createProviderOrder(args: {
   receipt: string;
 }): Promise<CreatedProviderOrder> {
   if (activeProvider() === "razorpay") {
-    // Guard: never take a real payment when persistence is the ephemeral
-    // in-memory fallback — the paid order would be lost on the next cold
-    // start. Fail the checkout loudly instead of silently losing money.
-    if (isEphemeralPersistence()) {
+    // Gate (RF-7): only take a real payment when a durable Postgres database
+    // is confirmed reachable. Fail-closed — any probe failure keeps live
+    // payments disabled rather than risk money the system can't durably
+    // record. Replaces the old VERCEL-keyed ephemeral hard-disable.
+    if (!(await isDurablePersistence())) {
       throw new Error(
-        "Live payments are disabled: server storage is ephemeral (in-memory). " +
-          "A durable database must be configured before accepting real payments.",
+        "Live payments are disabled: a durable database is not confirmed. " +
+          "Set DB_DRIVER=postgres with a reachable DATABASE_URL before accepting real payments.",
       );
     }
     const o = await createRazorpayOrder(args);

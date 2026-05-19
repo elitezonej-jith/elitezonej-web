@@ -3,8 +3,8 @@
 import { listNotices } from "../../lib/admin/repos/notices";
 import PopupNoticeClient from "./PopupNoticeClient";
 
-export default function PopupNotice() {
-  const all = listNotices({ onlyLive: true, type: "popup" });
+export default async function PopupNotice() {
+  const all = await listNotices({ onlyLive: true, type: "popup" });
   const popup = all[0];
   if (!popup) return null;
   return <PopupNoticeClient notice={popup} />;

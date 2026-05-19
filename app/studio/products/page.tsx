@@ -31,8 +31,15 @@ export default async function ProductsListPage({ searchParams }: SP) {
   const kind = sp.kind === "fabric" ? "fabric" : sp.kind === "tailored" ? "tailored" : undefined;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
 
-  const items = listProducts({ q, status, kind, limit: PAGE, offset: (page - 1) * PAGE });
-  const total = countProducts({ q, status, kind });
+  const items = await listProducts({ q, status, kind, limit: PAGE, offset: (page - 1) * PAGE });
+  const total = await countProducts({ q, status, kind });
+  const rows = await Promise.all(
+    items.map(async (p) => ({
+      p,
+      thumb: (await getThumbnail(p.slug)) ?? fallbackImages(p.slug)[0] ?? "",
+      meta: await getMeta(p.slug),
+    })),
+  );
   const pages = Math.max(1, Math.ceil(total / PAGE));
 
   const chips: Chip[] = [
@@ -78,9 +85,7 @@ export default async function ProductsListPage({ searchParams }: SP) {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((p) => {
-                    const thumb = getThumbnail(p.slug) ?? fallbackImages(p.slug)[0] ?? "";
-                    const meta = getMeta(p.slug);
+                  {rows.map(({ p, thumb, meta }) => {
                     return (
                       <tr key={p.slug}>
                         <td style={{ width: 60 }}>

@@ -3,32 +3,31 @@ import "server-only";
 // every studio edit is visible on the public site immediately.
 
 import { cache } from "react";
-import { getDb } from "../admin/db";
+import { sql } from "../admin/db";
 import { listProducts as listAdminProducts } from "../admin/repos/products";
 import { getMeta } from "../admin/repos/product-meta";
 import { listImages, getThumbnail, fallbackImages } from "../admin/repos/product-images";
 import type { Product } from "../admin/types";
 
 export type StorefrontProduct = Product & {
-  meta: ReturnType<typeof getMeta>;
+  meta: Awaited<ReturnType<typeof getMeta>>;
   images: string[];
   thumbnail: string | null;
 };
 
-function decorate(p: Product): StorefrontProduct {
-  const meta = getMeta(p.slug);
-  const dbImages = listImages(p.slug).map((i) => i.image_path);
+async function decorate(p: Product): Promise<StorefrontProduct> {
+  const meta = await getMeta(p.slug);
+  const dbImages = (await listImages(p.slug)).map((i) => i.image_path);
   const images = dbImages.length ? dbImages : fallbackImages(p.slug);
-  const thumb = getThumbnail(p.slug) ?? images[0] ?? null;
+  const thumb = (await getThumbnail(p.slug)) ?? images[0] ?? null;
   return { ...p, meta, images, thumbnail: thumb };
 }
 
 export const getProduct = cache(_getProduct);
-function _getProduct(slug: string): StorefrontProduct | null {
-  const db = getDb();
-  const r = db.prepare("SELECT * FROM products WHERE slug = ? AND status = 'active'").get(slug) as
-    | { sizes_json: string; features_json: string; spec_json: string } & Omit<Product, "sizes" | "features" | "spec">
-    | undefined;
+async function _getProduct(slug: string): Promise<StorefrontProduct | null> {
+  const r = await sql.get<
+    { sizes_json: string; features_json: string; spec_json: string } & Omit<Product, "sizes" | "features" | "spec">
+  >("SELECT * FROM products WHERE slug = ? AND status = 'active'", [slug]);
   if (!r) return null;
   const product: Product = {
     ...r,
@@ -56,11 +55,11 @@ const _listProductsByKey = cache((_key: string, filter?: ListFilter) =>
   _listProducts(filter),
 );
 
-export function listProducts(filter?: ListFilter): StorefrontProduct[] {
+export function listProducts(filter?: ListFilter): Promise<StorefrontProduct[]> {
   return _listProductsByKey(JSON.stringify(filter ?? {}), filter);
 }
 
-function _listProducts(filter?: ListFilter): StorefrontProduct[] {
+async function _listProducts(filter?: ListFilter): Promise<StorefrontProduct[]> {
   const opts: Parameters<typeof listAdminProducts>[0] = {
     status: "active",
     kind: filter?.kind,
@@ -68,9 +67,9 @@ function _listProducts(filter?: ListFilter): StorefrontProduct[] {
     category: filter?.category,
     limit: filter?.limit ?? 100,
   };
-  let products = listAdminProducts(opts);
+  let products = await listAdminProducts(opts);
   if (filter?.sub) products = products.filter((p) => p.sub === filter.sub);
-  let result = products.map(decorate);
+  let result = await Promise.all(products.map(decorate));
   if (filter?.featured) result = result.filter((p) => p.meta.is_featured === 1);
   if (filter?.trending) result = result.filter((p) => p.meta.is_trending === 1);
   if (filter?.newArrival) result = result.filter((p) => p.meta.is_new_arrival === 1);

@@ -1,5 +1,5 @@
 import "server-only";
-import { getDb } from "../db";
+import { sql } from "../db";
 import type {
   Product,
   ProductRow,
@@ -26,8 +26,7 @@ export type ListFilter = {
   offset?: number;
 };
 
-export function listProducts(f: ListFilter = {}): Product[] {
-  const db = getDb();
+export async function listProducts(f: ListFilter = {}): Promise<Product[]> {
   const where: string[] = [];
   const params: unknown[] = [];
   if (f.kind) {
@@ -50,16 +49,15 @@ export function listProducts(f: ListFilter = {}): Product[] {
     where.push("(name LIKE ? OR slug LIKE ? OR cat LIKE ?)");
     params.push(`%${f.q}%`, `%${f.q}%`, `%${f.q}%`);
   }
-  const sql = `SELECT * FROM products ${
+  const query = `SELECT * FROM products ${
     where.length ? "WHERE " + where.join(" AND ") : ""
   } ORDER BY updated_at DESC LIMIT ? OFFSET ?`;
   params.push(f.limit ?? 100, f.offset ?? 0);
-  const rows = db.prepare(sql).all(...params) as ProductRow[];
+  const rows = await sql.all<ProductRow>(query, params);
   return rows.map(rowToProduct);
 }
 
-export function countProducts(f: ListFilter = {}): number {
-  const db = getDb();
+export async function countProducts(f: ListFilter = {}): Promise<number> {
   const where: string[] = [];
   const params: unknown[] = [];
   if (f.kind) { where.push("kind = ?"); params.push(f.kind); }
@@ -68,15 +66,13 @@ export function countProducts(f: ListFilter = {}): number {
     where.push("(name LIKE ? OR slug LIKE ?)");
     params.push(`%${f.q}%`, `%${f.q}%`);
   }
-  const sql = `SELECT COUNT(*) as n FROM products ${where.length ? "WHERE " + where.join(" AND ") : ""}`;
-  return (db.prepare(sql).get(...params) as { n: number }).n;
+  const query = `SELECT COUNT(*) as n FROM products ${where.length ? "WHERE " + where.join(" AND ") : ""}`;
+  const row = await sql.get<{ n: number | string }>(query, params);
+  return Number(row?.n ?? 0);
 }
 
-export function getProduct(slug: string): Product | null {
-  const db = getDb();
-  const row = db.prepare("SELECT * FROM products WHERE slug = ?").get(slug) as
-    | ProductRow
-    | undefined;
+export async function getProduct(slug: string): Promise<Product | null> {
+  const row = await sql.get<ProductRow>("SELECT * FROM products WHERE slug = ?", [slug]);
   return row ? rowToProduct(row) : null;
 }
 
@@ -104,18 +100,17 @@ export type ProductInput = {
   description: string | null;
 };
 
-export function upsertProduct(input: ProductInput): void {
-  const db = getDb();
-  db.prepare(
+export async function upsertProduct(input: ProductInput): Promise<void> {
+  await sql.run(
     `INSERT INTO products (
       slug, name, cat, cat_link, price, sale_price, line,
       sizes_json, features_json, spec_json, note, fit, fabric,
       occasion, badge, gender, category, sub, kind, status, description, updated_at
     ) VALUES (
-      @slug, @name, @cat, @cat_link, @price, @sale_price, @line,
-      @sizes_json, @features_json, @spec_json, @note, @fit, @fabric,
-      @occasion, @badge, @gender, @category, @sub, @kind, @status, @description,
-      datetime('now')
+      ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?, ?, ?,
+      CURRENT_TIMESTAMP
     )
     ON CONFLICT(slug) DO UPDATE SET
       name = excluded.name,
@@ -138,48 +133,64 @@ export function upsertProduct(input: ProductInput): void {
       kind = excluded.kind,
       status = excluded.status,
       description = excluded.description,
-      updated_at = datetime('now')`,
-  ).run({
-    ...input,
-    sizes_json: JSON.stringify(input.sizes),
-    features_json: JSON.stringify(input.features),
-    spec_json: JSON.stringify(input.spec),
-  });
+      updated_at = CURRENT_TIMESTAMP`,
+    [
+      input.slug,
+      input.name,
+      input.cat,
+      input.cat_link,
+      input.price,
+      input.sale_price,
+      input.line,
+      JSON.stringify(input.sizes),
+      JSON.stringify(input.features),
+      JSON.stringify(input.spec),
+      input.note,
+      input.fit,
+      input.fabric,
+      input.occasion,
+      input.badge,
+      input.gender,
+      input.category,
+      input.sub,
+      input.kind,
+      input.status,
+      input.description,
+    ],
+  );
 }
 
-export function deleteProduct(slug: string): void {
-  getDb().prepare("DELETE FROM products WHERE slug = ?").run(slug);
+export async function deleteProduct(slug: string): Promise<void> {
+  await sql.run("DELETE FROM products WHERE slug = ?", [slug]);
 }
 
-export function setStatus(slug: string, status: ProductStatus): void {
-  getDb()
-    .prepare(
-      `UPDATE products SET status = ?, updated_at = datetime('now') WHERE slug = ?`,
-    )
-    .run(status, slug);
+export async function setStatus(slug: string, status: ProductStatus): Promise<void> {
+  await sql.run(
+    `UPDATE products SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE slug = ?`,
+    [status, slug],
+  );
 }
 
-export function getInventory(slug: string): InventoryRow[] {
-  return getDb()
-    .prepare(
-      "SELECT * FROM inventory WHERE product_slug = ? ORDER BY size ASC",
-    )
-    .all(slug) as InventoryRow[];
+export async function getInventory(slug: string): Promise<InventoryRow[]> {
+  return sql.all<InventoryRow>(
+    "SELECT * FROM inventory WHERE product_slug = ? ORDER BY size ASC",
+    [slug],
+  );
 }
 
-export function setInventory(
+export async function setInventory(
   slug: string,
   rows: Array<{ size: string; stock: number; oos_flag: number }>,
-): void {
-  const db = getDb();
-  const tx = db.transaction(() => {
-    db.prepare("DELETE FROM inventory WHERE product_slug = ?").run(slug);
-    const ins = db.prepare(
-      "INSERT INTO inventory (product_slug, size, stock, oos_flag) VALUES (?, ?, ?, ?)",
-    );
-    for (const r of rows) ins.run(slug, r.size, r.stock, r.oos_flag);
+): Promise<void> {
+  await sql.tx(async (t) => {
+    await t.run("DELETE FROM inventory WHERE product_slug = ?", [slug]);
+    for (const r of rows) {
+      await t.run(
+        "INSERT INTO inventory (product_slug, size, stock, oos_flag) VALUES (?, ?, ?, ?)",
+        [slug, r.size, r.stock, r.oos_flag],
+      );
+    }
   });
-  tx();
 }
 
 export type StockMatrixRow = {
@@ -191,23 +202,25 @@ export type StockMatrixRow = {
   total: number;
 };
 
-export function getStockMatrix(filter?: { kind?: "tailored" | "fabric" }): StockMatrixRow[] {
-  const db = getDb();
-  const sql = `SELECT slug, name, kind, status FROM products
+export async function getStockMatrix(filter?: { kind?: "tailored" | "fabric" }): Promise<StockMatrixRow[]> {
+  const query = `SELECT slug, name, kind, status FROM products
                ${filter?.kind ? "WHERE kind = ?" : ""}
                ORDER BY name ASC`;
-  const rows = (filter?.kind
-    ? db.prepare(sql).all(filter.kind)
-    : db.prepare(sql).all()) as Array<{ slug: string; name: string; kind: string; status: ProductStatus }>;
-  const inv = db.prepare(
-    "SELECT size, stock, oos_flag as oos FROM inventory WHERE product_slug = ? ORDER BY size",
+  const rows = await sql.all<{ slug: string; name: string; kind: string; status: ProductStatus }>(
+    query,
+    filter?.kind ? [filter.kind] : [],
   );
-  return rows.map((r) => {
-    const sizes = inv.all(r.slug) as Array<{ size: string; stock: number; oos: number }>;
-    return {
+  const out: StockMatrixRow[] = [];
+  for (const r of rows) {
+    const sizes = await sql.all<{ size: string; stock: number; oos: number }>(
+      "SELECT size, stock, oos_flag as oos FROM inventory WHERE product_slug = ? ORDER BY size",
+      [r.slug],
+    );
+    out.push({
       ...r,
       sizes,
-      total: sizes.reduce((a, s) => a + s.stock, 0),
-    };
-  });
+      total: sizes.reduce((a, s) => a + Number(s.stock), 0),
+    });
+  }
+  return out;
 }

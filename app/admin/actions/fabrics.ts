@@ -20,8 +20,8 @@ export async function saveFabricMetaAction(fd: FormData): Promise<void> {
   const parsed = MetaSchema.safeParse(Object.fromEntries(fd.entries()));
   if (!parsed.success) return;
   const { slug, ...meta } = parsed.data;
-  upsertFabricMeta(slug, meta);
-  logAudit({ user_id: me.id, action: "save_fabric_meta", entity: "fabric", entity_id: slug });
+  await upsertFabricMeta(slug, meta);
+  await logAudit({ user_id: me.id, action: "save_fabric_meta", entity: "fabric", entity_id: slug });
   revalidatePath(`/admin/fabrics/${slug}`);
 }
 
@@ -43,7 +43,7 @@ export async function saveFabricColoursAction(fd: FormData): Promise<void> {
     }))
     .filter((c) => c.name.trim().length > 0);
 
-  setFabricColours(slug, colours);
-  logAudit({ user_id: me.id, action: "save_fabric_colours", entity: "fabric", entity_id: slug, payload: { count: colours.length } });
+  await setFabricColours(slug, colours);
+  await logAudit({ user_id: me.id, action: "save_fabric_colours", entity: "fabric", entity_id: slug, payload: { count: colours.length } });
   revalidatePath(`/admin/fabrics/${slug}`);
 }

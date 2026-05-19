@@ -26,7 +26,7 @@ export async function createCategoryAction(fd: FormData): Promise<void> {
   const parsed = CategorySchema.safeParse(Object.fromEntries(fd.entries()));
   if (!parsed.success) return;
   const v = parsed.data;
-  const id = createCategory({
+  const id = await createCategory({
     parent_id: v.parent_id === "" || v.parent_id === undefined ? null : Number(v.parent_id),
     name: v.name,
     slug: v.slug,
@@ -34,7 +34,7 @@ export async function createCategoryAction(fd: FormData): Promise<void> {
     kind: v.kind || null,
     sort_order: v.sort_order ?? 0,
   });
-  logAudit({ user_id: me.id, action: "create_category", entity: "category", entity_id: String(id) });
+  await logAudit({ user_id: me.id, action: "create_category", entity: "category", entity_id: String(id) });
   revalidatePath("/admin/categories");
 }
 
@@ -43,8 +43,8 @@ export async function updateCategoryAction(fd: FormData): Promise<void> {
   const parsed = UpdateCategorySchema.safeParse(Object.fromEntries(fd.entries()));
   if (!parsed.success) return;
   const { id, name, slug, sort_order } = parsed.data;
-  updateCategory(id, { name, slug, sort_order });
-  logAudit({ user_id: me.id, action: "update_category", entity: "category", entity_id: String(id) });
+  await updateCategory(id, { name, slug, sort_order });
+  await logAudit({ user_id: me.id, action: "update_category", entity: "category", entity_id: String(id) });
   revalidatePath("/admin/categories");
 }
 
@@ -52,7 +52,7 @@ export async function deleteCategoryAction(fd: FormData): Promise<void> {
   const me = await requireUser();
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
-  deleteCategory(id);
-  logAudit({ user_id: me.id, action: "delete_category", entity: "category", entity_id: String(id) });
+  await deleteCategory(id);
+  await logAudit({ user_id: me.id, action: "delete_category", entity: "category", entity_id: String(id) });
   revalidatePath("/admin/categories");
 }

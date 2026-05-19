@@ -68,8 +68,8 @@ export async function createAddressAction(
   const parsed = parseAddress(fd);
   if (!parsed.success) return shapeErrors(parsed.error);
   const makeDefault = fd.get("set_default") === "1";
-  const id = createAddress(me.id, parsed.data, makeDefault);
-  logAudit({
+  const id = await createAddress(me.id, parsed.data, makeDefault);
+  await logAudit({
     user_id: null,
     action: "customer_address_create",
     entity: "address",
@@ -89,10 +89,10 @@ export async function updateAddressAction(
   const parsed = parseAddress(fd);
   if (!parsed.success) return shapeErrors(parsed.error);
   // Ownership is enforced in the WHERE clause: a foreign id changes 0 rows.
-  if (!updateAddress(addressId.data, me.id, parsed.data)) {
+  if (!(await updateAddress(addressId.data, me.id, parsed.data))) {
     return { error: "Address not found." };
   }
-  logAudit({
+  await logAudit({
     user_id: null,
     action: "customer_address_update",
     entity: "address",
@@ -109,10 +109,10 @@ export async function deleteAddressAction(
   const me = await requireCustomer();
   const addressId = idOf.safeParse(fd.get("address_id"));
   if (!addressId.success) return { error: "Address not found." };
-  if (!deleteAddress(addressId.data, me.id)) {
+  if (!(await deleteAddress(addressId.data, me.id))) {
     return { error: "Address not found." };
   }
-  logAudit({
+  await logAudit({
     user_id: null,
     action: "customer_address_delete",
     entity: "address",
@@ -129,10 +129,10 @@ export async function setDefaultAddressAction(
   const me = await requireCustomer();
   const addressId = idOf.safeParse(fd.get("address_id"));
   if (!addressId.success) return { error: "Address not found." };
-  if (!setDefaultAddress(addressId.data, me.id)) {
+  if (!(await setDefaultAddress(addressId.data, me.id))) {
     return { error: "Address not found." };
   }
-  logAudit({
+  await logAudit({
     user_id: null,
     action: "customer_address_set_default",
     entity: "address",

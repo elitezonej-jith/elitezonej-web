@@ -9,9 +9,9 @@ export const metadata = { title: "Sign in · Studio" };
 type SP = { searchParams: Promise<{ next?: string }> };
 
 export default async function StudioLoginPage({ searchParams }: SP) {
-  if (countUsers() === 0) redirect("/studio/setup");
+  if ((await countUsers()) === 0) redirect("/studio/setup");
   const c = await cookies();
-  const me = getSessionUser(c.get(SESSION_COOKIE)?.value);
+  const me = await getSessionUser(c.get(SESSION_COOKIE)?.value);
   if (me) redirect("/studio");
   const sp = await searchParams;
   return (

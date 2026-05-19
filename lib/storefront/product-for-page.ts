@@ -43,8 +43,8 @@ export function adaptDbProduct(p: StorefrontProduct): LegacyProduct {
   };
 }
 
-export function getProductForPage(slug: string): LegacyProduct | null {
-  const fromDb = dbGetProduct(slug);
+export async function getProductForPage(slug: string): Promise<LegacyProduct | null> {
+  const fromDb = await dbGetProduct(slug);
   if (fromDb) return adaptDbProduct(fromDb);
   return staticGetProduct(slug) ?? null;
 }

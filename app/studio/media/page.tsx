@@ -14,8 +14,8 @@ type SP = { searchParams: Promise<{ q?: string; folder?: string }> };
 export default async function MediaPage({ searchParams }: SP) {
   await requireUser("/studio/login");
   const sp = await searchParams;
-  const folders = listFolders();
-  const assets = listAssets({ q: sp.q, folder: sp.folder });
+  const folders = await listFolders();
+  const assets = await listAssets({ q: sp.q, folder: sp.folder });
 
   return (
     <div className="stu-page">

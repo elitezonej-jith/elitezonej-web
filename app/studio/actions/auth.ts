@@ -41,34 +41,34 @@ export async function signInStudioAction(_prev: AuthState, fd: FormData): Promis
   }
 
   // Constant-time: always run bcrypt to avoid email-enumeration via timing.
-  const u = getUserByEmail(parsed.data.email);
+  const u = await getUserByEmail(parsed.data.email);
   const hashForCompare = u?.password_hash ?? "$2a$12$invalidinvalidinvalidinvaliduO0000000000000000000000000000";
   const ok = await verifyPassword(parsed.data.password, hashForCompare);
   if (!u || !ok) return { error: "We couldn't sign you in with those details." };
 
   resetRateLimit(rlKey);
 
-  const sess = createSession(u.id);
+  const sess = await createSession(u.id);
   const c = await cookies();
   c.set(SESSION_COOKIE, sess.id, {
     ...SESSION_COOKIE_OPTIONS,
     expires: new Date(sess.expires_at),
   });
   touchLogin(u.id);
-  logAudit({ user_id: u.id, action: "studio_sign_in", entity: "user", entity_id: String(u.id) });
+  await logAudit({ user_id: u.id, action: "studio_sign_in", entity: "user", entity_id: String(u.id) });
   redirect(safeNextPath(parsed.data.next, "/studio"));
 }
 
 export async function signOutStudioAction(): Promise<void> {
   const c = await cookies();
   const sid = c.get(SESSION_COOKIE)?.value;
-  if (sid) destroySession(sid);
+  if (sid) await destroySession(sid);
   c.delete(SESSION_COOKIE);
   redirect("/studio/login");
 }
 
 export async function bootstrapStudioOwnerAction(_prev: AuthState, fd: FormData): Promise<AuthState> {
-  if (countUsers() > 0) return { error: "Setup is already complete." };
+  if ((await countUsers()) > 0) return { error: "Setup is already complete." };
   const parsed = SetupSchema.safeParse({
     email: fd.get("email"),
     password: fd.get("password"),
@@ -76,13 +76,13 @@ export async function bootstrapStudioOwnerAction(_prev: AuthState, fd: FormData)
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   const hash = await hashPassword(parsed.data.password);
-  const id = createUser({ email: parsed.data.email, password_hash: hash, name: parsed.data.name, role: "owner" });
-  const sess = createSession(id);
+  const id = await createUser({ email: parsed.data.email, password_hash: hash, name: parsed.data.name, role: "owner" });
+  const sess = await createSession(id);
   const c = await cookies();
   c.set(SESSION_COOKIE, sess.id, {
     ...SESSION_COOKIE_OPTIONS,
     expires: new Date(sess.expires_at),
   });
-  logAudit({ user_id: id, action: "bootstrap_owner", entity: "user", entity_id: String(id) });
+  await logAudit({ user_id: id, action: "bootstrap_owner", entity: "user", entity_id: String(id) });
   redirect("/studio");
 }

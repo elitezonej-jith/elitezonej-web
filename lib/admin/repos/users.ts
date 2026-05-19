@@ -1,58 +1,70 @@
 import "server-only";
-import { getDb } from "../db";
+import { sql } from "../db";
 import type { Role, User } from "../types";
 
-export function countUsers(): number {
-  return (getDb().prepare("SELECT COUNT(*) as n FROM users").get() as { n: number }).n;
+export async function countUsers(): Promise<number> {
+  const row = await sql.get<{ n: number | string }>("SELECT COUNT(*) as n FROM users");
+  return Number(row?.n ?? 0);
 }
 
-export function listUsers(): User[] {
-  return getDb()
-    .prepare("SELECT id, email, name, role, created_at, last_login_at FROM users ORDER BY created_at ASC")
-    .all() as User[];
+export async function listUsers(): Promise<User[]> {
+  return sql.all<User>(
+    "SELECT id, email, name, role, created_at, last_login_at FROM users ORDER BY created_at ASC",
+  );
 }
 
-export function getUserByEmail(email: string): (User & { password_hash: string }) | null {
-  return (getDb()
-    .prepare(
-      "SELECT id, email, name, role, created_at, last_login_at, password_hash FROM users WHERE email = ?",
-    )
-    .get(email.toLowerCase()) as (User & { password_hash: string }) | undefined) ?? null;
+export async function getUserByEmail(
+  email: string,
+): Promise<(User & { password_hash: string }) | null> {
+  return sql.get<User & { password_hash: string }>(
+    "SELECT id, email, name, role, created_at, last_login_at, password_hash FROM users WHERE email = ?",
+    [email.toLowerCase()],
+  );
 }
 
 /** Auth-only: fetch the password hash by user id (tighter than email lookup
  *  for self-scoped flows like password change). */
-export function getUserAuthById(id: number): { id: number; password_hash: string } | null {
-  return (getDb()
-    .prepare("SELECT id, password_hash FROM users WHERE id = ?")
-    .get(id) as { id: number; password_hash: string } | undefined) ?? null;
+export async function getUserAuthById(
+  id: number,
+): Promise<{ id: number; password_hash: string } | null> {
+  return sql.get<{ id: number; password_hash: string }>(
+    "SELECT id, password_hash FROM users WHERE id = ?",
+    [id],
+  );
 }
 
-export function getUserById(id: number): User | null {
-  return (getDb()
-    .prepare("SELECT id, email, name, role, created_at, last_login_at FROM users WHERE id = ?")
-    .get(id) as User | undefined) ?? null;
+export async function getUserById(id: number): Promise<User | null> {
+  return sql.get<User>(
+    "SELECT id, email, name, role, created_at, last_login_at FROM users WHERE id = ?",
+    [id],
+  );
 }
 
-export function createUser(input: { email: string; password_hash: string; name: string; role: Role }): number {
-  const r = getDb()
-    .prepare(
-      `INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)`,
-    )
-    .run(input.email.toLowerCase(), input.password_hash, input.name, input.role);
-  return Number(r.lastInsertRowid);
+export async function createUser(input: {
+  email: string;
+  password_hash: string;
+  name: string;
+  role: Role;
+}): Promise<number> {
+  const r = await sql.run(
+    `INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, ?)
+     RETURNING id`,
+    [input.email.toLowerCase(), input.password_hash, input.name, input.role],
+  );
+  return Number(r.rows[0].id);
 }
 
-export function setUserPassword(id: number, password_hash: string): void {
-  getDb().prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(password_hash, id);
+export async function setUserPassword(id: number, password_hash: string): Promise<void> {
+  await sql.run("UPDATE users SET password_hash = ? WHERE id = ?", [password_hash, id]);
 }
 
-export function deleteUser(id: number): void {
-  getDb().prepare("DELETE FROM users WHERE id = ?").run(id);
+export async function deleteUser(id: number): Promise<void> {
+  await sql.run("DELETE FROM users WHERE id = ?", [id]);
 }
 
-export function touchLogin(id: number): void {
-  getDb()
-    .prepare("UPDATE users SET last_login_at = datetime('now') WHERE id = ?")
-    .run(id);
+export async function touchLogin(id: number): Promise<void> {
+  await sql.run(
+    "UPDATE users SET last_login_at = CURRENT_TIMESTAMP WHERE id = ?",
+    [id],
+  );
 }

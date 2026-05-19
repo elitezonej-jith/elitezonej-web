@@ -31,9 +31,9 @@ function orderDate(iso: string): string {
 export default async function AccountPage() {
   const me = await requireCustomer();
   // me.email is the verified server-side session email (never client input).
-  const orders = getCustomerOrdersByEmail(me.email);
+  const orders = await getCustomerOrdersByEmail(me.email);
   // Addresses are scoped to the server-resolved account id, never client input.
-  const addresses = listAddressesForCustomer(me.id);
+  const addresses = await listAddressesForCustomer(me.id);
 
   return (
     <>

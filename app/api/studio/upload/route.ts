@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
 
   // Auth
   const c = await cookies();
-  const me = getSessionUser(c.get(SESSION_COOKIE)?.value);
+  const me = await getSessionUser(c.get(SESSION_COOKIE)?.value);
   if (!me) return new NextResponse("Unauthorized", { status: 401 });
 
   let form: FormData;
@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
   await fs.writeFile(outAbs, out.data);
 
   const publicPath = `/uploads/${folder}/${filename}`;
-  recordAsset({
+  await recordAsset({
     path: publicPath,
     folder,
     width: out.info.width,

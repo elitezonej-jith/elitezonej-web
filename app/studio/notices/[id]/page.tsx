@@ -16,7 +16,7 @@ export default async function EditNoticePage({ params, searchParams }: Params) {
   await requireUser("/studio/login");
   const { id } = await params;
   const { saved } = await searchParams;
-  const notice = getNotice(Number(id));
+  const notice = await getNotice(Number(id));
   if (!notice) notFound();
   return (
     <div className="stu-page stu-page--narrow">

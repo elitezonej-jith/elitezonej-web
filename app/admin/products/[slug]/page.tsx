@@ -19,9 +19,9 @@ export default async function ProductEditorPage({ params, searchParams }: Params
   await requireUser();
   const { slug } = await params;
   const { saved } = await searchParams;
-  const product = getProduct(slug);
+  const product = await getProduct(slug);
   if (!product) notFound();
-  const inventory = getInventory(slug);
+  const inventory = await getInventory(slug);
 
   return (
     <div className="adm-page">

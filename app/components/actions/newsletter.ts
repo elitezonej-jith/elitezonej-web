@@ -21,9 +21,9 @@ export async function subscribeNewsletter(
   const parsed = Schema.safeParse({ email: String(fd.get("email") ?? "").trim().toLowerCase() });
   if (!parsed.success) return { error: "Enter a valid email address." };
 
-  const result = subscribe(parsed.data.email, "footer");
+  const result = await subscribe(parsed.data.email, "footer");
   if (result === "new" || result === "resubscribed") {
-    logAudit({
+    await logAudit({
       user_id: null,
       action: "newsletter_subscribe",
       entity: "newsletter",

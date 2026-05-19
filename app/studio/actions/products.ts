@@ -65,7 +65,7 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please review the form." };
   const v = parsed.data;
 
-  const exists = !!getProduct(v.slug);
+  const exists = !!(await getProduct(v.slug));
   const input: ProductInput = {
     slug: v.slug,
     name: v.name,
@@ -84,9 +84,9 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
     kind: v.kind, status: v.status,
     description: v.long_description || null,
   };
-  upsertProduct(input);
+  await upsertProduct(input);
 
-  upsertMeta({
+  await upsertMeta({
     product_slug: v.slug,
     is_featured: v.is_featured === "on" ? 1 : 0,
     is_trending: v.is_trending === "on" ? 1 : 0,
@@ -99,10 +99,10 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
   });
 
   if (!exists) {
-    setInventory(v.slug, splitLines(v.sizes).map((s) => ({ size: s, stock: 6, oos_flag: 0 })));
+    await setInventory(v.slug, splitLines(v.sizes).map((s) => ({ size: s, stock: 6, oos_flag: 0 })));
   }
 
-  logAudit({
+  await logAudit({
     user_id: me.id,
     action: exists ? "update_product" : "create_product",
     entity: "product", entity_id: v.slug,
@@ -119,8 +119,8 @@ export async function deleteProductAction(fd: FormData): Promise<void> {
   const me = await requireUser("/studio/login");
   const slug = String(fd.get("slug") ?? "");
   if (!slug) return;
-  deleteProduct(slug);
-  logAudit({ user_id: me.id, action: "delete_product", entity: "product", entity_id: slug });
+  await deleteProduct(slug);
+  await logAudit({ user_id: me.id, action: "delete_product", entity: "product", entity_id: slug });
   revalidatePath("/studio/products");
   redirect("/studio/products?flash=Product%20removed");
 }
@@ -130,8 +130,8 @@ export async function archiveProductAction(fd: FormData): Promise<void> {
   const slug = String(fd.get("slug") ?? "");
   const status = String(fd.get("status") ?? "archived") as "active" | "draft" | "archived";
   if (!slug) return;
-  setStatus(slug, status);
-  logAudit({ user_id: me.id, action: "set_product_status", entity: "product", entity_id: slug, payload: { status } });
+  await setStatus(slug, status);
+  await logAudit({ user_id: me.id, action: "set_product_status", entity: "product", entity_id: slug, payload: { status } });
   revalidatePath("/studio/products");
   revalidatePath(`/studio/products/${slug}`);
 }
@@ -140,14 +140,14 @@ export async function duplicateProductAction(fd: FormData): Promise<void> {
   const me = await requireUser("/studio/login");
   const slug = String(fd.get("slug") ?? "");
   if (!slug) return;
-  const src = getProduct(slug);
+  const src = await getProduct(slug);
   if (!src) return;
   let newSlug = `${slug}-copy`;
   let n = 2;
-  while (getProduct(newSlug)) {
+  while (await getProduct(newSlug)) {
     newSlug = `${slug}-copy-${n++}`;
   }
-  upsertProduct({
+  await upsertProduct({
     slug: newSlug,
     name: `${src.name} (Copy)`,
     cat: src.cat, cat_link: src.cat_link,
@@ -157,9 +157,9 @@ export async function duplicateProductAction(fd: FormData): Promise<void> {
     badge: src.badge, gender: src.gender, category: src.category, sub: src.sub,
     kind: src.kind, status: "draft", description: src.description,
   });
-  const meta = getMeta(slug);
-  upsertMeta({ ...meta, product_slug: newSlug });
-  logAudit({ user_id: me.id, action: "duplicate_product", entity: "product", entity_id: newSlug, payload: { src: slug } });
+  const meta = await getMeta(slug);
+  await upsertMeta({ ...meta, product_slug: newSlug });
+  await logAudit({ user_id: me.id, action: "duplicate_product", entity: "product", entity_id: newSlug, payload: { src: slug } });
   revalidatePath("/studio/products");
   redirect(`/studio/products/${newSlug}?flash=Duplicate%20created`);
 }
@@ -172,8 +172,8 @@ export async function attachImageAction(fd: FormData): Promise<void> {
   const imagePath = String(fd.get("image_path") ?? "");
   const alt = String(fd.get("alt") ?? "");
   if (!slug || !imagePath) return;
-  const id = addImage(slug, imagePath, alt);
-  logAudit({ user_id: me.id, action: "attach_image", entity: "product", entity_id: slug, payload: { id, imagePath } });
+  const id = await addImage(slug, imagePath, alt);
+  await logAudit({ user_id: me.id, action: "attach_image", entity: "product", entity_id: slug, payload: { id, imagePath } });
   revalidatePath(`/studio/products/${slug}`);
 }
 
@@ -182,8 +182,8 @@ export async function deleteImageAction(fd: FormData): Promise<void> {
   const id = Number(fd.get("id") ?? 0);
   const slug = String(fd.get("slug") ?? "");
   if (!id || !slug) return;
-  deleteProductImage(id, slug);
-  logAudit({ user_id: me.id, action: "delete_image", entity: "product", entity_id: slug, payload: { id } });
+  await deleteProductImage(id, slug);
+  await logAudit({ user_id: me.id, action: "delete_image", entity: "product", entity_id: slug, payload: { id } });
   revalidatePath(`/studio/products/${slug}`);
 }
 
@@ -192,7 +192,7 @@ export async function reorderImagesAction(fd: FormData): Promise<void> {
   const slug = String(fd.get("slug") ?? "");
   const ordered = String(fd.get("ordered") ?? "").split(",").map((n) => Number(n)).filter(Boolean);
   if (!slug || !ordered.length) return;
-  reorderImages(slug, ordered);
+  await reorderImages(slug, ordered);
   revalidatePath(`/studio/products/${slug}`);
 }
 
@@ -201,7 +201,7 @@ export async function setThumbnailAction(fd: FormData): Promise<void> {
   const slug = String(fd.get("slug") ?? "");
   const id = Number(fd.get("id") ?? 0);
   if (!slug || !id) return;
-  setThumbnail(slug, id);
+  await setThumbnail(slug, id);
   revalidatePath(`/studio/products/${slug}`);
 }
 
@@ -210,7 +210,7 @@ export async function setHoverAction(fd: FormData): Promise<void> {
   const slug = String(fd.get("slug") ?? "");
   const id = Number(fd.get("id") ?? 0);
   if (!slug || !id) return;
-  setHover(slug, id);
+  await setHover(slug, id);
   revalidatePath(`/studio/products/${slug}`);
 }
 
@@ -220,6 +220,6 @@ export async function updateAltAction(fd: FormData): Promise<void> {
   const alt = String(fd.get("alt") ?? "").slice(0, 300);
   const slug = String(fd.get("slug") ?? "");
   if (!id || !slug) return;
-  updateAlt(id, alt, slug);
-  logAudit({ user_id: me.id, action: "update_image_alt", entity: "product", entity_id: slug, payload: { id } });
+  await updateAlt(id, alt, slug);
+  await logAudit({ user_id: me.id, action: "update_image_alt", entity: "product", entity_id: slug, payload: { id } });
 }

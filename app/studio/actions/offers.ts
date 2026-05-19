@@ -29,7 +29,7 @@ export async function saveOfferAction(_prev: OfferSaveState, fd: FormData): Prom
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please review the form." };
   const v = parsed.data;
   const code = v.code.toUpperCase();
-  upsertPromotion({
+  await upsertPromotion({
     code,
     type: v.type, value: v.value,
     starts_at: v.starts_at || null, ends_at: v.ends_at || null,
@@ -49,9 +49,9 @@ export async function saveOfferAction(_prev: OfferSaveState, fd: FormData): Prom
     target_type: t as "all" | "category" | "product",
     target_id: ids[i] ?? "",
   })).filter((t) => t.target_type === "all" || t.target_id);
-  setTargets(code, targets);
+  await setTargets(code, targets);
 
-  logAudit({ user_id: me.id, action: "save_offer", entity: "promotion", entity_id: code });
+  await logAudit({ user_id: me.id, action: "save_offer", entity: "promotion", entity_id: code });
   revalidatePath("/studio/offers");
   revalidatePath("/");
   redirect(`/studio/offers/${code}?saved=1`);
@@ -61,8 +61,8 @@ export async function deleteOfferAction(fd: FormData): Promise<void> {
   const me = await requireUser("/studio/login");
   const code = String(fd.get("code") ?? "").toUpperCase();
   if (!code) return;
-  deletePromotion(code);
-  logAudit({ user_id: me.id, action: "delete_offer", entity: "promotion", entity_id: code });
+  await deletePromotion(code);
+  await logAudit({ user_id: me.id, action: "delete_offer", entity: "promotion", entity_id: code });
   revalidatePath("/studio/offers");
   redirect("/studio/offers?flash=Offer%20removed");
 }

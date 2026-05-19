@@ -18,7 +18,7 @@ function formatValue(p: { type: string; value: number }) {
 
 export default async function PromotionsPage() {
   await requireUser();
-  const promos = listPromotions();
+  const promos = await listPromotions();
   return (
     <div className="adm-page">
       <EditorsNote body={`The promotions ledger has ${promos.length} ${promos.length === 1 ? "code" : "codes"}. Active codes apply at the cart.`} />

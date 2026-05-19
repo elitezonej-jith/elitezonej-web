@@ -16,8 +16,8 @@ export default async function InventoryPage({ searchParams }: SP) {
   await requireUser();
   const sp = await searchParams;
   const kind = sp.kind === "fabric" ? "fabric" : "tailored";
-  const rows = getStockMatrix({ kind });
-  const threshold = Number(getSetting("low_stock_threshold") ?? "3");
+  const rows = await getStockMatrix({ kind });
+  const threshold = Number((await getSetting("low_stock_threshold")) ?? "3");
 
   // Build the size column index across the full matrix.
   const sizes = Array.from(

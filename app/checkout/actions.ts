@@ -69,14 +69,14 @@ async function clientIp(): Promise<string> {
 /** Rebuilds the start state for an order a prior submission already created
  *  (double-click / retry of the same idempotency key). Returns null if the
  *  order can't be safely resumed, so the caller degrades to creating fresh. */
-function resumeCheckout(orderId: string): CheckoutStartState | null {
-  const order = getOrder(orderId);
+async function resumeCheckout(orderId: string): Promise<CheckoutStartState | null> {
+  const order = await getOrder(orderId);
   if (!order) return null;
   const orow = order as unknown as Record<string, unknown>;
   if (orow.payment_status === "paid") {
     return { error: "This order has already been paid.", orderId };
   }
-  const pay = getPaymentsForOrder(orderId)[0];
+  const pay = (await getPaymentsForOrder(orderId))[0];
   if (!pay) return null;
   const pricing = {
     subtotal: Number(order.subtotal ?? 0),
@@ -145,19 +145,19 @@ export async function startCheckout(
   // the order it already created instead of duplicating order + gateway order.
   const idemKey = String(fd.get("idempotency_key") ?? "").slice(0, 80);
   if (idemKey) {
-    const existing = getCheckoutIdempotency(idemKey);
+    const existing = await getCheckoutIdempotency(idemKey);
     if (existing) {
-      const resumed = resumeCheckout(existing);
+      const resumed = await resumeCheckout(existing);
       if (resumed) return resumed;
       // Couldn't safely resume → fall through and create fresh (no worse
       // than pre-idempotency behaviour).
     }
   }
 
-  const priced = priceCart(linesParsed.data as CartLineInput[], form.data.promo_code);
+  const priced = await priceCart(linesParsed.data as CartLineInput[], form.data.promo_code);
   if (!priced.ok) return { error: priced.error };
 
-  const orderId = createPendingOrder({
+  const orderId = await createPendingOrder({
     contact: {
       email: form.data.email,
       first_name: form.data.first_name,
@@ -186,7 +186,7 @@ export async function startCheckout(
     providerOrderId = po.providerOrderId;
     keyId = po.publicKey ?? "";
   } catch (err) {
-    logAudit({
+    await logAudit({
       user_id: null,
       action: "checkout_provider_error",
       entity: "order",
@@ -199,16 +199,16 @@ export async function startCheckout(
     };
   }
 
-  createPayment({
+  await createPayment({
     order_id: orderId,
     provider,
     provider_order_id: providerOrderId,
     amount: priced.pricing.total,
   });
 
-  if (idemKey) putCheckoutIdempotency(idemKey, orderId);
+  if (idemKey) await putCheckoutIdempotency(idemKey, orderId);
 
-  logAudit({
+  await logAudit({
     user_id: null,
     action: "checkout_started",
     entity: "order",
@@ -266,9 +266,9 @@ export async function previewPricing(
 
   // Price once with the promo to learn whether it was accepted, and once
   // without so a rejected code still yields a usable (undiscounted) summary.
-  const withPromo = priceCart(linesParsed.data as CartLineInput[], promo || null);
+  const withPromo = await priceCart(linesParsed.data as CartLineInput[], promo || null);
   if (!withPromo.ok) {
-    const base = priceCart(linesParsed.data as CartLineInput[], null);
+    const base = await priceCart(linesParsed.data as CartLineInput[], null);
     if (!base.ok) return { ok: false, error: base.error };
     return {
       ok: true,
@@ -314,7 +314,7 @@ export async function confirmPayment(input: {
 
   // The provider order id is the trust anchor — it ties the signed callback
   // back to the payment row we created server-side.
-  const payment = getPaymentByProviderOrderId(input.razorpay_order_id);
+  const payment = await getPaymentByProviderOrderId(input.razorpay_order_id);
   if (!payment || payment.order_id !== orderId) {
     return { ok: false, error: "Payment record not found." };
   }
@@ -325,7 +325,7 @@ export async function confirmPayment(input: {
     signature: input.razorpay_signature,
   });
   if (!valid) {
-    logAudit({
+    await logAudit({
       user_id: null,
       action: "payment_signature_invalid",
       entity: "order",
@@ -340,7 +340,7 @@ export async function confirmPayment(input: {
   // and otherwise proceed (a fetch failure falls back to the webhook).
   const gw = await fetchRazorpayPayment(input.razorpay_payment_id);
   if (gw && (!amountMatches(payment.amount, gw.amount) || gw.currency !== payment.currency)) {
-    logAudit({
+    await logAudit({
       user_id: null,
       action: "payment_amount_mismatch",
       entity: "order",
@@ -355,12 +355,12 @@ export async function confirmPayment(input: {
     return { ok: false, error: "Payment amount could not be verified. Please contact us — you have not been charged twice." };
   }
 
-  const result = fulfilOrderPaid(orderId, {
+  const result = await fulfilOrderPaid(orderId, {
     providerPaymentId: input.razorpay_payment_id,
   });
   if (!result.ok) return { ok: false, error: result.error };
 
-  logAudit({
+  await logAudit({
     user_id: null,
     action: result.alreadyPaid ? "payment_confirm_idempotent" : "order_paid",
     entity: "order",
@@ -396,7 +396,7 @@ export async function confirmMockPayment(input: {
     return { ok: false, error: "This payment session is invalid or has expired." };
   }
 
-  const order = getOrder(orderId);
+  const order = await getOrder(orderId);
   if (!order) return { ok: false, error: "Order not found." };
   if (order.payment_status === "paid") {
     return { ok: true, orderId };
@@ -405,12 +405,12 @@ export async function confirmMockPayment(input: {
     return { ok: false, error: "This order can no longer be paid." };
   }
 
-  const result = fulfilOrderPaid(orderId, {
+  const result = await fulfilOrderPaid(orderId, {
     providerPaymentId: `mock_${crypto.randomUUID().replace(/-/g, "").slice(0, 18)}`,
   });
   if (!result.ok) return { ok: false, error: result.error };
 
-  logAudit({
+  await logAudit({
     user_id: null,
     action: result.alreadyPaid ? "mock_payment_idempotent" : "mock_payment_paid",
     entity: "order",

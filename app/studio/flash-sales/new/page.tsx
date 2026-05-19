@@ -8,7 +8,7 @@ export const metadata = { title: "New flash sale · Studio" };
 
 export default async function NewFlashSalePage() {
   await requireUser("/studio/login");
-  const promos = listPromotions();
+  const promos = await listPromotions();
   return (
     <div className="stu-page stu-page--narrow">
       <PageHead title="New flash sale" sub="A countdown banner that appears on the storefront. Optionally tie to a code."

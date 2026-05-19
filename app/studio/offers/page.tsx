@@ -23,7 +23,7 @@ function formatValue(p: { type: string; value: number }) {
 export default async function OffersPage({ searchParams }: SP) {
   await requireUser("/studio/login");
   const sp = await searchParams;
-  const offers = listPromotions();
+  const offers = await listPromotions();
   const featuredMap = new Map<string, number>();
   try {
     const rows = getDb().prepare("SELECT code, is_featured FROM promotions").all() as Array<{ code: string; is_featured: number }>;

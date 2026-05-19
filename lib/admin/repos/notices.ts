@@ -1,5 +1,5 @@
 import "server-only";
-import { getDb } from "../db";
+import { sql } from "../db";
 
 export type NoticeType = "scroll" | "popup" | "festive";
 
@@ -21,47 +21,62 @@ export type Notice = {
   updated_at: string;
 };
 
-export function listNotices(opts?: { onlyLive?: boolean; type?: NoticeType }): Notice[] {
-  const db = getDb();
+export async function listNotices(opts?: { onlyLive?: boolean; type?: NoticeType }): Promise<Notice[]> {
   const where: string[] = [];
   const params: unknown[] = [];
   if (opts?.type) { where.push("type = ?"); params.push(opts.type); }
   if (opts?.onlyLive) {
     where.push("enabled = 1");
-    where.push("(starts_at IS NULL OR datetime(starts_at) <= datetime('now'))");
-    where.push("(ends_at   IS NULL OR datetime(ends_at)   >= datetime('now'))");
+    where.push("(starts_at IS NULL OR starts_at <= CURRENT_TIMESTAMP)");
+    where.push("(ends_at   IS NULL OR ends_at   >= CURRENT_TIMESTAMP)");
   }
-  const sql = `SELECT * FROM notices ${where.length ? "WHERE " + where.join(" AND ") : ""} ORDER BY priority DESC, id ASC`;
-  return db.prepare(sql).all(...params) as Notice[];
+  const query = `SELECT * FROM notices ${where.length ? "WHERE " + where.join(" AND ") : ""} ORDER BY priority DESC, id ASC`;
+  return sql.all<Notice>(query, params);
 }
 
-export function getNotice(id: number): Notice | null {
-  return (getDb().prepare("SELECT * FROM notices WHERE id = ?").get(id) as Notice | undefined) ?? null;
+export async function getNotice(id: number): Promise<Notice | null> {
+  return sql.get<Notice>("SELECT * FROM notices WHERE id = ?", [id]);
 }
 
 export type NoticeInput = Omit<Notice, "id" | "created_at" | "updated_at">;
 
-export function createNotice(input: NoticeInput): number {
-  const r = getDb().prepare(`
-    INSERT INTO notices
+export async function createNotice(input: NoticeInput): Promise<number> {
+  const r = await sql.run(
+    `INSERT INTO notices
       (type, body, link_href, link_text, color_bg, color_fg, priority,
        starts_at, ends_at, dismissable, enabled, target_paths)
     VALUES
-      (@type, @body, @link_href, @link_text, @color_bg, @color_fg, @priority,
-       @starts_at, @ends_at, @dismissable, @enabled, @target_paths)
-  `).run(input);
-  return Number(r.lastInsertRowid);
+      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+    [
+      input.type,
+      input.body,
+      input.link_href,
+      input.link_text,
+      input.color_bg,
+      input.color_fg,
+      input.priority,
+      input.starts_at,
+      input.ends_at,
+      input.dismissable,
+      input.enabled,
+      input.target_paths,
+    ],
+  );
+  return Number(r.rows[0].id);
 }
 
-export function updateNotice(id: number, patch: Partial<Notice>): void {
+export async function updateNotice(id: number, patch: Partial<Notice>): Promise<void> {
   const cols = ["type","body","link_href","link_text","color_bg","color_fg","priority",
-                "starts_at","ends_at","dismissable","enabled","target_paths"];
-  const set = cols.filter((c) => c in patch).map((c) => `${c} = @${c}`);
-  if (!set.length) return;
-  set.push(`updated_at = datetime('now')`);
-  getDb().prepare(`UPDATE notices SET ${set.join(", ")} WHERE id = @id`).run({ id, ...patch });
+                "starts_at","ends_at","dismissable","enabled","target_paths"] as const;
+  const present = cols.filter((c) => c in patch);
+  if (!present.length) return;
+  const set = present.map((c) => `${c} = ?`);
+  const params = present.map((c) => (patch as Record<string, unknown>)[c]);
+  set.push(`updated_at = CURRENT_TIMESTAMP`);
+  params.push(id);
+  await sql.run(`UPDATE notices SET ${set.join(", ")} WHERE id = ?`, params);
 }
 
-export function deleteNotice(id: number): void {
-  getDb().prepare("DELETE FROM notices WHERE id = ?").run(id);
+export async function deleteNotice(id: number): Promise<void> {
+  await sql.run("DELETE FROM notices WHERE id = ?", [id]);
 }

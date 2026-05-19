@@ -17,7 +17,7 @@ export const metadata = {
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const c = await cookies();
   const sid = c.get(SESSION_COOKIE)?.value;
-  const me = sid ? getSessionUser(sid) : null;
+  const me = sid ? await getSessionUser(sid) : null;
 
   // No (or invalid) session — render the page without the workbook shell.
   // proxy.ts has already gated unauthenticated visitors away from protected
@@ -27,10 +27,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   }
 
   const counts = {
-    products: countProducts({ kind: "tailored", status: "all" }),
-    fabrics: countProducts({ kind: "fabric", status: "all" }),
-    bookingsNew: countBookings({ status: "new" }),
-    orders: countOrders(),
+    products: await countProducts({ kind: "tailored", status: "all" }),
+    fabrics: await countProducts({ kind: "fabric", status: "all" }),
+    bookingsNew: await countBookings({ status: "new" }),
+    orders: await countOrders(),
   };
 
   return (

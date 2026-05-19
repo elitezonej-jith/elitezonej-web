@@ -42,11 +42,11 @@ export async function saveBannerAction(_prev: BannerSaveState, fd: FormData): Pr
   };
   let savedId = id;
   if (id) {
-    updateBanner(id, data);
-    logAudit({ user_id: me.id, action: "update_banner", entity: "banner", entity_id: String(id) });
+    await updateBanner(id, data);
+    await logAudit({ user_id: me.id, action: "update_banner", entity: "banner", entity_id: String(id) });
   } else {
-    savedId = createBanner(data);
-    logAudit({ user_id: me.id, action: "create_banner", entity: "banner", entity_id: String(savedId) });
+    savedId = await createBanner(data);
+    await logAudit({ user_id: me.id, action: "create_banner", entity: "banner", entity_id: String(savedId) });
   }
   revalidatePath("/studio/banners");
   revalidatePath("/");
@@ -57,8 +57,8 @@ export async function deleteBannerAction(fd: FormData): Promise<void> {
   const me = await requireUser("/studio/login");
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
-  deleteBanner(id);
-  logAudit({ user_id: me.id, action: "delete_banner", entity: "banner", entity_id: String(id) });
+  await deleteBanner(id);
+  await logAudit({ user_id: me.id, action: "delete_banner", entity: "banner", entity_id: String(id) });
   revalidatePath("/studio/banners");
   revalidatePath("/");
   redirect("/studio/banners?flash=Banner%20removed");
@@ -68,7 +68,7 @@ export async function reorderBannersAction(fd: FormData): Promise<void> {
   await requireUser("/studio/login");
   const ordered = String(fd.get("ordered") ?? "").split(",").map((n) => Number(n)).filter(Boolean);
   if (!ordered.length) return;
-  reorderBanners(ordered);
+  await reorderBanners(ordered);
   revalidatePath("/studio/banners");
   revalidatePath("/");
 }
@@ -78,8 +78,8 @@ export async function setBannerEnabledAction(fd: FormData): Promise<void> {
   const id = Number(fd.get("id") ?? 0);
   const enabled = String(fd.get("enabled") ?? "0") === "1" ? 1 : 0;
   if (!id) return;
-  updateBanner(id, { enabled });
-  logAudit({ user_id: me.id, action: "set_banner_enabled", entity: "banner", entity_id: String(id), payload: { enabled } });
+  await updateBanner(id, { enabled });
+  await logAudit({ user_id: me.id, action: "set_banner_enabled", entity: "banner", entity_id: String(id), payload: { enabled } });
   revalidatePath("/studio/banners");
   revalidatePath("/");
 }

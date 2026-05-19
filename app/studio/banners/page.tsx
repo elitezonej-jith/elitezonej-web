@@ -15,7 +15,7 @@ type SP = { searchParams: Promise<{ flash?: string }> };
 
 export default async function BannersListPage({ searchParams }: SP) {
   await requireUser("/studio/login");
-  const banners = listBanners();
+  const banners = await listBanners();
   const sp = await searchParams;
   void StatusTag;
   return (
