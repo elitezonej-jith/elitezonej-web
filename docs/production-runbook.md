@@ -93,43 +93,102 @@ Full sync→async port landed behind `DB_DRIVER` (commit on
 unchanged. `npx tsc --noEmit` 0 errors; `npm run build` succeeds (SQLite path,
 22/22 static pages). Runtime parity/durability NOT yet proven — that is Phase 3.
 
-## Phase 3 — verify durability & parity (BLOCKING, owner-run for Postgres)
+## Phase 3 — verify durability & parity (DONE)
 
-Local SQLite path: verified via `npm run build` (green).
+- ✅ Local SQLite path: `npm run build` green (22/22 static).
+- ✅ Postgres parity + durability + RF-9 concurrency: `npm run db:verify`
+  **12/12 passed** on the Neon verify branch (temp-table semantic checks +
+  two-client concurrent-claim race + self-cleaning durability probe).
+- ✅ Security code audit: 10 money-safety invariants preserved; the one
+  concurrency regression found was fixed in **RF-9** (claim-first atomic
+  `fulfilOrderPaid`).
+- ✅ `db:seed` reconfirmed from this repo on the verify branch (owner exists).
 
-Postgres path — run against the Neon **verify branch** (never production):
+Re-run anytime: `DATABASE_URL='<verify-branch url>' npm run db:verify` →
+expect `12 passed, 0 failed`.
 
-```bash
-DATABASE_URL='<neon VERIFY-branch url>' npm run db:migrate   # if not already
-DATABASE_URL='<neon VERIFY-branch url>' npm run db:verify
-```
+## Phase 4 — durability gate (DONE, RF-7)
 
-`db:verify` (db/verify.mjs) asserts, with zero impact on real data
-(temp tables + a self-deleting marker):
-- migrations applied; payments/webhook/idempotency constraints exist;
-- guarded stock decrement affects 0 rows when insufficient (no oversell);
-- `CASE` floor clamp; `ON CONFLICT (pk) DO NOTHING` idempotency (count 1 then 0);
-- `RETURNING id`; `CURRENT_TIMESTAMP`;
-- durability: a row written, then read back over a brand-new connection.
+`isDurablePersistence()` replaced the old `VERCEL`-keyed hard-disable. Live
+Razorpay is taken **iff** `DB_DRIVER=postgres` AND a fresh `SELECT 1` +
+`schema_migrations` probe succeeds; fail-closed otherwise (per-call probe, so a
+DB outage immediately re-closes the gate). Offline/sandbox self-disable
+unchanged. Code complete; activation is purely the env flip in cutover below.
 
-Expected: `N passed, 0 failed` (exit 0). Paste the output back.
+## Phase 5 — integration
 
-Still owed before Phase 4 sign-off: (a) re-confirm `db:seed` ran from THIS
-repo against the verify branch (owner user exists), (b) a full
-order→pay→webhook→reconcile lifecycle dry run with Razorpay **test** keys in a
-Preview deploy on `DB_DRIVER=postgres`. Both QA and Security must sign off.
+### Part B — Razorpay test-keys lifecycle dry run (run LOCALLY)
 
-## Phases 4–5
+Do this off-Vercel so the durability gate is exercised honestly (`VERCEL`
+unset locally → gate decided by DB_DRIVER + probe, not platform).
 
-Live payments stay disabled until Phase 4’s durability gate (RF-7, replaces the
-`isEphemeralPersistence()` hard-disable) — gated on Phase 3 sign-off + explicit
-user approval.
+1. Razorpay **Test Mode** dashboard → copy test `key_id` / `key_secret`.
+   Settings → Webhooks → add a webhook → URL = a tunnel to your local app
+   (e.g. `cloudflared tunnel --url http://localhost:3000` →
+   `https://<tunnel>/api/webhooks/razorpay`); subscribe to
+   `payment.captured`, `order.paid`, `payment.failed`; set a webhook secret.
+2. Build + start against the **verify branch** with test keys:
+   ```bash
+   DB_DRIVER=postgres DATABASE_URL='<verify-branch pooled url>' \
+     RAZORPAY_KEY_ID='rzp_test_…' RAZORPAY_KEY_SECRET='…' \
+     NEXT_PUBLIC_RAZORPAY_KEY_ID='rzp_test_…' \
+     RAZORPAY_WEBHOOK_SECRET='<the webhook secret>' \
+     CHECKOUT_TOKEN_SECRET='<stable ≥16-char>' \
+     npm run build && \
+   DB_DRIVER=postgres DATABASE_URL='<verify-branch pooled url>' \
+     RAZORPAY_KEY_ID='rzp_test_…' RAZORPAY_KEY_SECRET='…' \
+     NEXT_PUBLIC_RAZORPAY_KEY_ID='rzp_test_…' \
+     RAZORPAY_WEBHOOK_SECRET='<the webhook secret>' \
+     CHECKOUT_TOKEN_SECRET='<stable ≥16-char>' \
+     npm start
+   ```
+3. Browser `http://localhost:3000`: add item → checkout → the **real
+   Razorpay test modal** must open (proves the gate now permits live mode on
+   durable Postgres). Pay with a Razorpay test card.
+4. Assert the full money path:
+   - Receipt page shows success; order `payment_status='paid'` **once**.
+   - Webhook delivered (tunnel/log) → reconciled; re-deliver the same event
+     from the Razorpay dashboard → **no double effect** (idempotent).
+   - `/admin` (seeded owner): order `paid`, **stock decremented exactly
+     once**, customer `total_orders/total_spent` bumped once, promo
+     `usage_count` once (if used).
+   - Mismatch check (optional): the amount-reconcile path logs
+     `payment_amount_mismatch*` and leaves the order unpaid on a forced
+     mismatch.
+5. Negative gate check: stop the DB / unset `DATABASE_URL` and retry checkout
+   → must fail with “Live payments are disabled …”, **no order, no charge**.
 
-## Rollback (authoritative, every phase ≤ 4)
+Record pass/fail. This is the QA + Security live sign-off for the money path.
+
+### Production cutover (owner — Joyfernandas Vercel account)
+
+Only after Part B passes:
+
+1. Vercel → Production env: `DB_DRIVER=postgres`, **production** pooled
+   `DATABASE_URL` (NOT the verify branch), `DATABASE_POOL_MAX=3`,
+   `CHECKOUT_TOKEN_SECRET` (stable), Razorpay **live**
+   `RAZORPAY_KEY_ID/SECRET`, `NEXT_PUBLIC_RAZORPAY_KEY_ID`,
+   `RAZORPAY_WEBHOOK_SECRET`.
+2. Run once against the **production** DB (direct URL):
+   `DATABASE_URL='<prod DIRECT url>' npm run db:migrate` then
+   `… SEED_OWNER_EMAIL/PASSWORD/NAME … npm run db:seed`. Optionally
+   `… npm run db:verify` (safe — temp tables + self-cleaning marker).
+3. Razorpay **live** dashboard → webhook → `https://<prod-domain>/api/
+   webhooks/razorpay`, same events, matching `RAZORPAY_WEBHOOK_SECRET`.
+4. Merge `feat/postgres-migration` → `master`, push (owner-run), let Vercel
+   auto-deploy. First request runs migrations-idempotent; gate flips live.
+5. Smoke: one real low-value order end-to-end; confirm Admin + webhook;
+   sign in as seeded owner and **rotate the password**.
+
+## Rollback (authoritative, any phase incl. post-cutover)
 
 - **Instant revert:** set `DB_DRIVER=sqlite` in Vercel (Preview/Prod) +
-  redeploy → prior guarded, ephemeral behavior; live payments auto-disable via
-  the durability gate. No data-loss concern (ephemeral had none).
+  redeploy → prior guarded, in-memory behavior; the durability gate then
+  returns false so **live payments auto-disable** (fail-closed) — no code
+  change or redeploy of app logic needed. Postgres data is left intact and
+  resumes on the next `DB_DRIVER=postgres`. (Note: orders taken while reverted
+  to sqlite are NOT durable — treat sqlite revert as an emergency stop, not a
+  steady state.)
 - **Bad migration:** never edit an applied file; add a new forward versioned
   migration; verify on the Neon `verify` branch first.
 - **Production DB untouched** until the deliberate `DB_DRIVER=postgres` flip;
