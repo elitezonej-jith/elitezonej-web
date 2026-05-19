@@ -16,6 +16,7 @@ export default function BespokePage() {
     <>
       <Header />
 
+      <main>
       <section className="b-hero">
         <div className="copy">
           <div className="ix t-mono-xs">Bespoke · Made-to-Measure · Alterations</div>
@@ -172,6 +173,7 @@ export default function BespokePage() {
         </div>
       </section>
 
+      </main>
       <TrustStrip />
       <Footer />
     </>

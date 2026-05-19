@@ -49,10 +49,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
       />
       <Header />
-      <ProductPageClient
-        product={product}
-        related={listProductsForPage().filter((p) => p.slug !== slug).slice(0, 3)}
-      />
+      <main>
+        <ProductPageClient
+          product={product}
+          related={listProductsForPage().filter((p) => p.slug !== slug).slice(0, 3)}
+        />
+      </main>
       <TrustStrip />
       <Footer />
     </>

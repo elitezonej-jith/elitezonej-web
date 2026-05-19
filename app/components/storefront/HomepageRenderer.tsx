@@ -8,6 +8,7 @@
 import { listBlocks, type HomepageBlockResolved } from "../../../lib/admin/repos/homepage";
 import { listFlashSales } from "../../../lib/admin/repos/flash-sales";
 import { listBanners } from "../../../lib/admin/repos/banners";
+import { getSiteSettings } from "../../../lib/storefront/site-settings";
 import Header from "../Header";
 import Footer from "../Footer";
 import HeroGridDynamic from "./blocks/HeroGridDynamic";
@@ -32,6 +33,7 @@ export default function HomepageRenderer() {
   const blocks = listBlocks({ onlyEnabled: true });
   const liveSale = listFlashSales({ onlyLive: true })[0];
   const banners = listBanners({ onlyPublished: true });
+  const { brandName } = getSiteSettings();
 
   const announce = blocks.filter((b) => b.type === "announce_bar");
   const promos = blocks.filter((b) => b.type === "promo_modal");
@@ -49,9 +51,26 @@ export default function HomepageRenderer() {
       {promos.map((b) => (
         <Block key={b.id} block={b} banners={banners} />
       ))}
-      {rest.map((b) => (
-        <Block key={b.id} block={b} banners={banners} />
-      ))}
+      <main>
+        <h1
+          style={{
+            position: "absolute",
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: "hidden",
+            clip: "rect(0 0 0 0)",
+            whiteSpace: "nowrap",
+            border: 0,
+          }}
+        >
+          {brandName} — Bespoke tailoring &amp; ready-to-wear
+        </h1>
+        {rest.map((b) => (
+          <Block key={b.id} block={b} banners={banners} />
+        ))}
+      </main>
       <Footer />
     </>
   );

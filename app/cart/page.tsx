@@ -9,7 +9,9 @@ export default function CartPage() {
   return (
     <>
       <Header />
-      <CartClient />
+      <main>
+        <CartClient />
+      </main>
       <TrustStrip />
       <Footer />
     </>

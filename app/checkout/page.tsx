@@ -20,10 +20,12 @@ export default async function CheckoutPage() {
   return (
     <>
       <Header />
-      <CheckoutClient
-        savedAddresses={savedAddresses}
-        defaultAddressId={defaultAddressId}
-      />
+      <main>
+        <CheckoutClient
+          savedAddresses={savedAddresses}
+          defaultAddressId={defaultAddressId}
+        />
+      </main>
       <TrustStrip />
       <Footer />
     </>

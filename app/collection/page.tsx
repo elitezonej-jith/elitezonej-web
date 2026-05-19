@@ -30,15 +30,17 @@ export default async function CollectionPage({
   return (
     <>
       <Header />
-      <CollectionClient
-        cat={cat}
-        sub={sub}
-        products={products}
-        headTitle={meta.title}
-        headStand={meta.stand}
-        parentTitle={parentTitle}
-        hasSub={hasSub}
-      />
+      <main>
+        <CollectionClient
+          cat={cat}
+          sub={sub}
+          products={products}
+          headTitle={meta.title}
+          headStand={meta.stand}
+          parentTitle={parentTitle}
+          hasSub={hasSub}
+        />
+      </main>
       <TrustStrip />
       <Footer />
     </>
