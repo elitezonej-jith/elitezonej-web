@@ -160,7 +160,34 @@ unset locally → gate decided by DB_DRIVER + probe, not platform).
 
 Record pass/fail. This is the QA + Security live sign-off for the money path.
 
-### Production cutover (owner — Joyfernandas Vercel account)
+### Durability-only cutover — NO Razorpay keys (RECOMMENDED FIRST)
+
+Goes live with durable Postgres in **offline/sandbox payment mode** (orders
+persist durably; no card charge). Razorpay is simply not configured → the
+durability gate is never consulted (it only guards the razorpay branch).
+Part B is **not** required for this. Owner — Joyfernandas Vercel account:
+
+1. Vercel → Production env: `DB_DRIVER=postgres`, **production** pooled
+   `DATABASE_URL` (NOT the verify branch), `DATABASE_POOL_MAX=3`,
+   `CHECKOUT_TOKEN_SECRET` (stable ≥16 chars — still needed: it signs the
+   sandbox/receipt token; a per-process fallback breaks across instances).
+   Do **NOT** set any `RAZORPAY_*` yet.
+2. Against the **production** DB once (direct URL):
+   `DATABASE_URL='<prod DIRECT url>' npm run db:migrate` then
+   `… SEED_OWNER_EMAIL/PASSWORD/NAME … npm run db:seed`
+   (optionally `… npm run db:verify`).
+3. Merge `feat/postgres-migration` → `master`, push (owner-run) → Vercel
+   auto-deploys. Migrations are idempotent on boot.
+4. Smoke: place a sandbox order; confirm it appears in `/admin`; trigger a
+   redeploy (cold start) and confirm the order **is still there** — durability
+   proven in production. Sign in as the seeded owner and rotate the password.
+
+Later, when Razorpay keys arrive → do **Part B** (test keys, locally), then
+the section below adds only the `RAZORPAY_*` env vars + live webhook and a
+redeploy. **No code change, no new migration** — the gate auto-permits live
+payments once durable Postgres + keys coexist.
+
+### Full payments cutover (owner — when Razorpay keys are in hand)
 
 Only after Part B passes:
 
