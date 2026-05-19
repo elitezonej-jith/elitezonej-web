@@ -14,7 +14,8 @@
     "images:compress": "node scripts/compress-images.mjs",
     "db:migrate": "node db/migrate.mjs",
     "db:seed": "node db/seed.mjs",
-    "db:verify": "node db/verify.mjs"
+    "db:verify": "node db/verify.mjs",
+    "db:import-sqlite": "node db/import-from-sqlite.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
