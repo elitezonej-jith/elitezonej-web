@@ -75,6 +75,15 @@ try {
   const ts = await sql`SELECT CURRENT_TIMESTAMP AS t`;
   check("CURRENT_TIMESTAMP resolves", ts[0].t instanceof Date, `t=${ts[0].t}`);
 
+  // 7a. Portable day-bucket on a timestamptz (kpi.ts getRevenueByDay). Bare
+  //     substr(timestamptz,…) errors on Postgres; CAST(... AS TEXT) first is
+  //     the dual-driver-safe form. Guards against the class of SQLite-only
+  //     SQL that tsc/typecheck cannot catch.
+  const day = await sql`SELECT substr(CAST(now() AS text),1,10) AS d`;
+  check("substr(CAST(timestamptz AS text),1,10) yields a date",
+    typeof day[0].d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day[0].d),
+    `d=${day[0].d}`);
+
   // 7b. RF-9 atomic claim under real concurrency. Two independent clients race
   //     the exact claim UPDATE on one order row; Postgres must let EXACTLY ONE
   //     win (count 1) and the other see count 0 — the property that prevents

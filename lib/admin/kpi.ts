@@ -89,10 +89,14 @@ export async function getKpis(): Promise<Kpis> {
 
 export async function getRevenueByDay(days = 30): Promise<DailyPoint[]> {
   const rows = await sql.all<{ day: string; total: number | string }>(
-    `SELECT substr(created_at,1,10) as day, COALESCE(SUM(total),0) as total
+    // created_at is timestamptz on Postgres / ISO TEXT on SQLite. substr() on
+    // a bare timestamptz errors on Postgres ("function substr(timestamp with
+    // time zone, ...) does not exist"); CAST(... AS TEXT) yields
+    // 'YYYY-MM-DD …' on both drivers, so substr(...,1,10) is the day on both.
+    `SELECT substr(CAST(created_at AS TEXT),1,10) as day, COALESCE(SUM(total),0) as total
        FROM orders
        WHERE status != 'cancelled' AND created_at >= ?
-       GROUP BY day ORDER BY day ASC`,
+       GROUP BY substr(CAST(created_at AS TEXT),1,10) ORDER BY day ASC`,
     [isoDaysAgo(days)],
   );
 
