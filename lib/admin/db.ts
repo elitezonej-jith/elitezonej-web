@@ -310,3 +310,30 @@ const pgClient: SqlClient = {
 
 export const sql: SqlClient =
   process.env.DB_DRIVER === "postgres" ? pgClient : sqliteSql;
+
+/**
+ * Durable persistence gate (RF-7) — the condition under which live money may
+ * be taken. True iff the Postgres driver is active AND a fresh connectivity
+ * probe confirms the migrated schema is reachable. This REPLACES the old
+ * platform-keyed `isEphemeralPersistence()` hard-disable: that signal keyed
+ * off `VERCEL===1` and would have wrongly blocked live payments on a
+ * perfectly durable Postgres-on-Vercel deployment.
+ *
+ * Fail-closed by construction: DB_DRIVER not postgres, no DATABASE_URL, an
+ * unreachable database, or a missing migration table all return `false`, so
+ * `createProviderOrder` refuses rather than accept money it cannot durably
+ * record. Probed per call (not cached) so a DB that goes down mid-life
+ * immediately re-closes the gate.
+ */
+export async function isDurablePersistence(): Promise<boolean> {
+  if (process.env.DB_DRIVER !== "postgres") return false;
+  try {
+    await pgSql.get("SELECT 1");
+    const m = await pgSql.get<{ n: number | string }>(
+      "SELECT count(*) AS n FROM schema_migrations",
+    );
+    return Number(m?.n ?? 0) >= 1;
+  } catch {
+    return false;
+  }
+}
