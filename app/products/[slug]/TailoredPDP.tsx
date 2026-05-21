@@ -139,7 +139,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
           <div className="field-block" ref={sizeBlockRef}>
             <div className="head">
               <label>Size</label>
-              <a href="#">Size guide</a>
+              <a href="/size-guide">Size guide</a>
             </div>
             <div className="sizes" style={sizePrompt ? { outline: "2px solid var(--accent)", outlineOffset: 6 } : undefined}>
               {product.sizes.map(s => {
