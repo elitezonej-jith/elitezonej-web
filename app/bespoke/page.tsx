@@ -113,15 +113,6 @@ export default function BespokePage() {
         </div>
       </section>
 
-      <section className="pricing">
-        <h2>Transparent pricing</h2>
-        <div className="pricing-table">
-          <div><h4>Bespoke Suit</h4><div className="from">₹45,000<small>Base · cloth from ₹3,500/m</small></div><p>Includes paper pattern, three fittings, lifetime mending, free alterations for one year.</p></div>
-          <div><h4>Made-to-Measure Sherwani</h4><div className="from">₹28,000<small>Base · embroidery from ₹6,000</small></div><p>Includes one fitting, churidar, dupatta, cotton mulmul lining. Hand-worked zardozi quoted on selection.</p></div>
-          <div><h4>Tailored Shirts</h4><div className="from">₹2,800<small>Per shirt · three for ₹7,500</small></div><p>Egyptian cotton poplin, single-needle stitching, mother-of-pearl buttons.</p></div>
-        </div>
-      </section>
-
       <section className="book" id="book">
         <div className="row">
           <div>
