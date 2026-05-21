@@ -8,6 +8,7 @@ import {
   type HomepageBlockType,
 } from "../../../lib/admin/repos/homepage";
 import { logAudit } from "../../../lib/admin/repos/audit";
+import { getSiteSettings } from "../../../lib/storefront/site-settings";
 
 const VALID_TYPES: HomepageBlockType[] = [
   "hero_grid","hero_banner","banner_carousel","product_carousel",
@@ -116,8 +117,11 @@ function defaultConfigFor(type: HomepageBlockType): Record<string, unknown> {
       return { items: [{ kicker: "01", label: "Free shipping over ₹5,000" }] };
     case "wedding_editorial":
       return { image: "", headline: "The Wedding Wardrobe", body: "", cta: { label: "Shop Festive", href: "/collection?c=festive" } };
-    case "bespoke_teaser":
-      return { headline: "From sketch to fitting in seven days.", body: "", cta: { label: "Begin a fitting", href: "/bespoke" } };
+    case "bespoke_teaser": {
+      const { leadTimeDays } = getSiteSettings();
+      const label = `${leadTimeDays} day${leadTimeDays === 1 ? "" : "s"}`;
+      return { headline: `From sketch to fitting in ${label}.`, body: "", cta: { label: "Begin a fitting", href: "/bespoke" } };
+    }
     case "category_grid":
       return { categories: [] };
     case "announce_bar":
