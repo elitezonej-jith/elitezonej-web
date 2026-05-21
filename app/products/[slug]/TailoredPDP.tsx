@@ -23,7 +23,6 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
   const [angleIdx, setAngleIdx] = useState(0);
   const [sizeOn, setSizeOn] = useState("");
   const [lbOpen, setLbOpen] = useState(false);
-  const [deliveryDate, setDeliveryDate] = useState("");
   const [sizePrompt, setSizePrompt] = useState(false);
   const sizeBlockRef = useRef<HTMLDivElement>(null);
 
@@ -50,11 +49,6 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
       imageSrc: imgSrc(product.slug, "01-front"),
     });
   };
-
-  useEffect(() => {
-    const d = new Date(Date.now() + 7 * 86400000);
-    setDeliveryDate(d.toLocaleDateString("en-IN", { weekday: "long", day: "2-digit", month: "long" }));
-  }, []);
 
   const others = related;
   const lightboxImages = ANGLES.map((a, i) => ({
@@ -179,7 +173,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
           <div className="delivery">
             <div className="pin" aria-hidden="true">110001</div>
             <div className="text">
-              {deliveryDate ? <>Delivered by <b>{deliveryDate}</b></> : <>Delivery in 3–5 working days</>}
+              Delivery in <b>5–7 working days</b>
               {product.price >= 15000 && <> · Free shipping</>}
             </div>
           </div>
