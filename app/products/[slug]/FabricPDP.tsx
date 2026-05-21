@@ -300,7 +300,7 @@ export default function FabricPDP({ product }: Props) {
 
           <div className="delivery">
             <div className="pin">110001</div>
-            <div className="text">Delivered by <b>{deliveryDate}</b> · Free shipping across India</div>
+            <div className="text">Delivered by <b>{deliveryDate}</b>{product.price >= 15000 && <> · Free shipping across India</>}</div>
           </div>
 
           <div className="disclaimer">

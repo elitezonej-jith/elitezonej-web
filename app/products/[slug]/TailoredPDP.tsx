@@ -179,9 +179,8 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
           <div className="delivery">
             <div className="pin" aria-hidden="true">110001</div>
             <div className="text">
-              {deliveryDate
-                ? <>Delivered by <b>{deliveryDate}</b> · Free shipping</>
-                : <>Free shipping · delivery in 3–5 working days</>}
+              {deliveryDate ? <>Delivered by <b>{deliveryDate}</b></> : <>Delivery in 3–5 working days</>}
+              {product.price >= 15000 && <> · Free shipping</>}
             </div>
           </div>
           <div className="returns-line t-mono-xs">7-day returns · Free reverse pickup · Cash on delivery available</div>
