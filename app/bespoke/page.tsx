@@ -113,26 +113,6 @@ export default function BespokePage() {
         </div>
       </section>
 
-      <section className="atelier">
-        <div className="row">
-          <div className="copy">
-            <h2>Our atelier in Delhi</h2>
-            <p className="t-body-lg">Twelve designers, twenty-six master tailors — between us, three hundred and seventy years on the bench. We design every piece in-house, cut every garment in our workroom, and put our names on every label.</p>
-            <div className="stats">
-              <div className="stat t-mono-xs">Designers<b>12</b></div>
-              <div className="stat t-mono-xs">Master tailors<b>26</b></div>
-              <div className="stat t-mono-xs">Average tenure<b>14 years</b></div>
-              <div className="stat t-mono-xs">Founded<b>2012</b></div>
-            </div>
-          </div>
-          <div className="team">
-            <div className="person"><div className="ph p1"></div><h4>Aman Gupta</h4><p className="role">Lead Designer</p><p className="yrs">Twelve years on the bench. Three-piece suits and structured bandhgalas.</p></div>
-            <div className="person"><div className="ph p2"></div><h4>Vikram Mehta</h4><p className="role">Master Tailor</p><p className="yrs">Eighteen years cutting. Trained in Savile Row construction technique.</p></div>
-            <div className="person"><div className="ph p3"></div><h4>Riya Kapoor</h4><p className="role">Bespoke Specialist</p><p className="yrs">Nine years in zardozi and gota work. Festive sherwani lead designer.</p></div>
-          </div>
-        </div>
-      </section>
-
       <section className="pricing">
         <h2>Transparent pricing</h2>
         <div className="pricing-table">

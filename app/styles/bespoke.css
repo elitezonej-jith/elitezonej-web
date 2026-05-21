@@ -138,63 +138,6 @@
 .step-3 .photo { background-image: url("/generated/_sections/process-measure.webp"); }
 .step-4 .photo { background-image: url("/generated/_sections/process-finish.webp"); }
 
-.atelier { background: var(--paper-2); padding: var(--s-9) 0; border-top: var(--rule); border-bottom: var(--rule); }
-.atelier .row {
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: 0 var(--pad-x-d);
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: var(--s-7);
-  align-items: center;
-}
-@media (max-width: 900px) { .atelier .row { grid-template-columns: 1fr; padding: 0 var(--pad-x-m); } }
-.atelier .copy h2 {
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: clamp(32px, 4vw, 52px);
-  letter-spacing: -0.015em;
-  line-height: 1.05;
-}
-.atelier .copy p { color: var(--ink-2); margin: var(--s-4) 0 0; max-width: 520px; }
-.atelier .copy .stats {
-  display: flex;
-  gap: var(--s-7);
-  margin-top: var(--s-5);
-  padding-top: var(--s-4);
-  border-top: var(--rule);
-  flex-wrap: wrap;
-}
-.atelier .stat { color: var(--ink-3); }
-.atelier .stat b {
-  display: block;
-  margin-top: 4px;
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-size: 24px;
-  color: var(--ink);
-  letter-spacing: -0.01em;
-  text-transform: none;
-}
-.team { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-3); }
-.team .person { display: flex; flex-direction: column; gap: var(--s-3); }
-.team .ph { aspect-ratio: 1; background-size: cover; background-position: center; border-radius: 50%; overflow: hidden; }
-.p1 { background-image: url("/generated/_team/team-aman.webp"); }
-.p2 { background-image: url("/generated/_team/team-vikram.webp"); }
-.p3 { background-image: url("/generated/_team/team-riya.webp"); }
-.team h4 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 18px; letter-spacing: -0.005em; }
-.team .role {
-  color: var(--ink-3);
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  font-family: var(--font-mono);
-  text-transform: uppercase;
-}
-.team .yrs { color: var(--ink-2); font-size: 13px; margin: 0; line-height: 1.4; }
-@media (max-width: 600px) { .team { grid-template-columns: 1fr; } }
-
 .pricing { padding: var(--s-9) var(--pad-x-d); max-width: var(--container); margin: 0 auto; }
 .pricing h2 {
   margin: 0;
