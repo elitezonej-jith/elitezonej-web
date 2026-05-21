@@ -174,7 +174,6 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
             >
               {sizeOn ? "Add to bag" : "Choose a size"}
             </button>
-            <Link className="btn btn-secondary btn-block" href="/bespoke#book">Book a fitting</Link>
           </div>
 
           <div className="delivery">
