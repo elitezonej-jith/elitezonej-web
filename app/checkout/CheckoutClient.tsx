@@ -478,7 +478,6 @@ export default function CheckoutClient({
 
           <div className="reassure t-mono-xs" style={{ marginTop: 16 }}>
             <span>✓ Secure card &amp; UPI payment</span>
-            <span>✓ Free alterations within 30 days</span>
             <span>✓ Reach us on {WHATSAPP_DISPLAY}</span>
           </div>
         </aside>

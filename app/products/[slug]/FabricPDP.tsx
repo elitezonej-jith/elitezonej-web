@@ -368,7 +368,7 @@ export default function FabricPDP({ product }: Props) {
           </details>
           <details>
             <summary>Returns and exchanges</summary>
-            <div>Unused cloth in original condition is returnable within seven days of delivery. We pick up at our cost. Custom-dyed cloth is non-refundable. Free alterations to any garment we tailor for you within thirty days.</div>
+            <div>Unused cloth in original condition is returnable within seven days of delivery. We pick up at our cost. Custom-dyed cloth is non-refundable.</div>
           </details>
           <details>
             <summary>Bulk and event orders</summary>

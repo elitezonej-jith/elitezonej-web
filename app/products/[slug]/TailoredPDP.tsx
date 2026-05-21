@@ -244,8 +244,8 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
           <div>Standard delivery is free across India and arrives in 3–5 working days. Express delivery available at checkout. International orders ship via DHL; duties calculated at checkout.</div>
         </details>
         <details>
-          <summary>Returns &amp; alterations</summary>
-          <div>Free returns within 7 days of delivery. Free reverse pickup across all major Indian cities. Free alterations within 30 days — we&apos;ll re-cut to your fit at no charge.</div>
+          <summary>Returns</summary>
+          <div>Free returns within 7 days of delivery. Free reverse pickup across all major Indian cities.</div>
         </details>
         <details>
           <summary>Care</summary>
