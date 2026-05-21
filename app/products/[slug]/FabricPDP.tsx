@@ -294,7 +294,7 @@ export default function FabricPDP({ product }: Props) {
                 <path d="M12 4v8l5 3" />
                 <circle cx="12" cy="12" r="9" />
               </svg>
-              <b>7-day</b>&nbsp;returns
+              <b>3-day</b>&nbsp;returns
             </span>
           </div>
 
@@ -368,7 +368,7 @@ export default function FabricPDP({ product }: Props) {
           </details>
           <details>
             <summary>Returns and exchanges</summary>
-            <div>Unused cloth in original condition is returnable within seven days of delivery. We pick up at our cost. Custom-dyed cloth is non-refundable.</div>
+            <div>Unused cloth in original condition is returnable within three days of delivery. We pick up at our cost. Custom-dyed cloth is non-refundable.</div>
           </details>
           <details>
             <summary>Bulk and event orders</summary>
