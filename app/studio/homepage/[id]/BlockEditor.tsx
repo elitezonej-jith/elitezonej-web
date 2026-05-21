@@ -65,7 +65,7 @@ function Editor({ type, config, update }: { type: string; config: RC; update: (n
           <header className="stu-card__head"><h3>Trust strip</h3></header>
           <div className="stu-card__body">
             <p style={{ fontSize: 13.5, color: "var(--stu-text-3)" }}>
-              The trust &amp; support strip (duties, free delivery, pay later, helpline) is fixed in code.
+              The trust &amp; support strip (duties, free delivery, helpline) is fixed in code.
               This block controls whether it shows and where it sits on the page — use the list view to
               reorder or hide it.
             </p>
