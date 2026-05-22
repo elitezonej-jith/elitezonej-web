@@ -19,7 +19,7 @@ import {
   purgeExpiredCustomerSessions,
 } from "../../lib/admin/repos/customer-auth";
 import { logAudit } from "../../lib/admin/repos/audit";
-import { getDb } from "../../lib/admin/db";
+import { sql } from "../../lib/admin/db";
 
 export type AuthState = {
   error?: string;
@@ -179,9 +179,10 @@ export async function updateProfileAction(_prev: AuthState, fd: FormData): Promi
     city: fd.get("city") ?? "",
   });
   if (!parsed.success) return { error: "Please check the form." };
-  getDb()
-    .prepare("UPDATE customers SET first_name = ?, last_name = ?, phone = ?, city = ? WHERE id = ?")
-    .run(parsed.data.first_name, parsed.data.last_name, parsed.data.phone || null, parsed.data.city || null, me.id);
+  await sql.run(
+    "UPDATE customers SET first_name = ?, last_name = ?, phone = ?, city = ? WHERE id = ?",
+    [parsed.data.first_name, parsed.data.last_name, parsed.data.phone || null, parsed.data.city || null, me.id],
+  );
   await logAudit({
     user_id: null,
     action: "customer_profile_update",

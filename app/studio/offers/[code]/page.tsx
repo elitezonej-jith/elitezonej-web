@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getPromotion } from "../../../../lib/admin/repos/promotions";
 import { listTargets } from "../../../../lib/admin/repos/offer-targets";
 import { listProducts } from "../../../../lib/admin/repos/products";
-import { getDb } from "../../../../lib/admin/db";
+import { sql } from "../../../../lib/admin/db";
 import PageHead from "../../components/PageHead";
 import StatusTag from "../../components/StatusTag";
 import { FlashToast } from "../../components/Toast";
@@ -23,8 +23,8 @@ export default async function EditOfferPage({ params, searchParams }: Params) {
   if (!promo) notFound();
   const targets = await listTargets(promo.code);
   const products = await listProducts({ status: "all", limit: 200 });
-  const cats = getDb().prepare("SELECT id, name, slug, parent_id FROM categories ORDER BY name ASC").all() as Array<{ id: number; name: string; slug: string; parent_id: number | null }>;
-  const featuredRow = getDb().prepare("SELECT is_featured FROM promotions WHERE code = ?").get(promo.code) as { is_featured: number } | undefined;
+  const cats = await sql.all<{ id: number; name: string; slug: string; parent_id: number | null }>("SELECT id, name, slug, parent_id FROM categories ORDER BY name ASC");
+  const featuredRow = await sql.get<{ is_featured: number }>("SELECT is_featured FROM promotions WHERE code = ?", [promo.code]);
 
   return (
     <div className="stu-page">

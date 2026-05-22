@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "../../../lib/admin/session";
-import { getDb } from "../../../lib/admin/db";
+import { sql } from "../../../lib/admin/db";
 import { createCategory, updateCategory, deleteCategory } from "../../../lib/admin/repos/categories";
 import { logAudit } from "../../../lib/admin/repos/audit";
 
@@ -36,13 +36,11 @@ export async function saveCategoryAction(_prev: CatSaveState, fd: FormData): Pro
   let savedId = id;
   if (id) {
     await updateCategory(id, data);
-    getDb().prepare("UPDATE categories SET image_path = ?, enabled = ? WHERE id = ?")
-      .run(v.image_path, enabled, id);
+    await sql.run("UPDATE categories SET image_path = ?, enabled = ? WHERE id = ?", [v.image_path, enabled, id]);
     await logAudit({ user_id: me.id, action: "update_category", entity: "category", entity_id: String(id) });
   } else {
     savedId = await createCategory(data);
-    getDb().prepare("UPDATE categories SET image_path = ?, enabled = ? WHERE id = ?")
-      .run(v.image_path, enabled, savedId);
+    await sql.run("UPDATE categories SET image_path = ?, enabled = ? WHERE id = ?", [v.image_path, enabled, savedId]);
     await logAudit({ user_id: me.id, action: "create_category", entity: "category", entity_id: String(savedId) });
   }
   revalidatePath("/studio/categories");

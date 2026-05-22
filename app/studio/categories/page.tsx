@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getDb } from "../../../lib/admin/db";
+import { sql } from "../../../lib/admin/db";
 import PageHead from "../components/PageHead";
 import StatusTag from "../components/StatusTag";
 import EmptyState from "../components/EmptyState";
@@ -21,7 +21,7 @@ type Cat = {
 export default async function CategoriesPage({ searchParams }: SP) {
   await requireUser("/studio/login");
   const sp = await searchParams;
-  const all = getDb().prepare("SELECT * FROM categories ORDER BY parent_id IS NULL DESC, parent_id ASC, sort_order ASC").all() as Cat[];
+  const all = await sql.all<Cat>("SELECT * FROM categories ORDER BY parent_id IS NULL DESC, parent_id ASC, sort_order ASC");
   const tops = all.filter((c) => c.parent_id === null);
   const subs = all.filter((c) => c.parent_id !== null);
 
