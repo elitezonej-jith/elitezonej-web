@@ -4,6 +4,7 @@ import EditorsNote from "../../components/EditorsNote";
 import NewProductForm from "./NewProductForm";
 import { requireUser } from "../../../../lib/admin/session";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "New piece · Atelier" };
 
 export default async function NewProductPage() {

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { SESSION_COOKIE, getSessionUser } from "../../../lib/admin/auth";
 import LoginForm from "./LoginForm";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Sign in · Studio" };
 
 type SP = { searchParams: Promise<{ next?: string }> };

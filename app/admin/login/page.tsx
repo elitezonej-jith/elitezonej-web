@@ -4,6 +4,7 @@ import { getCurrentUser } from "../../../lib/admin/session";
 import LoginForm from "./LoginForm";
 import "../styles/admin.css";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Sign in · Elite Zone J Atelier" };
 
 type SP = { searchParams: Promise<{ next?: string }> };

@@ -3,6 +3,7 @@ import { countUsers } from "../../../lib/admin/repos/users";
 import SetupForm from "./SetupForm";
 import "../styles/admin.css";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "First-run setup · Elite Zone J Atelier" };
 
 export default async function SetupPage() {

@@ -4,6 +4,7 @@ import EditorsNote from "../../components/EditorsNote";
 import PromoForm from "../PromoForm";
 import { requireUser } from "../../../../lib/admin/session";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "New promotion · Atelier" };
 
 export default async function NewPromotionPage() {
