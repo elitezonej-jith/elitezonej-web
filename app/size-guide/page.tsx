@@ -9,7 +9,7 @@ export const metadata = {
     "How to measure for our suits, shirts, trousers and dresses. Body measurements in inches and centimetres, mapped to our standard sizes.",
 };
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default function SizeGuidePage() {
   return (
