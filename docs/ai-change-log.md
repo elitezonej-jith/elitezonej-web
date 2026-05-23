@@ -1,5 +1,12 @@
 # AI Change Log
 
+## 2026-05-23 15:10 IST — fail-loud guard against silent ephemeral SQLite on Vercel
+
+- What: `getDb()` now throws immediately on a serverless deployment (`VERCEL=1` or `IS_SERVERLESS=1`) if `DB_DRIVER` is not `postgres`. Local dev (no `VERCEL`) is unaffected.
+- Why: Without this guard, a missing/misspelled `DB_DRIVER` on Vercel silently falls back to an in-memory SQLite database that resets every 15 minutes. The site appears to function but orders, sessions, and accounts vanish on every cold start — a silent corruption mode much worse than a loud failure. This is the exact symptom we hit earlier today during the Postgres cutover; making it crash loudly catches the misconfig at request time instead of weeks later via customer complaints.
+- Files: lib/admin/db.ts (ring-fenced — adding a guard, no control-flow change to the SQLite or Postgres paths).
+- Notes: `tsc --noEmit` 0 errors before/after. Zero external callers of `getDb()` (verified by grep) — every repo uses the async `sql` client, which routes to Postgres in prod and SQLite in local dev. The guard only fires on the misconfig path.
+
 ## 2026-05-23 14:30 IST — layout-level force-dynamic + drop ISR (temp)
 
 - What: Added `export const dynamic = "force-dynamic"` to `app/studio/layout.tsx` and `app/admin/layout.tsx` (covers every page in those segments). Switched `app/page.tsx`, `app/collection/page.tsx`, `app/size-guide/page.tsx`, `app/products/[slug]/page.tsx` from `revalidate` (ISR) to `force-dynamic`.

@@ -202,6 +202,19 @@ export function getDb(): Database.Database {
   if (process.env.DB_DRIVER === "postgres") {
     throw new Error("getDb() is not available in Postgres mode. Use async sql.");
   }
+  // Fail-loud guard: refuse to silently fall back to ephemeral SQLite on a
+  // serverless deployment. If we reach here on Vercel it means DB_DRIVER was
+  // unset/misspelled — the user-visible alternative is "site appears to work
+  // but orders/sessions vanish every 15 min", which is much worse than a
+  // hard 500 on every request until the env is fixed.
+  if (IS_SERVERLESS) {
+    throw new Error(
+      "[db] Serverless runtime without DB_DRIVER=postgres. Refusing to fall " +
+        "back to ephemeral in-memory SQLite (data would not survive cold " +
+        "starts). Set DB_DRIVER=postgres and a valid DATABASE_URL in the " +
+        "Vercel project env vars, then redeploy.",
+    );
+  }
   if (!global.__ezj_admin_db) global.__ezj_admin_db = open();
   return global.__ezj_admin_db;
 }
