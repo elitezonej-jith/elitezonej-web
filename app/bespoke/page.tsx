@@ -13,8 +13,8 @@ import "../styles/bespoke.css";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Bespoke & Made-to-Measure — Elite Zone J" };
 
-export default function BespokePage() {
-  const { leadTimeDays } = getSiteSettings();
+export default async function BespokePage() {
+  const { leadTimeDays } = await getSiteSettings();
   const leadLabel = `${leadTimeDays} day${leadTimeDays === 1 ? "" : "s"}`;
   return (
     <>

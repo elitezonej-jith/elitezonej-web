@@ -32,7 +32,7 @@ export async function addBlockAction(fd: FormData): Promise<void> {
   const id = await createBlock({
     type: parsed.data.type as HomepageBlockType,
     title: parsed.data.title,
-    config: defaultConfigFor(parsed.data.type as HomepageBlockType),
+    config: await defaultConfigFor(parsed.data.type as HomepageBlockType),
   });
   await logAudit({ user_id: me.id, action: "create_block", entity: "homepage_block", entity_id: String(id), payload: { type: parsed.data.type } });
   revalidatePath("/studio/homepage");
@@ -92,7 +92,7 @@ export async function saveBlockConfigAction(fd: FormData): Promise<void> {
   redirect(`/studio/homepage/${id}?saved=1`);
 }
 
-function defaultConfigFor(type: HomepageBlockType): Record<string, unknown> {
+async function defaultConfigFor(type: HomepageBlockType): Promise<Record<string, unknown>> {
   switch (type) {
     case "hero_grid":
       return { tiles: [
@@ -118,7 +118,7 @@ function defaultConfigFor(type: HomepageBlockType): Record<string, unknown> {
     case "wedding_editorial":
       return { image: "", headline: "The Wedding Wardrobe", body: "", cta: { label: "Shop Festive", href: "/collection?c=festive" } };
     case "bespoke_teaser": {
-      const { leadTimeDays } = getSiteSettings();
+      const { leadTimeDays } = await getSiteSettings();
       const label = `${leadTimeDays} day${leadTimeDays === 1 ? "" : "s"}`;
       return { headline: `From sketch to fitting in ${label}.`, body: "", cta: { label: "Begin a fitting", href: "/bespoke" } };
     }
