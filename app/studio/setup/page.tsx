@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { countUsers } from "../../../lib/admin/repos/users";
 import SetupForm from "./SetupForm";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Get started · Studio" };
 
 export default async function StudioSetupPage() {
