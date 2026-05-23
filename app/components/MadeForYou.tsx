@@ -30,7 +30,10 @@ const DEFAULT_ITEMS: MadeForYouItem[] = [
     alt: "Festive sherwani in silk",
     eyebrow: "Made to measure",
     title: "Custom Sherwani",
-    body: "Choose your cloth, lining, collar, and length. Festive-ready in seven days. From ₹28,000.",
+    // Fallback copy only — when ServiceCards is rendered from the DB-driven
+    // homepage block, items come from the studio config. Lead time here should
+    // match the admin "lead_time_days" setting if defaults are ever surfaced.
+    body: "Choose your cloth, lining, collar, and length. Festive-ready in 7 days. From ₹28,000.",
     cta: "Configure yours",
   },
   {

@@ -27,17 +27,6 @@ function TruckIcon() {
   );
 }
 
-function CardIcon() {
-  return (
-    <svg viewBox="0 0 48 48" {...stroke}>
-      <rect x="6" y="12" width="36" height="24" rx="2" />
-      <path d="M6 19h36" />
-      <path d="M12 28h6" />
-      <path d="M22 28h4" />
-    </svg>
-  );
-}
-
 function PhoneIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
@@ -84,13 +73,6 @@ export default function TrustStrip() {
             <span className="trust-label--short">Free&nbsp;delivery</span>
           </div>
           <div className="trust-sub">On orders over ₹15,000</div>
-        </div>
-        <div className="trust-item">
-          <CardIcon />
-          <div className="trust-title">
-            <span className="trust-label--full">Buy Now Pay Later</span>
-            <span className="trust-label--short">Pay&nbsp;later</span>
-          </div>
         </div>
       </div>
 

@@ -97,7 +97,7 @@ export default async function Footer({ minimal = false }: { minimal?: boolean })
             <ul>
               <li><Link href="/bespoke">Contact</Link></li>
               <li><Link href="/bespoke">FAQs</Link></li>
-              <li><Link href="/cart">Size guide</Link></li>
+              <li><Link href="/size-guide">Size guide</Link></li>
               <li><Link href="/cart">Delivery</Link></li>
               <li><Link href="/cart">Returns</Link></li>
               <li><Link href="/cart">Terms &amp; conditions</Link></li>
@@ -156,7 +156,7 @@ export default async function Footer({ minimal = false }: { minimal?: boolean })
           <ul className="foot-mobile__links">
             <li><Link href="/bespoke">Contact</Link></li>
             <li><Link href="/bespoke">About</Link></li>
-            <li><Link href="/cart">Size guide</Link></li>
+            <li><Link href="/size-guide">Size guide</Link></li>
             <li><Link href="/cart">Returns</Link></li>
             <li><Link href="/cart">Privacy</Link></li>
           </ul>

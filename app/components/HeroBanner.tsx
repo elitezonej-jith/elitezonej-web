@@ -7,7 +7,10 @@ const SLIDES = [
     img: "/generated/_sections/hero.webp",
     imgPos: "25% 20%",
     eyebrow: "Spring · Summer 2026",
-    h1: "Made for you\nin seven days",
+    // Fallback copy only — HeroBanner.tsx is not currently rendered (homepage is
+    // DB-driven via HomepageRenderer + FullBanner). Lead time should match the
+    // admin "lead_time_days" setting when this component is re-enabled.
+    h1: "Made for you\nin 7 days",
     cta: "Shop New",
     href: "/collection?c=men",
   },

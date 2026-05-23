@@ -7,12 +7,15 @@ import Parallax from "../components/Parallax";
 import SectionHead from "../components/SectionHead";
 import BookingForm from "./BookingForm";
 import { WHATSAPP_LINK, WHATSAPP_DISPLAY } from "@/lib/contact";
+import { getSiteSettings } from "@/lib/storefront/site-settings";
 import "../styles/bespoke.css";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Bespoke & Made-to-Measure — Elite Zone J" };
 
-export default function BespokePage() {
+export default async function BespokePage() {
+  const { leadTimeDays } = await getSiteSettings();
+  const leadLabel = `${leadTimeDays} day${leadTimeDays === 1 ? "" : "s"}`;
   return (
     <>
       <Header />
@@ -21,7 +24,7 @@ export default function BespokePage() {
       <section className="b-hero">
         <div className="copy">
           <div className="ix t-mono-xs">Bespoke · Made-to-Measure · Alterations</div>
-          <h1>A suit cut to <em>your</em> figure.<br />Delivered in seven days.</h1>
+          <h1>A suit cut to <em>your</em> figure.<br />Delivered in {leadLabel}.</h1>
           <p>Twelve in-house designers and twenty-six master tailors, working from our Delhi atelier.
             Visit us by appointment, or book a home fitting in Delhi, Mumbai, or Bangalore.</p>
           <div className="ctas">
@@ -67,12 +70,12 @@ export default function BespokePage() {
                 <span className="ix t-mono-xs">Made-to-Measure</span>
                 <h3>Custom Sherwani</h3>
                 <span className="svc-rule" aria-hidden="true" />
-                <div className="price">From ₹28,000 · 7 days</div>
+                <div className="price">From ₹28,000 · {leadLabel}</div>
                 <ul>
                   <li>Built on our base block, adjusted to your fourteen measurements</li>
                   <li>Choose cloth, lining, collar, length, and embroidery</li>
                   <li>One fitting included; alterations free for thirty days</li>
-                  <li>Festive-ready in seven days</li>
+                  <li>Festive-ready in {leadLabel}</li>
                 </ul>
                 <div className="cta"><Link className="btn btn-primary btn-block" href="#book">Configure yours</Link></div>
               </div>
@@ -103,42 +106,13 @@ export default function BespokePage() {
           numeral={2}
           eyebrow="The process"
           title="How it's made."
-          meta="Four steps · Seven days"
+          meta={`Four steps · ${leadLabel}`}
         />
         <div className="steps">
           <Reveal as="div" className="step step-1" delay={0}><div className="photo"></div><div className="num">01</div><h4>Choose your cloth</h4><p className="t-body">Browse our cloth library — wools from Vitale Barberis Canonico and Reda 1865, Egyptian poplins from Thomas Mason, handwoven Indian silks. Order swatches free of charge.</p></Reveal>
           <Reveal as="div" className="step step-2" delay={1}><div className="photo"></div><div className="num">02</div><h4>Get measured</h4><p className="t-body">Visit our Delhi atelier or book a home fitting in Delhi NCR, Mumbai, or Bangalore. Fourteen measurements, taken by our master tailors. Forty minutes, complimentary refreshment.</p></Reveal>
           <Reveal as="div" className="step step-3" delay={2}><div className="photo"></div><div className="num">03</div><h4>We cut and stitch</h4><p className="t-body">Cut by hand from your paper pattern, basted for the first fitting, then constructed with hand-padded canvas and hand-stitched lapels.</p></Reveal>
-          <Reveal as="div" className="step step-4" delay={3}><div className="photo"></div><div className="num">04</div><h4>Receive in seven days</h4><p className="t-body">Delivered free across India in a hand-stitched garment bag. Free alterations within thirty days of delivery, until the fit is exactly right. Lifetime mending.</p></Reveal>
-        </div>
-      </section>
-
-      <section className="atelier">
-        <div className="row">
-          <div className="copy">
-            <h2>Our atelier in Delhi</h2>
-            <p className="t-body-lg">Twelve designers, twenty-six master tailors — between us, three hundred and seventy years on the bench. We design every piece in-house, cut every garment in our workroom, and put our names on every label.</p>
-            <div className="stats">
-              <div className="stat t-mono-xs">Designers<b>12</b></div>
-              <div className="stat t-mono-xs">Master tailors<b>26</b></div>
-              <div className="stat t-mono-xs">Average tenure<b>14 years</b></div>
-              <div className="stat t-mono-xs">Founded<b>2012</b></div>
-            </div>
-          </div>
-          <div className="team">
-            <div className="person"><div className="ph p1"></div><h4>Aman Gupta</h4><p className="role">Lead Designer</p><p className="yrs">Twelve years on the bench. Three-piece suits and structured bandhgalas.</p></div>
-            <div className="person"><div className="ph p2"></div><h4>Vikram Mehta</h4><p className="role">Master Tailor</p><p className="yrs">Eighteen years cutting. Trained in Savile Row construction technique.</p></div>
-            <div className="person"><div className="ph p3"></div><h4>Riya Kapoor</h4><p className="role">Bespoke Specialist</p><p className="yrs">Nine years in zardozi and gota work. Festive sherwani lead designer.</p></div>
-          </div>
-        </div>
-      </section>
-
-      <section className="pricing">
-        <h2>Transparent pricing</h2>
-        <div className="pricing-table">
-          <div><h4>Bespoke Suit</h4><div className="from">₹45,000<small>Base · cloth from ₹3,500/m</small></div><p>Includes paper pattern, three fittings, lifetime mending, free alterations for one year.</p></div>
-          <div><h4>Made-to-Measure Sherwani</h4><div className="from">₹28,000<small>Base · embroidery from ₹6,000</small></div><p>Includes one fitting, churidar, dupatta, cotton mulmul lining. Hand-worked zardozi quoted on selection.</p></div>
-          <div><h4>Tailored Shirts</h4><div className="from">₹2,800<small>Per shirt · three for ₹7,500</small></div><p>Egyptian cotton poplin, single-needle stitching, mother-of-pearl buttons.</p></div>
+          <Reveal as="div" className="step step-4" delay={3}><div className="photo"></div><div className="num">04</div><h4>Receive in {leadLabel}</h4><p className="t-body">Delivered free across India in a hand-stitched garment bag. Lifetime mending.</p></Reveal>
         </div>
       </section>
 

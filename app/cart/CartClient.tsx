@@ -94,11 +94,11 @@ export default function CartClient() {
                       Sold in 0.5 m increments · minimum 0.5 m
                     </div>
                   )}
-                  <div className="alt-line t-body-sm">
-                    {it.isFabric
-                      ? <>Need a custom dye lot? <Link href="/bespoke#book">Book the cloth desk.</Link></>
-                      : <>Doesn&apos;t fit exactly? <Link href="/bespoke">Free alteration available within 30 days.</Link></>}
-                  </div>
+                  {it.isFabric && (
+                    <div className="alt-line t-body-sm">
+                      Need a custom dye lot? <Link href="/bespoke#book">Book the cloth desk.</Link>
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -108,7 +108,6 @@ export default function CartClient() {
         <aside className="summary">
           <h2>Order summary</h2>
           <div className="row"><span>Subtotal</span><b>{fmtINR(subtotal)}</b></div>
-          <div className="row"><span>Free alterations</span><b>Included</b></div>
           <div className="row"><span>Estimated delivery</span><b>Free</b></div>
           <div className="row"><span>Estimated tax</span><b>Inclusive</b></div>
 
@@ -131,8 +130,7 @@ export default function CartClient() {
           </div>
 
           <div className="reassure t-mono-xs">
-            <span>✓ Free alterations within 30 days</span>
-            <span>✓ 7-day returns · Free reverse pickup</span>
+            <span>✓ 3-day returns · Free reverse pickup</span>
             <span>✓ Razorpay secure · UPI · Cards · COD</span>
           </div>
         </aside>

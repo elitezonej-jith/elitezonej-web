@@ -23,7 +23,6 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
   const [angleIdx, setAngleIdx] = useState(0);
   const [sizeOn, setSizeOn] = useState("");
   const [lbOpen, setLbOpen] = useState(false);
-  const [deliveryDate, setDeliveryDate] = useState("");
   const [sizePrompt, setSizePrompt] = useState(false);
   const sizeBlockRef = useRef<HTMLDivElement>(null);
 
@@ -50,11 +49,6 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
       imageSrc: imgSrc(product.slug, "01-front"),
     });
   };
-
-  useEffect(() => {
-    const d = new Date(Date.now() + 7 * 86400000);
-    setDeliveryDate(d.toLocaleDateString("en-IN", { weekday: "long", day: "2-digit", month: "long" }));
-  }, []);
 
   const others = related;
   const lightboxImages = ANGLES.map((a, i) => ({
@@ -139,7 +133,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
           <div className="field-block" ref={sizeBlockRef}>
             <div className="head">
               <label>Size</label>
-              <a href="#">Size guide</a>
+              <a href="/size-guide">Size guide</a>
             </div>
             <div className="sizes" style={sizePrompt ? { outline: "2px solid var(--accent)", outlineOffset: 6 } : undefined}>
               {product.sizes.map(s => {
@@ -174,18 +168,16 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
             >
               {sizeOn ? "Add to bag" : "Choose a size"}
             </button>
-            <Link className="btn btn-secondary btn-block" href="/bespoke#book">Book a fitting</Link>
           </div>
 
           <div className="delivery">
             <div className="pin" aria-hidden="true">110001</div>
             <div className="text">
-              {deliveryDate
-                ? <>Delivered by <b>{deliveryDate}</b> · Free shipping</>
-                : <>Free shipping · delivery in 3–5 working days</>}
+              Delivery in <b>5–7 working days</b>
+              {product.price >= 15000 && <> · Free shipping</>}
             </div>
           </div>
-          <div className="returns-line t-mono-xs">7-day returns · Free reverse pickup · Cash on delivery available</div>
+          <div className="returns-line t-mono-xs">3-day returns · Free reverse pickup · Cash on delivery available</div>
 
           <div className="feature-list">
             <h4>Features</h4>
@@ -244,8 +236,8 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
           <div>Standard delivery is free across India and arrives in 3–5 working days. Express delivery available at checkout. International orders ship via DHL; duties calculated at checkout.</div>
         </details>
         <details>
-          <summary>Returns &amp; alterations</summary>
-          <div>Free returns within 7 days of delivery. Free reverse pickup across all major Indian cities. Free alterations within 30 days — we&apos;ll re-cut to your fit at no charge.</div>
+          <summary>Returns</summary>
+          <div>Free returns within 3 days of delivery. Free reverse pickup across all major Indian cities.</div>
         </details>
         <details>
           <summary>Care</summary>

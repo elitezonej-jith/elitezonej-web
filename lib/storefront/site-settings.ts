@@ -11,12 +11,14 @@ export type SiteSettings = {
   brandName: string;
   currency: string;
   currencySymbol: string;
+  leadTimeDays: number;
 };
 
 const FALLBACK: SiteSettings = {
   brandName: "Elite Zone J",
   currency: "INR",
   currencySymbol: "₹",
+  leadTimeDays: 7,
 };
 
 export async function getSiteSettings(): Promise<SiteSettings> {
@@ -28,9 +30,12 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   }
   const pick = (k: string, fb: string) =>
     s[k] && s[k].trim().length ? s[k] : fb;
+  const leadRaw = Number(s["lead_time_days"]);
+  const leadTimeDays = Number.isFinite(leadRaw) && leadRaw > 0 ? Math.trunc(leadRaw) : FALLBACK.leadTimeDays;
   return {
     brandName: pick("brand_name", FALLBACK.brandName),
     currency: pick("currency", FALLBACK.currency),
     currencySymbol: pick("currency_symbol", FALLBACK.currencySymbol),
+    leadTimeDays,
   };
 }

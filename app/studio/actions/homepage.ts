@@ -8,6 +8,7 @@ import {
   type HomepageBlockType,
 } from "../../../lib/admin/repos/homepage";
 import { logAudit } from "../../../lib/admin/repos/audit";
+import { getSiteSettings } from "../../../lib/storefront/site-settings";
 
 const VALID_TYPES: HomepageBlockType[] = [
   "hero_grid","hero_banner","banner_carousel","product_carousel",
@@ -31,7 +32,7 @@ export async function addBlockAction(fd: FormData): Promise<void> {
   const id = await createBlock({
     type: parsed.data.type as HomepageBlockType,
     title: parsed.data.title,
-    config: defaultConfigFor(parsed.data.type as HomepageBlockType),
+    config: await defaultConfigFor(parsed.data.type as HomepageBlockType),
   });
   await logAudit({ user_id: me.id, action: "create_block", entity: "homepage_block", entity_id: String(id), payload: { type: parsed.data.type } });
   revalidatePath("/studio/homepage");
@@ -91,7 +92,7 @@ export async function saveBlockConfigAction(fd: FormData): Promise<void> {
   redirect(`/studio/homepage/${id}?saved=1`);
 }
 
-function defaultConfigFor(type: HomepageBlockType): Record<string, unknown> {
+async function defaultConfigFor(type: HomepageBlockType): Promise<Record<string, unknown>> {
   switch (type) {
     case "hero_grid":
       return { tiles: [
@@ -116,8 +117,11 @@ function defaultConfigFor(type: HomepageBlockType): Record<string, unknown> {
       return { items: [{ kicker: "01", label: "Free shipping over ₹5,000" }] };
     case "wedding_editorial":
       return { image: "", headline: "The Wedding Wardrobe", body: "", cta: { label: "Shop Festive", href: "/collection?c=festive" } };
-    case "bespoke_teaser":
-      return { headline: "From sketch to fitting in seven days.", body: "", cta: { label: "Begin a fitting", href: "/bespoke" } };
+    case "bespoke_teaser": {
+      const { leadTimeDays } = await getSiteSettings();
+      const label = `${leadTimeDays} day${leadTimeDays === 1 ? "" : "s"}`;
+      return { headline: `From sketch to fitting in ${label}.`, body: "", cta: { label: "Begin a fitting", href: "/bespoke" } };
+    }
     case "category_grid":
       return { categories: [] };
     case "announce_bar":

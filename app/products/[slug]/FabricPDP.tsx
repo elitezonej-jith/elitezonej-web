@@ -24,7 +24,6 @@ export default function FabricPDP({ product }: Props) {
   const [qtyMeters, setQtyMeters] = useState(1);
   const [qtyText, setQtyText] = useState("1");
   const [lbOpen, setLbOpen] = useState(false);
-  const [deliveryDate, setDeliveryDate] = useState("Friday, 02 May");
 
   const colours = product.colourVariants ?? (product.colour && product.colourHex
     ? [{ name: product.colour, hex: product.colourHex }]
@@ -38,11 +37,6 @@ export default function FabricPDP({ product }: Props) {
   useEffect(() => {
     setAngleIdx(0); setColourIdx(0); setQtyMeters(1); setQtyText("1");
   }, [product.slug]);
-
-  useEffect(() => {
-    const d = new Date(Date.now() + 7 * 86400000);
-    setDeliveryDate(d.toLocaleDateString("en-IN", { weekday: "long", day: "2-digit", month: "long" }));
-  }, []);
 
   // Non-primary colours only have a `front` shot — fall back to the
   // primary colour for other angles so the gallery stays populated.
@@ -294,13 +288,13 @@ export default function FabricPDP({ product }: Props) {
                 <path d="M12 4v8l5 3" />
                 <circle cx="12" cy="12" r="9" />
               </svg>
-              <b>7-day</b>&nbsp;returns
+              <b>3-day</b>&nbsp;returns
             </span>
           </div>
 
           <div className="delivery">
             <div className="pin">110001</div>
-            <div className="text">Delivered by <b>{deliveryDate}</b> · Free shipping across India</div>
+            <div className="text">Delivery in <b>5–7 working days</b>{product.price >= 15000 && <> · Free shipping across India</>}</div>
           </div>
 
           <div className="disclaimer">
@@ -368,7 +362,7 @@ export default function FabricPDP({ product }: Props) {
           </details>
           <details>
             <summary>Returns and exchanges</summary>
-            <div>Unused cloth in original condition is returnable within seven days of delivery. We pick up at our cost. Custom-dyed cloth is non-refundable. Free alterations to any garment we tailor for you within thirty days.</div>
+            <div>Unused cloth in original condition is returnable within three days of delivery. We pick up at our cost. Custom-dyed cloth is non-refundable.</div>
           </details>
           <details>
             <summary>Bulk and event orders</summary>
