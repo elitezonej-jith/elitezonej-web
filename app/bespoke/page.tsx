@@ -9,6 +9,7 @@ import BookingForm from "./BookingForm";
 import { WHATSAPP_LINK, WHATSAPP_DISPLAY } from "@/lib/contact";
 import "../styles/bespoke.css";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Bespoke & Made-to-Measure — Elite Zone J" };
 
 export default function BespokePage() {

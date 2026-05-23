@@ -6,10 +6,7 @@ import { safeNextPath } from "../../lib/storefront/auth";
 import SignupForm from "./SignupForm";
 import "../styles/account.css";
 
-// No `force-dynamic`: the page reads cookies() via getCurrentCustomer(), which
-// already opts it into dynamic (per-request) rendering (Next 16 cookies.md:69),
-// so the signed-in→/account redirect stays per-request correct. Dropping the
-// blanket opt-out lets the static shell become prefetchable / client-cacheable.
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Create account — Elite Zone J" };
 
 export default async function SignupPage({
