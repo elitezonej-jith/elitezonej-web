@@ -6,7 +6,7 @@ import EmptyState from "../components/EmptyState";
 import { FlashToast } from "../components/Toast";
 import { rupees, dateShort } from "../../../lib/admin/format";
 import { IconTag, IconPlus, IconEdit, IconStarFill } from "../components/Icons";
-import { getDb } from "../../../lib/admin/db";
+import { sql } from "../../../lib/admin/db";
 import { requireUser } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
@@ -26,7 +26,7 @@ export default async function OffersPage({ searchParams }: SP) {
   const offers = await listPromotions();
   const featuredMap = new Map<string, number>();
   try {
-    const rows = getDb().prepare("SELECT code, is_featured FROM promotions").all() as Array<{ code: string; is_featured: number }>;
+    const rows = await sql.all<{ code: string; is_featured: number }>("SELECT code, is_featured FROM promotions");
     rows.forEach((r) => featuredMap.set(r.code, r.is_featured));
   } catch { /* */ }
 

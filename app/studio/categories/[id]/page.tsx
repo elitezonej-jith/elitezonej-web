@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getDb } from "../../../../lib/admin/db";
+import { sql } from "../../../../lib/admin/db";
 import PageHead from "../../components/PageHead";
 import StatusTag from "../../components/StatusTag";
 import { FlashToast } from "../../components/Toast";
@@ -22,9 +22,9 @@ export default async function EditCategoryPage({ params, searchParams }: Params)
   await requireUser("/studio/login");
   const { id } = await params;
   const { saved } = await searchParams;
-  const cat = getDb().prepare("SELECT * FROM categories WHERE id = ?").get(Number(id)) as Cat | undefined;
+  const cat = await sql.get<Cat>("SELECT * FROM categories WHERE id = ?", [Number(id)]);
   if (!cat) notFound();
-  const tops = getDb().prepare("SELECT id, name, parent_id FROM categories WHERE parent_id IS NULL AND id != ? ORDER BY sort_order ASC").all(cat.id) as Array<{ id: number; name: string; parent_id: number | null }>;
+  const tops = await sql.all<{ id: number; name: string; parent_id: number | null }>("SELECT id, name, parent_id FROM categories WHERE parent_id IS NULL AND id != ? ORDER BY sort_order ASC", [cat.id]);
   return (
     <div className="stu-page stu-page--narrow">
       <FlashToast flash={saved ? "Category saved" : undefined} />

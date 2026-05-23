@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireUser } from "../../../lib/admin/session";
 import { upsertPromotion, deletePromotion } from "../../../lib/admin/repos/promotions";
 import { setTargets } from "../../../lib/admin/repos/offer-targets";
-import { getDb } from "../../../lib/admin/db";
+import { sql } from "../../../lib/admin/db";
 import { logAudit } from "../../../lib/admin/repos/audit";
 
 const Schema = z.object({
@@ -39,8 +39,7 @@ export async function saveOfferAction(_prev: OfferSaveState, fd: FormData): Prom
     description: v.description ?? null,
   });
   // is_featured column on promotions is added in schema-v2
-  getDb().prepare("UPDATE promotions SET is_featured = ? WHERE code = ?")
-    .run(v.is_featured === "on" ? 1 : 0, code);
+  await sql.run("UPDATE promotions SET is_featured = ? WHERE code = ?", [v.is_featured === "on" ? 1 : 0, code]);
 
   // Targets — collected from form arrays
   const types = fd.getAll("target_type").map(String);
