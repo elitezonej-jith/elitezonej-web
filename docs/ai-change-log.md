@@ -1,5 +1,12 @@
 # AI Change Log
 
+## 2026-05-23 14:30 IST — layout-level force-dynamic + drop ISR (temp)
+
+- What: Added `export const dynamic = "force-dynamic"` to `app/studio/layout.tsx` and `app/admin/layout.tsx` (covers every page in those segments). Switched `app/page.tsx`, `app/collection/page.tsx`, `app/size-guide/page.tsx`, `app/products/[slug]/page.tsx` from `revalidate` (ISR) to `force-dynamic`.
+- Why: Build still failing on `/`, `/collection`, `/size-guide`, `/studio/banners/new`, `/studio/categories/new` — Vercel build runner in iad1 cannot reach the Neon pooled URL in ap-southeast-1 within 60s to prerender. Layout-level dynamic stops the same problem from popping up on the next new studio/admin page; ISR pages temporarily downgraded to per-request rendering.
+- Files: app/studio/layout.tsx, app/admin/layout.tsx, app/page.tsx, app/collection/page.tsx, app/size-guide/page.tsx, app/products/[slug]/page.tsx
+- Notes: ISR lost on homepage, collection, PDP, size-guide. Real fix is region-collocating build/DB (move Neon to us-east-1) OR making DB loaders return defaults on connect failure so prerender survives. tsc --noEmit: 0 errors before, 0 errors after.
+
 ## 2026-05-23 13:40 IST — force-dynamic on remaining storefront pages
 
 - What: Added `export const dynamic = "force-dynamic"` to /login, /signup, /cart, /bespoke, /wishlist, /not-found.

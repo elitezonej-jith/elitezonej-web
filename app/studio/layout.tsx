@@ -10,6 +10,7 @@ import { listBanners } from "../../lib/admin/repos/banners";
 import "./styles/studio.css";
 import "react-image-crop/dist/ReactCrop.css";
 
+export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Studio · Elite Zone J",
   description: "Manage your fashion brand — products, banners, offers, content.",

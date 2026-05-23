@@ -1,13 +1,10 @@
 import HomepageRenderer from "./components/storefront/HomepageRenderer";
 import "./styles/home.css";
 
-// The homepage is fully data-driven: every section (including the announce
-// ticker and promo modal) is a row in `homepage_blocks`, edited/reordered/
-// hidden from /studio/homepage. ISR: pre-render at build and refresh every
-// 60s in the background. Studio edits show up within ~1 min on production;
-// for an immediate refresh after a /studio/homepage save, call
-// `revalidatePath("/")` from that action.
-export const revalidate = 60;
+// Temporarily force-dynamic instead of ISR: Vercel build runner (iad1) can't
+// reach Neon (ap-southeast-1) fast enough to prerender. Restore
+// `export const revalidate = 60` once build-time DB connectivity is fixed.
+export const dynamic = "force-dynamic";
 
 export default function Home() {
   return <HomepageRenderer />;

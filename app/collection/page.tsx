@@ -6,11 +6,8 @@ import { listProductsForPage } from "../../lib/storefront/catalogue";
 import { getCategoryMeta } from "../../lib/storefront/nav";
 import { CAT_DATA, SUBCATS } from "@/lib/subcats";
 
-// DB-backed (live catalog from the admin DB). This page reads `searchParams`
-// (?c=&sub=), which makes it dynamically rendered regardless of `revalidate`,
-// so we simply drop `force-dynamic` and let the route segment default apply.
-// SQLite reads are sub-ms; the per-request work is minimal.
-export const revalidate = 60;
+// Temporarily force-dynamic: Vercel build can't reach Neon to prerender ISR.
+export const dynamic = "force-dynamic";
 
 export default async function CollectionPage({
   searchParams,
