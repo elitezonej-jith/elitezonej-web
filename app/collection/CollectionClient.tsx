@@ -96,6 +96,18 @@ export default function CollectionClient({
     if (price.max !== "" && Number.isFinite(max)) list = list.filter(p => eff(p) <= max);
     if (sortKey === "price-asc") list = [...list].sort((a, b) => eff(a) - eff(b));
     if (sortKey === "price-desc") list = [...list].sort((a, b) => eff(b) - eff(a));
+    if (sortKey === "newest") {
+      // Newest first by DB createdAt (ISO). Static-only catalog entries have
+      // no timestamp — sort them last and preserve incoming order among them.
+      list = [...list].sort((a, b) => {
+        const at = a.createdAt ?? "";
+        const bt = b.createdAt ?? "";
+        if (at && bt) return bt.localeCompare(at);
+        if (at) return -1;
+        if (bt) return 1;
+        return 0;
+      });
+    }
     return list;
   }, [products, cat, sub, active, price, sortKey, isFabricMode]);
 
@@ -167,7 +179,7 @@ export default function CollectionClient({
             <div className="empty">
               <div className="t-mono-xs" style={{ color: "var(--ink-3)", marginBottom: "var(--s-4)" }}>Arriving Spring/Summer 2026</div>
               <h3>This collection is being shot.</h3>
-              <p>We&apos;re photographing the new season at our Delhi atelier this week. Message us on WhatsApp and we&apos;ll write to you the morning it goes live.</p>
+              <p>We&apos;re photographing the new season at our atelier this week. Message us on WhatsApp and we&apos;ll write to you the morning it goes live.</p>
               <a className="btn btn-primary" href={`${WHATSAPP_LINK}?text=${encodeURIComponent("Hi Elite Zone J — please notify me when the new collection goes live.")}`} target="_blank" rel="noopener noreferrer">
                 Notify me on WhatsApp
               </a>

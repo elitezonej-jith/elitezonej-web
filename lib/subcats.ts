@@ -1,14 +1,14 @@
 export type SubcatMeta = { title: string; stand: string; empty?: boolean };
 
 export const CAT_DATA: Record<string, SubcatMeta> = {
-  new:        { title: "New Arrivals", stand: "Just arrived to the atelier — the freshest tailoring, festive pieces, and accessories of the season, photographed in our Delhi workroom this month." },
-  men:        { title: "Men",       stand: "Tailored pieces for the eight hours of a wedding day, the boardroom on Tuesday, and the dinner table on Saturday. Cut in our Delhi atelier in Italian wool, finished by hand." },
+  new:        { title: "New Arrivals", stand: "Just arrived to the atelier — the freshest tailoring, festive pieces, and accessories of the season, photographed in our workroom this month." },
+  men:        { title: "Men",       stand: "Tailored pieces for the eight hours of a wedding day, the boardroom on Tuesday, and the dinner table on Saturday. Cut in our atelier in Italian wool, finished by hand." },
   women:      { title: "Women",     stand: "A capsule for the modern Indian woman — sharp tailoring, bias-cut silks, and festive lehengas, photographed in the same warm cream of our atelier. Designed with quiet confidence." },
   festive:    { title: "Festive",   stand: "For the Indian wedding season. Sherwanis, lehengas, sarees and bandhgalas — each piece either ready-to-wear or made-to-measure in seven days." },
   suits:      { title: "Suits",     stand: "Tailored two-piece, three-piece, and bandhgala suits in fine wool and linen — the foundation of the Elite Zone J wardrobe." },
   sherwani:   { title: "Sherwani",  stand: "Festive sherwanis cut for the front row at the family wedding — ivory raw silks, hand-worked zardozi, full ensembles with churidar and dupatta included." },
   shirts:     { title: "Shirts",    stand: "Italian-mill cottons, Egyptian poplin, single-needle stitching at twenty-two stitches per inch. The shirt you'll keep reaching for." },
-  fabrics:    { title: "Fabrics",   stand: "Cloth from our library — Italian wools, Egyptian poplins, hand-woven Indian silks and heavy linens. Sold by the metre, cut from a single piece, ships from our Delhi atelier." },
+  fabrics:    { title: "Fabrics",   stand: "Cloth from our library — Italian wools, Egyptian poplins, hand-woven Indian silks and heavy linens. Sold by the metre, cut from a single piece, ships from our atelier." },
   essentials: { title: "Essentials",stand: "The wardrobe foundations — cotton tees, fine-gauge knitwear, soft-shoulder jackets — all in the same restrained palette." },
 };
 

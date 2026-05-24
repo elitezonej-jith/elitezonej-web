@@ -133,7 +133,7 @@ export function seedFromCatalog(db: Database.Database): void {
       ["hero-premium", "The Premium Edit", "Premium", "Heritage tailoring at its most considered.", "/generated/_hero/premium.webp", "Shop the edit", "/collection?c=men&sub=wedding-suits", 1],
       ["hero-new-arrivals", "Just Arrived", "New", "The freshest tailoring of the season.", "/generated/_hero/new-arrivals.webp", "See what's new", "/collection?c=new", 2],
       ["hero-made-to-measure", "Made to Measure", "Bespoke", "Choose your cloth. Get measured. Receive in seven days.", "/generated/_hero/made-to-measure.webp", "Begin a fitting", "/bespoke", 3],
-      ["editorial-atelier", "How it's made.", "Studio note", "By hand, in our Delhi atelier.", "/generated/_sections/atelier.webp", "View Men's edit", "/collection?c=men", 10],
+      ["editorial-atelier", "How it's made.", "Studio note", "By hand, in our atelier.", "/generated/_sections/atelier.webp", "View Men's edit", "/collection?c=men", 10],
       ["editorial-women", "Designed in our studio.", "Women's edit", "Stitched by our master tailors.", "/generated/aria-pant-suit/01-front.webp", "View Women's edit", "/collection?c=women", 11],
       ["process-cloth", "Choose your cloth.", "Step one", "From a library of Italian wools, Egyptian poplins, hand-woven silks.", "/generated/_sections/process-cloth.webp", "", "", 20],
       ["process-measure", "Get measured.", "Step two", "In our atelier, or at your home in Delhi NCR, Mumbai, Bangalore.", "/generated/_sections/process-measure.webp", "", "", 21],

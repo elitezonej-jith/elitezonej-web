@@ -36,6 +36,9 @@ export type Product = {
   colourHex?: string;
   colourVariants?: FabricColour[];
   fabricMeta?: FabricMeta;
+  // ISO timestamp from the DB row; absent for static-only entries.
+  // Used by the collection "Newest" sort.
+  createdAt?: string;
 };
 
 export const PRODUCTS: Product[] = [

@@ -14,9 +14,10 @@ const QTY_MIN = 0.5;
 const QTY_STEP = 0.5;
 const QTY_PRESETS = [1, 2, 5, 10, 20];
 
-type Props = { product: Product };
+type Props = { product: Product; leadTimeDays: number };
 
-export default function FabricPDP({ product }: Props) {
+export default function FabricPDP({ product, leadTimeDays }: Props) {
+  const deliveryRange = `${leadTimeDays}–${leadTimeDays + 2} working days`;
   const router = useRouter();
   const { addItem } = useCart();
   const [colourIdx, setColourIdx] = useState(0);
@@ -294,7 +295,7 @@ export default function FabricPDP({ product }: Props) {
 
           <div className="delivery">
             <div className="pin">110001</div>
-            <div className="text">Delivery in <b>5–7 working days</b>{product.price >= 15000 && <> · Free shipping across India</>}</div>
+            <div className="text">Delivery in <b>{deliveryRange}</b>{product.price >= 15000 && <> · Free shipping across India</>}</div>
           </div>
 
           <div className="disclaimer">
@@ -350,7 +351,7 @@ export default function FabricPDP({ product }: Props) {
           </details>
           <details>
             <summary>Can I order a sample swatch first?</summary>
-            <div>Yes — request a 10×10 cm swatch from any cloth listing. Three swatches are free; a postage charge applies after that. Swatches ship within 48 hours from our Delhi atelier.</div>
+            <div>Yes — request a 10×10 cm swatch from any cloth listing. Three swatches are free; a postage charge applies after that. Swatches ship within 48 hours from our atelier.</div>
           </details>
           <details>
             <summary>How is the cloth measured and shipped?</summary>

@@ -16,9 +16,11 @@ type Props = {
   product: Product;
   setCurrentSlug: (slug: string) => void;
   related: Product[];
+  leadTimeDays: number;
 };
 
-export default function TailoredPDP({ product, setCurrentSlug, related }: Props) {
+export default function TailoredPDP({ product, setCurrentSlug, related, leadTimeDays }: Props) {
+  const deliveryRange = `${leadTimeDays}–${leadTimeDays + 2} working days`;
   const { addItem } = useCart();
   const [angleIdx, setAngleIdx] = useState(0);
   const [sizeOn, setSizeOn] = useState("");
@@ -173,11 +175,11 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
           <div className="delivery">
             <div className="pin" aria-hidden="true">110001</div>
             <div className="text">
-              Delivery in <b>5–7 working days</b>
+              Delivery in <b>{deliveryRange}</b>
               {product.price >= 15000 && <> · Free shipping</>}
             </div>
           </div>
-          <div className="returns-line t-mono-xs">3-day returns · Free reverse pickup · Cash on delivery available</div>
+          <div className="returns-line t-mono-xs">3-day returns · Free reverse pickup</div>
 
           <div className="feature-list">
             <h4>Features</h4>

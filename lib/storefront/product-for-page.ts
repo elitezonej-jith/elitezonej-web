@@ -40,6 +40,7 @@ export function adaptDbProduct(p: StorefrontProduct): LegacyProduct {
     colourHex: staticMatch?.colourHex,
     colourVariants: staticMatch?.colourVariants,
     fabricMeta: staticMatch?.fabricMeta,
+    createdAt: p.created_at,
   };
 }
 
