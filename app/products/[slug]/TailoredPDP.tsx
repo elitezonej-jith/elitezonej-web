@@ -177,7 +177,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related }: Props)
               {product.price >= 15000 && <> · Free shipping</>}
             </div>
           </div>
-          <div className="returns-line t-mono-xs">3-day returns · Free reverse pickup · Cash on delivery available</div>
+          <div className="returns-line t-mono-xs">3-day returns · Free reverse pickup</div>
 
           <div className="feature-list">
             <h4>Features</h4>
