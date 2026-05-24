@@ -15,6 +15,7 @@ type Counts = {
   bookingsNew: number;
   ordersOpen: number;
   bannersDraft: number;
+  reviewsPending: number;
 };
 
 const NAV: Array<
@@ -32,6 +33,7 @@ const NAV: Array<
   { kind: "group", label: "Catalog" },
   { kind: "link", href: "/studio/products",   label: "Products",   icon: "bag",      countKey: "products" },
   { kind: "link", href: "/studio/categories", label: "Categories", icon: "folder" },
+  { kind: "link", href: "/studio/reviews",    label: "Reviews",    icon: "bell",     countKey: "reviewsPending" },
 
   { kind: "group", label: "Marketing" },
   { kind: "link", href: "/studio/offers",      label: "Offers & coupons", icon: "tag" },

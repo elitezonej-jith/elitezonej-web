@@ -7,6 +7,7 @@ import { countBookings } from "../../lib/admin/repos/bookings";
 import { countOrders } from "../../lib/admin/repos/orders";
 import { countProducts } from "../../lib/admin/repos/products";
 import { listBanners } from "../../lib/admin/repos/banners";
+import { countPending as countPendingReviews } from "../../lib/admin/repos/product-reviews";
 import "./styles/studio.css";
 import "react-image-crop/dist/ReactCrop.css";
 
@@ -32,6 +33,7 @@ export default async function StudioLayout({ children }: { children: ReactNode }
     bookingsNew: await countBookings({ status: "new" }),
     ordersOpen: (await countOrders({ status: "new" })) + (await countOrders({ status: "confirmed" })) + (await countOrders({ status: "in_atelier" })),
     bannersDraft: (await listBanners()).filter((b) => b.status !== "published" || b.enabled === 0).length,
+    reviewsPending: await countPendingReviews(),
   };
 
   return (
