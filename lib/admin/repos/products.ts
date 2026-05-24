@@ -98,6 +98,7 @@ export type ProductInput = {
   kind: "tailored" | "fabric";
   status: ProductStatus;
   description: string | null;
+  size_guide: string;
 };
 
 export async function upsertProduct(input: ProductInput): Promise<void> {
@@ -105,11 +106,11 @@ export async function upsertProduct(input: ProductInput): Promise<void> {
     `INSERT INTO products (
       slug, name, cat, cat_link, price, sale_price, line,
       sizes_json, features_json, spec_json, note, fit, fabric,
-      occasion, badge, gender, category, sub, kind, status, description, updated_at
+      occasion, badge, gender, category, sub, kind, status, description, size_guide, updated_at
     ) VALUES (
       ?, ?, ?, ?, ?, ?, ?,
       ?, ?, ?, ?, ?, ?,
-      ?, ?, ?, ?, ?, ?, ?, ?,
+      ?, ?, ?, ?, ?, ?, ?, ?, ?,
       CURRENT_TIMESTAMP
     )
     ON CONFLICT(slug) DO UPDATE SET
@@ -133,6 +134,7 @@ export async function upsertProduct(input: ProductInput): Promise<void> {
       kind = excluded.kind,
       status = excluded.status,
       description = excluded.description,
+      size_guide = excluded.size_guide,
       updated_at = CURRENT_TIMESTAMP`,
     [
       input.slug,
@@ -156,6 +158,7 @@ export async function upsertProduct(input: ProductInput): Promise<void> {
       input.kind,
       input.status,
       input.description,
+      input.size_guide,
     ],
   );
 }

@@ -109,6 +109,11 @@ export default function ProductForm({
                           placeholder={"Cloth: Super 120s pure wool\nWeight: 280 gsm"}
                           style={{ fontFamily: "ui-monospace, monospace", fontSize: 13 }} />
               </label>
+              <label className="stu-field" style={{ marginTop: 18 }}>
+                <span className="stu-field__label">Size guide <span className="stu-field__hint">(shown on the product page; leave blank to hide)</span></span>
+                <textarea name="size_guide" defaultValue={product?.size_guide ?? ""} className="stu-textarea" rows={8}
+                          placeholder={"Chest 38: 96 cm\nChest 40: 101 cm\nChest 42: 106 cm\n\nMeasure across the fullest part of the chest, tape parallel to the floor."} />
+              </label>
             </div>
           </section>
 

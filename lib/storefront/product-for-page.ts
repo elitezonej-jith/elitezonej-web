@@ -40,7 +40,16 @@ export function adaptDbProduct(p: StorefrontProduct): LegacyProduct {
     colourHex: staticMatch?.colourHex,
     colourVariants: staticMatch?.colourVariants,
     fabricMeta: staticMatch?.fabricMeta,
-    createdAt: p.created_at,
+    // postgres.js returns `timestamptz` as JS `Date`; CollectionClient sort
+    // calls `.localeCompare` which is string-only. Coerce so the SQLite (text)
+    // and Postgres (Date) paths agree.
+    createdAt: ((): string | undefined => {
+      const v = p.created_at as unknown;
+      if (v instanceof Date) return v.toISOString();
+      if (typeof v === "string") return v;
+      return undefined;
+    })(),
+    sizeGuide: p.size_guide || undefined,
   };
 }
 

@@ -26,7 +26,7 @@ export default async function BespokePage() {
           <div className="ix t-mono-xs">Bespoke · Made-to-Measure · Alterations</div>
           <h1>A suit cut to <em>your</em> figure.<br />Delivered in {leadLabel}.</h1>
           <p>Twelve in-house designers and twenty-six master tailors.
-            Visit us by appointment, or book a home fitting in Delhi, Mumbai, or Bangalore.</p>
+            Visit us by appointment, or book a home fitting at your address.</p>
           <div className="ctas">
             <Link className="btn btn-primary btn-lg" href="#book">Book a fitting</Link>
             <Link className="btn btn-secondary btn-lg" href="#process">How it works</Link>
@@ -92,7 +92,7 @@ export default async function BespokePage() {
                   <li>Bring in a piece you love; we&apos;ll re-cut it to fit</li>
                   <li>Trousers, jackets, shirts, sherwanis</li>
                   <li>Free for any Elite Zone J piece in its first year</li>
-                  <li>Pickup &amp; return across Delhi, Mumbai, Bangalore</li>
+                  <li>Pickup &amp; return across India</li>
                 </ul>
                 <div className="cta"><Link className="btn btn-primary btn-block" href="#book">Book alterations</Link></div>
               </div>
@@ -110,7 +110,7 @@ export default async function BespokePage() {
         />
         <div className="steps">
           <Reveal as="div" className="step step-1" delay={0}><div className="photo"></div><div className="num">01</div><h4>Choose your cloth</h4><p className="t-body">Browse our cloth library — wools from Vitale Barberis Canonico and Reda 1865, Egyptian poplins from Thomas Mason, handwoven Indian silks. Order swatches free of charge.</p></Reveal>
-          <Reveal as="div" className="step step-2" delay={1}><div className="photo"></div><div className="num">02</div><h4>Get measured</h4><p className="t-body">Visit our atelier or book a home fitting in Delhi NCR, Mumbai, or Bangalore. Fourteen measurements, taken by our master tailors. Forty minutes, complimentary refreshment.</p></Reveal>
+          <Reveal as="div" className="step step-2" delay={1}><div className="photo"></div><div className="num">02</div><h4>Get measured</h4><p className="t-body">Book a home fitting at your address. Fourteen measurements, taken by our master tailors. Forty minutes, complimentary refreshment.</p></Reveal>
           <Reveal as="div" className="step step-3" delay={2}><div className="photo"></div><div className="num">03</div><h4>We cut and stitch</h4><p className="t-body">Cut by hand from your paper pattern, basted for the first fitting, then constructed with hand-padded canvas and hand-stitched lapels.</p></Reveal>
           <Reveal as="div" className="step step-4" delay={3}><div className="photo"></div><div className="num">04</div><h4>Receive in {leadLabel}</h4><p className="t-body">Delivered free across India in a hand-stitched garment bag. Lifetime mending.</p></Reveal>
         </div>
@@ -139,11 +139,11 @@ export default async function BespokePage() {
         <div className="grid">
           <Reveal as="div" className="quote" delay={0}>
             <q>&ldquo;I&apos;ve worn one of Aman&apos;s three-piece suits for every wedding I&apos;ve attended in the last four years. They&apos;ve taken it in twice for free and it still drapes like the day I bought it.&rdquo;</q>
-            <div className="by t-mono-xs">— <b>Rohan Mehra</b>, Delhi · Investment Manager</div>
+            <div className="by t-mono-xs">— <b>Rohan Mehra</b> · Investment Manager</div>
           </Reveal>
           <Reveal as="div" className="quote" delay={1}>
-            <q>&ldquo;The home fitting in Mumbai was the deciding factor. The tailor came to my apartment, took fourteen measurements, asked questions a Savile Row cutter would ask. The sherwani arrived right on schedule.&rdquo;</q>
-            <div className="by t-mono-xs">— <b>Arjun Shah</b>, Mumbai · Architect</div>
+            <q>&ldquo;The home fitting was the deciding factor. The tailor came to my apartment, took fourteen measurements, asked questions a Savile Row cutter would ask. The sherwani arrived right on schedule.&rdquo;</q>
+            <div className="by t-mono-xs">— <b>Arjun Shah</b> · Architect</div>
           </Reveal>
         </div>
       </section>

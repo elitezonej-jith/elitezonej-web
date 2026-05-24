@@ -41,6 +41,7 @@ const ProductSchema = z.object({
   meta_title: z.string().max(120).default(""),
   meta_description: z.string().max(240).default(""),
   og_image_path: z.string().max(240).default(""),
+  size_guide: z.string().max(8000).default(""),
 });
 
 function splitLines(raw: string): string[] {
@@ -83,6 +84,7 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
     gender: v.gender, category: v.category, sub: v.sub?.trim() || null,
     kind: v.kind, status: v.status,
     description: v.long_description || null,
+    size_guide: v.size_guide,
   };
   await upsertProduct(input);
 
@@ -156,6 +158,7 @@ export async function duplicateProductAction(fd: FormData): Promise<void> {
     note: src.note, fit: src.fit, fabric: src.fabric, occasion: src.occasion,
     badge: src.badge, gender: src.gender, category: src.category, sub: src.sub,
     kind: src.kind, status: "draft", description: src.description,
+    size_guide: src.size_guide,
   });
   const meta = await getMeta(slug);
   await upsertMeta({ ...meta, product_slug: newSlug });

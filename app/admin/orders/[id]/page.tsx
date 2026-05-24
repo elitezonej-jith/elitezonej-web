@@ -98,6 +98,7 @@ export default async function OrderDetailPage({ params }: Params) {
               <li><span className="adm-mono" style={{ minWidth: 96 }}>Email</span> {order.email}</li>
               <li><span className="adm-mono" style={{ minWidth: 96 }}>Phone</span> {order.phone ?? "—"}</li>
               <li><span className="adm-mono" style={{ minWidth: 96 }}>City</span> {order.city ?? "—"}</li>
+              <li><span className="adm-mono" style={{ minWidth: 96 }}>State</span> {order.ship_state || "—"}</li>
             </ul>
           </div>
         </div>

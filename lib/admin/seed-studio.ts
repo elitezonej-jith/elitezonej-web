@@ -21,7 +21,7 @@ export function seedStudioDefaults(db: Database.Database): void {
         { text: "Complimentary delivery on orders over ", accent: "₹15,000", suffix: "" },
         { text: "Made-to-measure in ", accent: "seven days", suffix: "" },
         { text: "Bespoke appointments at our ", accent: "atelier", suffix: "" },
-        { text: "Home fittings in ", accent: "Delhi · Mumbai · Bangalore", suffix: "" },
+        { text: "Home fittings ", accent: "across India", suffix: "" },
       ],
     }, 10],
     ["hero_grid", "Hero grid", "Three-tile entry", {
@@ -154,7 +154,7 @@ export function seedStudioDefaults(db: Database.Database): void {
           photoAria: "Master tailor at the cutting table",
           step: "Fitting",
           title: "Get measured.",
-          body: "Visit our atelier or book a home fitting in Delhi, Mumbai, or Bangalore. Fourteen measurements, taken by our master tailors. Forty minutes, complimentary chai.",
+          body: "Book a home fitting at your address. Fourteen measurements, taken by our master tailors. Forty minutes, complimentary chai.",
         },
         {
           photoClass: "pr-3",
@@ -172,7 +172,7 @@ export function seedStudioDefaults(db: Database.Database): void {
       headlinePost: " to reception.",
       paras: [
         "Indian wedding seasons run long. We designed a tight capsule of six pieces that cover every occasion from morning ceremonies to formal receptions — built around one tailored fit, three cloth weights, and the quiet hardware of an evening worth remembering.",
-        "Photographed in Jaipur, January 2026.",
+        "Photographed January 2026.",
       ],
       ctaLabel: "Shop the wedding wardrobe",
       ctaHref: "/collection?c=sherwani",
@@ -183,7 +183,7 @@ export function seedStudioDefaults(db: Database.Database): void {
       ix: "Bespoke · Made-to-measure",
       headlinePre: "Designed in our studio. ",
       headlineEm: "Stitched by our master tailors.",
-      body: "Twelve designers and twenty-six tailors. Visit us by appointment, or book a home fitting in Delhi, Mumbai, or Bangalore.",
+      body: "Twelve designers and twenty-six tailors. Book a home fitting at your address.",
       ctaLabel: "Visit the atelier",
       ctaHref: "/bespoke",
     }, 110],

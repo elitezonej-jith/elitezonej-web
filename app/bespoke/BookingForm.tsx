@@ -4,7 +4,7 @@ import { submitBespokeBooking, type PublicBookingState } from "../admin/actions/
 import { WHATSAPP_LINK, WHATSAPP_DISPLAY } from "@/lib/contact";
 
 type Field = {
-  name: "first_name" | "last_name" | "phone";
+  name: "first_name" | "last_name" | "phone" | "city";
   label: string;
   type: string;
   placeholder: string;
@@ -30,7 +30,7 @@ export default function BookingForm() {
         <span className="booking-confirm__eyebrow t-mono-xs">Appointment requested</span>
         <h4 className="booking-confirm__title"><em>Thank you.</em><br />We&apos;ll confirm within four hours.</h4>
         <p className="booking-confirm__sub">A note from the atelier is on its way to your phone. If you don&apos;t see it, WhatsApp us at <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">{WHATSAPP_DISPLAY}</a>.</p>
-        <span className="booking-confirm__signed">— By the bespoke desk · Delhi</span>
+        <span className="booking-confirm__signed">— By the bespoke desk</span>
       </div>
     );
   }
@@ -43,17 +43,9 @@ export default function BookingForm() {
         ))}
       </div>
       <BookingField field={TEXT_FIELDS[2]} invalid={!!state.error} />
-      <BookingSelect
-        name="city"
-        label="City"
-        placeholder="Select a city"
-        options={[
-          "Delhi NCR — Visit atelier",
-          "Delhi NCR — Home fitting",
-          "Mumbai — Home fitting",
-          "Bangalore — Home fitting",
-          "Other (we'll arrange)",
-        ]}
+      <BookingField
+        field={{ name: "city", label: "City", type: "text", placeholder: "Your city", autoComplete: "address-level2" }}
+        invalid={!!state.error}
       />
       <BookingSelect
         name="service"

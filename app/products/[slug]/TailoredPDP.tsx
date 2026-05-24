@@ -135,7 +135,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
           <div className="field-block" ref={sizeBlockRef}>
             <div className="head">
               <label>Size</label>
-              <a href="/size-guide">Size guide</a>
+              <a href={product.sizeGuide ? "#size-guide" : "/size-guide"}>Size guide</a>
             </div>
             <div className="sizes" style={sizePrompt ? { outline: "2px solid var(--accent)", outlineOffset: 6 } : undefined}>
               {product.sizes.map(s => {
@@ -160,6 +160,16 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
             >
               Don&apos;t know your size? Get measured at home →
             </Link>
+            {product.sizeGuide ? (
+              <details id="size-guide" className="pdp-size-guide" style={{ marginTop: "var(--s-4)" }}>
+                <summary className="t-mono-xs" style={{ cursor: "pointer", color: "var(--ink-2)", textDecoration: "underline", textUnderlineOffset: "3px" }}>
+                  Size guide for this piece
+                </summary>
+                <div className="t-body-sm" style={{ marginTop: "var(--s-3)", whiteSpace: "pre-wrap", color: "var(--ink-2)" }}>
+                  {product.sizeGuide}
+                </div>
+              </details>
+            ) : null}
           </div>
 
           <div className="ctas">
