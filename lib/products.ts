@@ -39,6 +39,9 @@ export type Product = {
   // ISO timestamp from the DB row; absent for static-only entries.
   // Used by the collection "Newest" sort.
   createdAt?: string;
+  // Per-product size guide (free-form text). Empty string = use the generic
+  // /size-guide page link only.
+  sizeGuide?: string;
 };
 
 export const PRODUCTS: Product[] = [

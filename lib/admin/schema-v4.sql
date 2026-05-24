@@ -17,3 +17,6 @@ CREATE INDEX IF NOT EXISTS idx_product_reviews_slug_status
   ON product_reviews(product_slug, status);
 CREATE INDEX IF NOT EXISTS idx_product_reviews_status
   ON product_reviews(status);
+
+-- Per-product size guide (free-form text rendered on PDP). Additive.
+ALTER TABLE products ADD COLUMN size_guide TEXT NOT NULL DEFAULT '';

@@ -45,6 +45,7 @@ export type ProductRow = {
   kind: ProductKind;
   status: ProductStatus;
   description: string | null;
+  size_guide: string;
   created_at: string;
   updated_at: string;
 };

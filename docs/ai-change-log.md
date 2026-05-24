@@ -1,5 +1,24 @@
 # AI Change Log
 
+## 2026-05-24 15:30 IST — UAT batch: collection crash, Delhi atelier copy, admin state field, per-product size guide
+
+- What:
+  - **#18 /collection 500 fix.** `adaptDbProduct` now coerces `created_at` (a `Date` on the Postgres driver, a `string` on SQLite) to an ISO string before handing it to the client component. `CollectionClient` sort calls `.localeCompare` which is string-only — Date objects crashed SSR and triggered the global error page.
+  - **#4 Delhi atelier removed.** Stripped "Delhi NCR" / "Delhi atelier" mentions from `app/bespoke/page.tsx`, `app/bespoke/BookingForm.tsx` city dropdown, `lib/admin/seed.ts` process step, and `lib/admin/seed-studio.ts` announce-bar + how-it-works copy.
+  - **#6 State on admin order/customer.** `getCustomerOrders` returns `ship_state` alongside other order summary fields. Customer detail surfaces it as "State" (from the most recent order); order detail surfaces it next to City.
+  - **#12 Per-product size guide.** New `products.size_guide TEXT NOT NULL DEFAULT ''` column (migration `0004_product_size_guide.sql` for Postgres + `schema-v4.sql` ALTER for SQLite). Studio product form gains a Size guide textarea. Renders on `TailoredPDP` as a `<details>` block under the size selector when populated; falls back to the generic `/size-guide` link otherwise.
+- Why: Closes the 4 outstanding UAT items from the regression sweep in `.gstack/qa-reports/uat-regression-2026-05-24.md`. #18 is a hard prod outage (entire collection browsable surface was returning the global error page). #4/#6/#12 are operator-facing gaps blocking the next deploy review.
+- Files:
+  - `lib/storefront/product-for-page.ts`, `lib/products.ts` (createdAt coercion + sizeGuide field)
+  - `app/bespoke/page.tsx`, `app/bespoke/BookingForm.tsx`, `lib/admin/seed.ts`, `lib/admin/seed-studio.ts` (Delhi removal)
+  - `lib/admin/repos/customers.ts`, `app/admin/customers/[id]/page.tsx`, `app/admin/orders/[id]/page.tsx` (state surfacing)
+  - `migrations/0004_product_size_guide.sql`, `lib/admin/schema-v4.sql`, `lib/admin/types.ts`, `lib/admin/repos/products.ts`, `app/studio/products/[slug]/ProductForm.tsx`, `app/studio/actions/products.ts`, `app/admin/actions/products.ts`, `app/products/[slug]/TailoredPDP.tsx` (size guide editor + render)
+- Notes:
+  - `npx tsc --noEmit`: 0 errors before, 0 errors after.
+  - **Prod migration required**: run `node db/migrate.mjs` against the Neon URL to apply `0004_product_size_guide.sql` before deploying — `ProductInput.size_guide` is now non-optional and `upsertProduct` references the column.
+  - Stale prod DB content (announce_bar block + `lead_time_days=7`) is NOT touched by this code change; it needs a separate Studio edit or one-shot SQL update as called out in the QA report.
+  - FabricPDP did not get the per-product size guide block (fabrics aren't sized); only `TailoredPDP` renders it. The Studio textarea is still available for fabric products and will be persisted, just not displayed yet.
+
 ## 2026-05-23 15:10 IST — fail-loud guard against silent ephemeral SQLite on Vercel
 
 - What: `getDb()` now throws immediately on a serverless deployment (`VERCEL=1` or `IS_SERVERLESS=1`) if `DB_DRIVER` is not `postgres`. Local dev (no `VERCEL`) is unaffected.

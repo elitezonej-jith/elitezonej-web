@@ -82,6 +82,7 @@ export async function saveProductAction(_prev: ActionState, fd: FormData): Promi
     kind: v.kind,
     status: v.status,
     description: v.description?.trim() || null,
+    size_guide: "",
   };
 
   const exists = !!(await getProduct(v.slug));
