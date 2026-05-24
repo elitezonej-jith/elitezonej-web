@@ -7,10 +7,15 @@ import type { Banner } from "../../../../lib/admin/repos/banners";
 
 const initial: BannerSaveState = {};
 
-function dateLocalForInput(iso: string | null): string {
-  if (!iso) return "";
-  // Convert SQLite "YYYY-MM-DD HH:mm:ss" to "YYYY-MM-DDTHH:mm" for datetime-local
-  return iso.replace(" ", "T").slice(0, 16);
+function dateLocalForInput(value: string | Date | null): string {
+  if (value == null) return "";
+  // SQLite returns TEXT ("2026-05-22 10:38:00"); postgres.js returns a JS Date
+  // for timestamptz. <input type="datetime-local"> wants "YYYY-MM-DDTHH:mm" in
+  // local time. Normalise both cases through a Date first.
+  const d = value instanceof Date ? value : new Date(String(value).replace(" ", "T") + "Z");
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export default function BannerForm({ banner }: { banner?: Banner }) {
