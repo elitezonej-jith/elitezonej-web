@@ -142,7 +142,7 @@ export default async function BespokePage() {
             <div className="by t-mono-xs">— <b>Rohan Mehra</b>, Delhi · Investment Manager</div>
           </Reveal>
           <Reveal as="div" className="quote" delay={1}>
-            <q>&ldquo;The home fitting in Mumbai was the deciding factor. The tailor came to my apartment, took fourteen measurements, asked questions a Savile Row cutter would ask. The sherwani arrived in seven days exactly.&rdquo;</q>
+            <q>&ldquo;The home fitting in Mumbai was the deciding factor. The tailor came to my apartment, took fourteen measurements, asked questions a Savile Row cutter would ask. The sherwani arrived right on schedule.&rdquo;</q>
             <div className="by t-mono-xs">— <b>Arjun Shah</b>, Mumbai · Architect</div>
           </Reveal>
         </div>

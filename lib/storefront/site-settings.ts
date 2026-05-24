@@ -18,7 +18,7 @@ const FALLBACK: SiteSettings = {
   brandName: "Elite Zone J",
   currency: "INR",
   currencySymbol: "₹",
-  leadTimeDays: 7,
+  leadTimeDays: 14,
 };
 
 export async function getSiteSettings(): Promise<SiteSettings> {
