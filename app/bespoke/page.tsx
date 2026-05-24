@@ -58,7 +58,7 @@ export default async function BespokePage() {
                   <li>Drafted to a paper pattern unique to your figure</li>
                   <li>Three fittings — basted, forward, finish</li>
                   <li>Hand-padded canvas, hand-stitched buttonholes</li>
-                  <li>Lifetime mending; alterations free for first year</li>
+                  <li>Lifetime mending</li>
                 </ul>
                 <div className="cta"><Link className="btn btn-primary btn-block" href="#book">Begin your suit</Link></div>
               </div>
@@ -74,7 +74,7 @@ export default async function BespokePage() {
                 <ul>
                   <li>Built on our base block, adjusted to your fourteen measurements</li>
                   <li>Choose cloth, lining, collar, length, and embroidery</li>
-                  <li>One fitting included; alterations free for thirty days</li>
+                  <li>One fitting included</li>
                   <li>Festive-ready in {leadLabel}</li>
                 </ul>
                 <div className="cta"><Link className="btn btn-primary btn-block" href="#book">Configure yours</Link></div>

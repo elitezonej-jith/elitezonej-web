@@ -20,7 +20,6 @@ export function seedStudioDefaults(db: Database.Database): void {
       items: [
         { text: "Complimentary delivery on orders over ", accent: "₹15,000", suffix: "" },
         { text: "Made-to-measure in ", accent: "seven days", suffix: "" },
-        { text: "Free alterations within ", accent: "30 days", suffix: " of delivery" },
         { text: "Bespoke appointments at our ", accent: "Delhi atelier", suffix: "" },
         { text: "Home fittings in ", accent: "Delhi · Mumbai · Bangalore", suffix: "" },
       ],
@@ -162,7 +161,7 @@ export function seedStudioDefaults(db: Database.Database): void {
           photoAria: "Finished suit, pressed and ready",
           step: "Delivery",
           title: "Receive in seven days.",
-          body: "Cut, stitched, and pressed in our workroom. Free alterations within thirty days of delivery — until the fit is right. Lifetime mending, on the house.",
+          body: "Cut, stitched, and pressed in our workroom. Lifetime mending, on the house.",
         },
       ],
     }, 90],
