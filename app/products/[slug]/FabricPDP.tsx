@@ -350,7 +350,7 @@ export default function FabricPDP({ product }: Props) {
           </details>
           <details>
             <summary>Can I order a sample swatch first?</summary>
-            <div>Yes — request a 10×10 cm swatch from any cloth listing. Three swatches are free; a postage charge applies after that. Swatches ship within 48 hours from our Delhi atelier.</div>
+            <div>Yes — request a 10×10 cm swatch from any cloth listing. Three swatches are free; a postage charge applies after that. Swatches ship within 48 hours from our atelier.</div>
           </details>
           <details>
             <summary>How is the cloth measured and shipped?</summary>

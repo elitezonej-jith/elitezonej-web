@@ -25,7 +25,7 @@ export default async function BespokePage() {
         <div className="copy">
           <div className="ix t-mono-xs">Bespoke · Made-to-Measure · Alterations</div>
           <h1>A suit cut to <em>your</em> figure.<br />Delivered in {leadLabel}.</h1>
-          <p>Twelve in-house designers and twenty-six master tailors, working from our Delhi atelier.
+          <p>Twelve in-house designers and twenty-six master tailors.
             Visit us by appointment, or book a home fitting in Delhi, Mumbai, or Bangalore.</p>
           <div className="ctas">
             <Link className="btn btn-primary btn-lg" href="#book">Book a fitting</Link>
@@ -33,7 +33,7 @@ export default async function BespokePage() {
           </div>
         </div>
         <Parallax className="b-hero-img" intensity={0.12} direction="-y">
-          <div className="img" role="img" aria-label="Master tailor measuring a client at the Delhi atelier"></div>
+          <div className="img" role="img" aria-label="Master tailor measuring a client at our atelier"></div>
         </Parallax>
       </section>
 
@@ -110,7 +110,7 @@ export default async function BespokePage() {
         />
         <div className="steps">
           <Reveal as="div" className="step step-1" delay={0}><div className="photo"></div><div className="num">01</div><h4>Choose your cloth</h4><p className="t-body">Browse our cloth library — wools from Vitale Barberis Canonico and Reda 1865, Egyptian poplins from Thomas Mason, handwoven Indian silks. Order swatches free of charge.</p></Reveal>
-          <Reveal as="div" className="step step-2" delay={1}><div className="photo"></div><div className="num">02</div><h4>Get measured</h4><p className="t-body">Visit our Delhi atelier or book a home fitting in Delhi NCR, Mumbai, or Bangalore. Fourteen measurements, taken by our master tailors. Forty minutes, complimentary refreshment.</p></Reveal>
+          <Reveal as="div" className="step step-2" delay={1}><div className="photo"></div><div className="num">02</div><h4>Get measured</h4><p className="t-body">Visit our atelier or book a home fitting in Delhi NCR, Mumbai, or Bangalore. Fourteen measurements, taken by our master tailors. Forty minutes, complimentary refreshment.</p></Reveal>
           <Reveal as="div" className="step step-3" delay={2}><div className="photo"></div><div className="num">03</div><h4>We cut and stitch</h4><p className="t-body">Cut by hand from your paper pattern, basted for the first fitting, then constructed with hand-padded canvas and hand-stitched lapels.</p></Reveal>
           <Reveal as="div" className="step step-4" delay={3}><div className="photo"></div><div className="num">04</div><h4>Receive in {leadLabel}</h4><p className="t-body">Delivered free across India in a hand-stitched garment bag. Lifetime mending.</p></Reveal>
         </div>

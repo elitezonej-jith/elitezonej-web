@@ -167,7 +167,7 @@ export default function CollectionClient({
             <div className="empty">
               <div className="t-mono-xs" style={{ color: "var(--ink-3)", marginBottom: "var(--s-4)" }}>Arriving Spring/Summer 2026</div>
               <h3>This collection is being shot.</h3>
-              <p>We&apos;re photographing the new season at our Delhi atelier this week. Message us on WhatsApp and we&apos;ll write to you the morning it goes live.</p>
+              <p>We&apos;re photographing the new season at our atelier this week. Message us on WhatsApp and we&apos;ll write to you the morning it goes live.</p>
               <a className="btn btn-primary" href={`${WHATSAPP_LINK}?text=${encodeURIComponent("Hi Elite Zone J — please notify me when the new collection goes live.")}`} target="_blank" rel="noopener noreferrer">
                 Notify me on WhatsApp
               </a>

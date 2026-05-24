@@ -20,7 +20,7 @@ export function seedStudioDefaults(db: Database.Database): void {
       items: [
         { text: "Complimentary delivery on orders over ", accent: "₹15,000", suffix: "" },
         { text: "Made-to-measure in ", accent: "seven days", suffix: "" },
-        { text: "Bespoke appointments at our ", accent: "Delhi atelier", suffix: "" },
+        { text: "Bespoke appointments at our ", accent: "atelier", suffix: "" },
         { text: "Home fittings in ", accent: "Delhi · Mumbai · Bangalore", suffix: "" },
       ],
     }, 10],
@@ -147,7 +147,7 @@ export function seedStudioDefaults(db: Database.Database): void {
           photoAria: "Cloth library — wool swatches",
           step: "Cloth",
           title: "Choose your cloth.",
-          body: "Browse our cloth library — wools from Italian and English mills, premium Indian cottons, hand-woven silks. Order swatches free, posted from the Delhi atelier within 48 hours.",
+          body: "Browse our cloth library — wools from Italian and English mills, premium Indian cottons, hand-woven silks. Order swatches free, posted from our atelier within 48 hours.",
         },
         {
           photoClass: "pr-2",
@@ -183,7 +183,7 @@ export function seedStudioDefaults(db: Database.Database): void {
       ix: "Bespoke · Made-to-measure",
       headlinePre: "Designed in our studio. ",
       headlineEm: "Stitched by our master tailors.",
-      body: "Twelve designers and twenty-six tailors, working from our Delhi atelier. Visit us by appointment, or book a home fitting in Delhi, Mumbai, or Bangalore.",
+      body: "Twelve designers and twenty-six tailors. Visit us by appointment, or book a home fitting in Delhi, Mumbai, or Bangalore.",
       ctaLabel: "Visit the atelier",
       ctaHref: "/bespoke",
     }, 110],
