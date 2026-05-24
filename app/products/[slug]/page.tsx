@@ -5,6 +5,7 @@ import TrustStrip from "../../components/TrustStrip";
 import ProductPageClient from "./ProductPageClient";
 import { getProductForPage } from "@/lib/storefront/product-for-page";
 import { listProductsForPage } from "@/lib/storefront/catalogue";
+import { getSiteSettings } from "@/lib/storefront/site-settings";
 
 // HEADER_CSS removed: the legacy block hard-coded the cream/oxblood
 // header/footer/trust-strip from the original tailoring brand, which
@@ -42,6 +43,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   };
 
   const related = (await listProductsForPage()).filter((p) => p.slug !== slug).slice(0, 3);
+  const { leadTimeDays } = await getSiteSettings();
 
   return (
     <>
@@ -54,6 +56,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         <ProductPageClient
           product={product}
           related={related}
+          leadTimeDays={leadTimeDays}
         />
       </main>
       <TrustStrip />

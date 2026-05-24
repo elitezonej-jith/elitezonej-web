@@ -9,9 +9,11 @@ import "../../styles/product.css";
 export default function ProductPageClient({
   product,
   related,
+  leadTimeDays,
 }: {
   product: Product;
   related: Product[];
+  leadTimeDays: number;
 }) {
   const router = useRouter();
   const isFabric = product.kind === "fabric";
@@ -31,8 +33,8 @@ export default function ProductPageClient({
       </div>
 
       {isFabric
-        ? <FabricPDP product={product} />
-        : <TailoredPDP product={product} setCurrentSlug={switchProduct} related={related} />}
+        ? <FabricPDP product={product} leadTimeDays={leadTimeDays} />
+        : <TailoredPDP product={product} setCurrentSlug={switchProduct} related={related} leadTimeDays={leadTimeDays} />}
     </>
   );
 }
