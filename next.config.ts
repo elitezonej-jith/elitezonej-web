@@ -15,6 +15,11 @@ const nextConfig: NextConfig = {
     deviceSizes: [640, 768, 1024, 1280, 1536, 1920],
     imageSizes: [128, 256, 384],
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    // Allow next/image to optimise uploads served from Vercel Blob.
+    // Bucket subdomains follow `*.public.blob.vercel-storage.com`.
+    remotePatterns: [
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+    ],
   },
   serverExternalPackages: ["better-sqlite3"],
   // Client router cache (in-browser, per-session, keyed by route segment —

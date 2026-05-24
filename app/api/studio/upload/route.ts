@@ -4,15 +4,18 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { randomBytes } from "node:crypto";
 import sharp from "sharp";
+import { put } from "@vercel/blob";
 import { SESSION_COOKIE, getSessionUser } from "../../../../lib/admin/auth";
 import { recordAsset } from "../../../../lib/admin/repos/media-assets";
 
 export const runtime = "nodejs";
 
-// DEPLOYMENT CAVEAT: this route writes to `public/uploads/` on the local
-// filesystem. On Vercel (and other read-only serverless FS hosts) these
-// writes will throw at runtime. Before production, swap the fs.writeFile
-// below for Vercel Blob / S3. Tracked in todo.md (L11).
+// Storage backend: Vercel Blob when BLOB_READ_WRITE_TOKEN is set (prod + any
+// preview that has the integration), otherwise fall back to the local
+// `public/uploads/` filesystem (dev). Same call shape either way — only
+// `recordAsset.path` differs (relative path locally, absolute https URL on
+// Blob). The PDP / Studio image renderers accept either.
+const USE_BLOB = !!process.env.BLOB_READ_WRITE_TOKEN;
 
 const SAFE_FOLDER = /^[a-z0-9_-]+(\/[a-z0-9_-]+)*$/i;
 const ALLOWED_MIME = new Set([
@@ -119,12 +122,25 @@ export async function POST(req: NextRequest) {
 
   const origName = (file as File).name ?? "upload";
   const filename = safeName(origName);
-  const dirAbs = path.resolve(process.cwd(), "public", "uploads", folder);
-  await fs.mkdir(dirAbs, { recursive: true });
-  const outAbs = path.join(dirAbs, filename);
-  await fs.writeFile(outAbs, out.data);
 
-  const publicPath = `/uploads/${folder}/${filename}`;
+  let publicPath: string;
+  if (USE_BLOB) {
+    // Vercel Blob: addRandomSuffix=false because `safeName()` already adds a
+    // unique suffix; access:"public" so the storefront <Image> can fetch it.
+    const blob = await put(`uploads/${folder}/${filename}`, out.data, {
+      access: "public",
+      contentType: "image/webp",
+      addRandomSuffix: false,
+    });
+    publicPath = blob.url;
+  } else {
+    const dirAbs = path.resolve(process.cwd(), "public", "uploads", folder);
+    await fs.mkdir(dirAbs, { recursive: true });
+    const outAbs = path.join(dirAbs, filename);
+    await fs.writeFile(outAbs, out.data);
+    publicPath = `/uploads/${folder}/${filename}`;
+  }
+
   await recordAsset({
     path: publicPath,
     folder,
