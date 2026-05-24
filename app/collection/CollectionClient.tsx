@@ -96,6 +96,18 @@ export default function CollectionClient({
     if (price.max !== "" && Number.isFinite(max)) list = list.filter(p => eff(p) <= max);
     if (sortKey === "price-asc") list = [...list].sort((a, b) => eff(a) - eff(b));
     if (sortKey === "price-desc") list = [...list].sort((a, b) => eff(b) - eff(a));
+    if (sortKey === "newest") {
+      // Newest first by DB createdAt (ISO). Static-only catalog entries have
+      // no timestamp — sort them last and preserve incoming order among them.
+      list = [...list].sort((a, b) => {
+        const at = a.createdAt ?? "";
+        const bt = b.createdAt ?? "";
+        if (at && bt) return bt.localeCompare(at);
+        if (at) return -1;
+        if (bt) return 1;
+        return 0;
+      });
+    }
     return list;
   }, [products, cat, sub, active, price, sortKey, isFabricMode]);
 
