@@ -85,6 +85,11 @@ export default async function Header() {
               height={116}
               priority
               className="brand-wordmark"
+              // Inline sizing so the image renders at the final size during
+              // the brief window between HTML paint and stylesheet load —
+              // without this, the image briefly displays at its native
+              // 892×116 and reads as "logo clipped above the viewport".
+              style={{ height: "clamp(28px, 4vw, 50px)", width: "auto" }}
             />
           </Link>
         </div>
