@@ -4,12 +4,15 @@ import { usePathname } from "next/navigation";
 import Image from "next/image";
 
 const STORAGE_KEY = "ezj-curtain-shown-v1";
-const HOLD_MS = 600;     // time the curtain holds at full opacity
-const FADE_MS = 600;     // fade-out duration (must match .loading-curtain transition)
+const MIN_HOLD_MS = 400;   // minimum hold so the curtain isn't a flash on fast loads
+const MAX_HOLD_MS = 3000;  // hard cap so a stuck resource can't trap the user behind the curtain
+const FADE_MS = 600;       // fade-out duration (must match .loading-curtain transition)
 
 export default function LoadingCurtain() {
-  // Show by default on cold load — gated by sessionStorage so subsequent
-  // navigations within the session never see it again.
+  // Cold-load greeter + FOUC shield. Stays at full opacity until window.load
+  // fires (all images / stylesheets / fonts done), then fades out. Bounded by
+  // MIN_HOLD_MS (avoid flash) and MAX_HOLD_MS (avoid trap). sessionStorage
+  // gates it to first visit per session.
   // Skip entirely on /admin routes — the workbook has its own visual language.
   const pathname = usePathname();
   const onAdmin = pathname?.startsWith("/admin") ?? false;
@@ -21,16 +24,42 @@ export default function LoadingCurtain() {
     try {
       if (window.sessionStorage.getItem(STORAGE_KEY)) return;
     } catch {
-      // sessionStorage may throw in some embeds — bail silently
       return;
     }
+    const mountedAt = Date.now();
     setPhase("showing");
-    const t1 = setTimeout(() => setPhase("fading"), HOLD_MS);
-    const t2 = setTimeout(() => {
-      setPhase("hidden");
-      try { window.sessionStorage.setItem(STORAGE_KEY, "1"); } catch {}
-    }, HOLD_MS + FADE_MS);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+
+    let fadeTimer: ReturnType<typeof setTimeout> | undefined;
+    let hideTimer: ReturnType<typeof setTimeout> | undefined;
+    let capTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const beginFade = () => {
+      if (fadeTimer || hideTimer) return; // already triggered
+      const heldFor = Date.now() - mountedAt;
+      const wait = Math.max(0, MIN_HOLD_MS - heldFor);
+      fadeTimer = setTimeout(() => setPhase("fading"), wait);
+      hideTimer = setTimeout(() => {
+        setPhase("hidden");
+        try { window.sessionStorage.setItem(STORAGE_KEY, "1"); } catch {}
+      }, wait + FADE_MS);
+    };
+
+    // Primary trigger: page fully loaded (resources, fonts, images). If we
+    // already loaded before mount (cached visit), beginFade immediately.
+    if (document.readyState === "complete") {
+      beginFade();
+    } else {
+      window.addEventListener("load", beginFade, { once: true });
+    }
+    // Safety cap: never let the curtain outlast MAX_HOLD_MS.
+    capTimer = setTimeout(beginFade, MAX_HOLD_MS);
+
+    return () => {
+      window.removeEventListener("load", beginFade);
+      if (fadeTimer) clearTimeout(fadeTimer);
+      if (hideTimer) clearTimeout(hideTimer);
+      if (capTimer) clearTimeout(capTimer);
+    };
   }, [onAdmin]);
 
   if (onAdmin) return null;
