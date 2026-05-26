@@ -3,10 +3,12 @@ import { sql } from "@/lib/admin/db";
 
 export const dynamic = "force-dynamic";
 
-// Vercel Cron pings this every few minutes (see vercel.json) to keep Neon's
-// auto-suspending compute awake on the free tier. One SELECT 1 is enough to
-// reset the idle timer. Returns 200 even on DB error so a transient blip
-// doesn't fail the cron and trigger Vercel alerts.
+// Pinged every ~5 min to keep Neon's auto-suspending free-tier compute awake.
+// Vercel Hobby caps crons at once-per-day, so this is meant to be hit from an
+// external uptime monitor (UptimeRobot, cron-job.org, BetterStack) — point one
+// at https://<your-domain>/api/keep-warm on a 5-min schedule. One SELECT 1 is
+// enough to reset the idle timer. Returns 200 even on DB error so a transient
+// blip doesn't fail the monitor and trigger alerts.
 export async function GET(): Promise<NextResponse> {
   const t0 = Date.now();
   let ok = false;
