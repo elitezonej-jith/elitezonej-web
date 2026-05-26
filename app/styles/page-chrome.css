@@ -1052,12 +1052,13 @@ details.foot-col-acc[open] > summary .foot-col-acc__chev { transform: rotate(180
   justify-content: center;
   pointer-events: none;
   animation: loading-curtain-in 460ms cubic-bezier(.22, 1, .36, 1);
-  transition: opacity 900ms cubic-bezier(.22, 1, .36, 1),
-              transform 900ms cubic-bezier(.22, 1, .36, 1);
+  transition: opacity 600ms cubic-bezier(.22, 1, .36, 1);
 }
+/* Pure opacity fade — the previous translateY(-3vh) dragged the
+   embedded wordmark visibly upward during the 900ms fade, which read
+   as "the logo flies off the top of the screen" for ~half a second. */
 .loading-curtain.is-fading {
   opacity: 0;
-  transform: translateY(-3vh);
 }
 @keyframes loading-curtain-in {
   0%   { opacity: 0; }
