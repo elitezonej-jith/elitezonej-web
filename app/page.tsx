@@ -1,10 +1,12 @@
 import HomepageRenderer from "./components/storefront/HomepageRenderer";
 import "./styles/home.css";
 
-// Temporarily force-dynamic instead of ISR: Vercel build runner (iad1) can't
-// reach Neon (ap-southeast-1) fast enough to prerender. Restore
-// `export const revalidate = 60` once build-time DB connectivity is fixed.
-export const dynamic = "force-dynamic";
+// ISR: cache rendered HTML for 60s. Studio mutations call revalidatePath("/")
+// (see app/studio/actions/homepage.ts) so editor changes still appear within
+// a single navigation. Falls back to on-demand render if prerender fails at
+// build time (when Vercel build runner can't reach the DB region).
+export const revalidate = 60;
+export const dynamicParams = true;
 
 export default function Home() {
   return <HomepageRenderer />;

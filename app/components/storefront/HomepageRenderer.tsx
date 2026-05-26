@@ -30,10 +30,16 @@ import PromoModalBlock from "./blocks/PromoModalBlock";
 type RC = Record<string, unknown>;
 
 export default async function HomepageRenderer() {
-  const blocks = await listBlocks({ onlyEnabled: true });
-  const liveSale = (await listFlashSales({ onlyLive: true }))[0];
-  const banners = await listBanners({ onlyPublished: true });
-  const { brandName } = await getSiteSettings();
+  // Parallel fetch — these four reads are independent. Sequencing them costs
+  // 3× the Neon RTT on every render (worst case ~700ms on a US↔SG round trip).
+  const [blocks, liveSales, banners, settings] = await Promise.all([
+    listBlocks({ onlyEnabled: true }),
+    listFlashSales({ onlyLive: true }),
+    listBanners({ onlyPublished: true }),
+    getSiteSettings(),
+  ]);
+  const liveSale = liveSales[0];
+  const { brandName } = settings;
 
   const announce = blocks.filter((b) => b.type === "announce_bar");
   const promos = blocks.filter((b) => b.type === "promo_modal");
