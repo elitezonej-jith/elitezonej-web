@@ -5,7 +5,7 @@ import Image from "next/image";
 
 const STORAGE_KEY = "ezj-curtain-shown-v1";
 const HOLD_MS = 600;     // time the curtain holds at full opacity
-const FADE_MS = 900;     // fade-out duration
+const FADE_MS = 600;     // fade-out duration (must match .loading-curtain transition)
 
 export default function LoadingCurtain() {
   // Show by default on cold load — gated by sessionStorage so subsequent
