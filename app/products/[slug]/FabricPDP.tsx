@@ -39,9 +39,16 @@ export default function FabricPDP({ product, leadTimeDays }: Props) {
     setAngleIdx(0); setColourIdx(0); setQtyMeters(1); setQtyText("1");
   }, [product.slug]);
 
-  // Non-primary colours only have a `front` shot — fall back to the
-  // primary colour for other angles so the gallery stays populated.
+  // Uploaded images (product_images via Studio) take precedence over the
+  // legacy /generated/<slug>/<colour>/<angle>.webp filesystem layout.
+  const uploadedImages = product.images ?? [];
   function fabricImg(angle: FabricAngle) {
+    // If the operator uploaded images in Studio, use them in order —
+    // FABRIC_ANGLES has 4 entries (front/drape/lay/detail); map by index.
+    if (uploadedImages.length > 0) {
+      const idx = FABRIC_ANGLES.indexOf(angle);
+      return uploadedImages[idx] ?? uploadedImages[0];
+    }
     if (!activeColour) return "";
     if (angle === "front" || colourIdx === 0 || !primaryColour) {
       return imgFabric(product.slug, activeColour.name, angle);
@@ -61,16 +68,18 @@ export default function FabricPDP({ product, leadTimeDays }: Props) {
     setQtyText(fmtMeters(v).replace("m", ""));
   }
 
-  if (!activeColour) return null;
+  // Only bail when there's nothing at all to render. With uploaded images
+  // we don't need a colour variant — the fabric still has photos.
+  if (!activeColour && uploadedImages.length === 0) return null;
 
   const buildLine = () => ({
-    id: lineId(product.slug, { colour: activeColour.name }),
+    id: lineId(product.slug, activeColour ? { colour: activeColour.name } : {}),
     slug: product.slug,
     name: product.name,
     unitPrice: product.price,
     qty: qtyMeters,
-    colour: activeColour.name,
-    imageSrc: imgFabric(product.slug, activeColour.name, "front"),
+    colour: activeColour?.name ?? "",
+    imageSrc: uploadedImages[0] ?? (activeColour ? imgFabric(product.slug, activeColour.name, "front") : ""),
     isFabric: true as const,
   });
 
