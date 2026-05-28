@@ -217,7 +217,7 @@ export default function CollectionClient({
                     <span className="col-dot" style={{ backgroundColor: p.colourHex || "transparent" }} aria-hidden="true" />
                     <span>Colour · {p.colour}</span>
                   </div>
-                  <p className="desc">{p.description}</p>
+                  <p className="desc">{p.description || p.shortDescription}</p>
                 </Link>
               </Reveal>
             ))
@@ -229,10 +229,13 @@ export default function CollectionClient({
                     <Image className="primary" src={p.thumbnail || p.images?.[0] || `/generated/${p.slug}/01-front.webp`} alt={`${p.name} front`} fill sizes="(max-width: 720px) 50vw, 33vw" priority={i === 0} loading={i === 0 ? "eager" : "lazy"} />
                     <Image className="alt" src={p.images?.[1] || `/generated/${p.slug}/02-overview.webp`} alt={`${p.name} overview`} fill sizes="(max-width: 720px) 50vw, 33vw" loading="lazy" />
                   </Link>
-                  {(p.badge || p.salePrice) && (
+                  {(p.badge || p.salePrice || p.isNewArrival || p.isFeatured || p.isTrending) && (
                     <div className="badge-stack">
                       {p.salePrice && <span className="badge badge-sale t-mono-xs">Sale</span>}
                       {p.badge && p.badge !== "Sale" && <span className="badge badge-new t-mono-xs">{p.badge}</span>}
+                      {!p.badge && p.isNewArrival && <span className="badge badge-new t-mono-xs">New</span>}
+                      {!p.badge && !p.isNewArrival && p.isFeatured && <span className="badge badge-new t-mono-xs">Featured</span>}
+                      {!p.badge && !p.isNewArrival && !p.isFeatured && p.isTrending && <span className="badge badge-new t-mono-xs">Trending</span>}
                     </div>
                   )}
                   <WishlistButton slug={p.slug} name={p.name} />

@@ -52,6 +52,10 @@ export function adaptDbProduct(p: StorefrontProduct): LegacyProduct {
     sizeGuide: p.size_guide || undefined,
     images: p.images,
     thumbnail: p.thumbnail,
+    shortDescription: p.meta?.short_description || undefined,
+    isNewArrival: p.meta?.is_new_arrival === 1,
+    isFeatured: p.meta?.is_featured === 1,
+    isTrending: p.meta?.is_trending === 1,
   };
 }
 

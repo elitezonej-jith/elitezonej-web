@@ -156,7 +156,7 @@ export default function FabricPDP({ product, leadTimeDays }: Props) {
           </div>
 
           <p className="editor-line">{product.line}</p>
-          <p className="desc">{product.description}</p>
+          <p className="desc">{product.description || product.shortDescription}</p>
 
           <div className="fabric-price-row">
             <span className="per-m">{fmtINR(product.price)}<small>/ metre · incl. taxes</small></span>
