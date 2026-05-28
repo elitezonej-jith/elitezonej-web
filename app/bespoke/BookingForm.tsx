@@ -4,7 +4,7 @@ import { submitBespokeBooking, type PublicBookingState } from "../admin/actions/
 import { WHATSAPP_LINK, WHATSAPP_DISPLAY } from "@/lib/contact";
 
 type Field = {
-  name: "first_name" | "last_name" | "phone" | "city";
+  name: "first_name" | "last_name" | "phone" | "email" | "city" | "state";
   label: string;
   type: string;
   placeholder: string;
@@ -16,6 +16,7 @@ const TEXT_FIELDS: Field[] = [
   { name: "first_name", label: "First name", type: "text", placeholder: "Your first name", autoComplete: "given-name" },
   { name: "last_name",  label: "Last name",  type: "text", placeholder: "Your last name", autoComplete: "family-name" },
   { name: "phone",      label: "Phone",      type: "tel",  placeholder: "+91 98765 43210", pattern: "^\\+?[0-9 \\-]{8,15}$", autoComplete: "tel" },
+  { name: "email",      label: "Email",      type: "email", placeholder: "you@example.com", autoComplete: "email" },
 ];
 
 const initial: PublicBookingState = {};
@@ -43,10 +44,17 @@ export default function BookingForm() {
         ))}
       </div>
       <BookingField field={TEXT_FIELDS[2]} invalid={!!state.error} />
-      <BookingField
-        field={{ name: "city", label: "City", type: "text", placeholder: "Your city", autoComplete: "address-level2" }}
-        invalid={!!state.error}
-      />
+      <BookingField field={TEXT_FIELDS[3]} invalid={!!state.error} />
+      <div className="booking-form__row two">
+        <BookingField
+          field={{ name: "city", label: "City", type: "text", placeholder: "Your city", autoComplete: "address-level2" }}
+          invalid={!!state.error}
+        />
+        <BookingField
+          field={{ name: "state", label: "State", type: "text", placeholder: "Your state", autoComplete: "address-level1" }}
+          invalid={!!state.error}
+        />
+      </div>
       <BookingSelect
         name="service"
         label="Service"

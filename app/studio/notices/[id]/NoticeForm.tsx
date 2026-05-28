@@ -50,7 +50,7 @@ export default function NoticeForm({ notice }: { notice?: Notice }) {
             <span className="stu-field__label">Message</span>
             <textarea name="body" value={body} onChange={(e) => setBody(e.target.value)} required minLength={2}
                       className="stu-textarea" rows={3}
-                      placeholder="Free shipping over ₹5,000 · Made-to-measure in seven days" />
+                      placeholder="Free shipping over ₹15,000 · Made-to-measure in seven days" />
           </label>
           <div className="stu-row" style={{ marginTop: 16 }}>
             <label className="stu-field">

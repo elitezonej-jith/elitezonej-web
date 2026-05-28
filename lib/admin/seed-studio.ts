@@ -244,7 +244,7 @@ export function seedStudioDefaults(db: Database.Database): void {
   db.prepare(`
     INSERT INTO notices (type, body, link_href, link_text, priority, dismissable, enabled, target_paths)
     VALUES ('scroll',
-            'Free shipping over ₹5,000 · Made-to-measure in seven days · Lifetime mending on tailoring',
+            'Free shipping over ₹15,000 · Made-to-measure in seven days · Lifetime mending on tailoring',
             '/bespoke', 'Begin a fitting', 100, 0, 1, '*')
   `).run();
 }

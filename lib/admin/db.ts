@@ -19,6 +19,7 @@ const SCHEMA_PATH = path.resolve(process.cwd(), "lib/admin/schema.sql");
 const SCHEMA_V2_PATH = path.resolve(process.cwd(), "lib/admin/schema-v2.sql");
 const SCHEMA_V3_PATH = path.resolve(process.cwd(), "lib/admin/schema-v3.sql");
 const SCHEMA_V4_PATH = path.resolve(process.cwd(), "lib/admin/schema-v4.sql");
+const SCHEMA_V5_PATH = path.resolve(process.cwd(), "lib/admin/schema-v5.sql");
 
 // Read schema files once at module load instead of on every open() — keeps
 // synchronous disk I/O off the request hot path on serverless cold starts.
@@ -35,6 +36,7 @@ function parseStatements(file: string): string[] {
 const SCHEMA_V2_STATEMENTS = parseStatements(SCHEMA_V2_PATH);
 const SCHEMA_V3_STATEMENTS = parseStatements(SCHEMA_V3_PATH);
 const SCHEMA_V4_STATEMENTS = parseStatements(SCHEMA_V4_PATH);
+const SCHEMA_V5_STATEMENTS = parseStatements(SCHEMA_V5_PATH);
 
 function hasColumn(db: Database.Database, table: string, column: string): boolean {
   try {
@@ -172,6 +174,7 @@ function open(): Database.Database {
   applyAdditive(db, SCHEMA_V2_STATEMENTS, "schema-v2");
   applyAdditive(db, SCHEMA_V3_STATEMENTS, "schema-v3");
   applyAdditive(db, SCHEMA_V4_STATEMENTS, "schema-v4");
+  applyAdditive(db, SCHEMA_V5_STATEMENTS, "schema-v5");
 
   // Seed the static owner account if missing — runs before catalog seed so
   // the first /admin visit can log straight in without going through /setup.

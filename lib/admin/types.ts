@@ -181,6 +181,7 @@ export type Booking = {
   phone: string;
   email: string | null;
   city: string;
+  state: string;
   service: string;
   message: string | null;
   status: BookingStatus;
