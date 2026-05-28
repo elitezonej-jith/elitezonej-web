@@ -194,15 +194,19 @@ export default function CollectionClient({
               <Reveal as="div" key={p.slug} className="fabric-card qa-host" delay={(i % 4) as 0 | 1 | 2 | 3} aria-label={`${p.name} — ${p.colour}`}>
                 <Link href={`/products/${p.slug}`} aria-label={p.name}>
                   <div className="swatch" style={{ backgroundColor: p.colourHex || "var(--paper-2)" }}>
-                    {p.colour && (
-                      <Image
-                        src={imgFabric(p.slug, p.colour, "front")}
-                        alt={`${p.name} — ${p.colour} texture`}
-                        fill
-                        sizes="(max-width: 720px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        loading="lazy"
-                      />
-                    )}
+                    {(() => {
+                      const uploaded = p.thumbnail || p.images?.[0];
+                      const src = uploaded || (p.colour ? imgFabric(p.slug, p.colour, "front") : null);
+                      return src ? (
+                        <Image
+                          src={src}
+                          alt={`${p.name}${p.colour ? ` — ${p.colour} texture` : " texture"}`}
+                          fill
+                          sizes="(max-width: 720px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          loading="lazy"
+                        />
+                      ) : null;
+                    })()}
                     <WishlistButton slug={p.slug} name={p.name} />
                     <QuickAddButton product={p} />
                   </div>
