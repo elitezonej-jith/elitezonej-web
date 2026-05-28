@@ -42,6 +42,11 @@ export type Product = {
   // Per-product size guide (free-form text). Empty string = use the generic
   // /size-guide page link only.
   sizeGuide?: string;
+  // Uploaded images from product_images (Studio image manager).
+  // When non-empty, PDP gallery + grid cards use these in order; otherwise
+  // they fall back to /generated/<slug>/<angle>.webp.
+  images?: string[];
+  thumbnail?: string | null;
 };
 
 export const PRODUCTS: Product[] = [

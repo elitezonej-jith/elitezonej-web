@@ -50,39 +50,47 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
       unitPrice: product.salePrice ?? product.price,
       qty: 1,
       size: sizeOn,
-      imageSrc: imgSrc(product.slug, "01-front"),
+      imageSrc: gallerySrcs[0] ?? imgSrc(product.slug, "01-front"),
     });
   };
 
   const others = related;
-  const lightboxImages = ANGLES.map((a, i) => ({
-    src: imgSrc(product.slug, a),
-    alt: `${product.name} ${ANGLE_LABELS[i]}`,
+  // Prefer uploaded images (product_images table, set in Studio) when present;
+  // fall back to the legacy /generated/<slug>/<angle>.webp filesystem layout
+  // so seeded products keep rendering.
+  const gallerySrcs: string[] = product.images && product.images.length > 0
+    ? product.images
+    : ANGLES.map((a) => imgSrc(product.slug, a));
+  const galleryAlts: string[] = gallerySrcs.map((_, i) => ANGLE_LABELS[i] ?? `View ${i + 1}`);
+  const safeAngleIdx = Math.min(angleIdx, Math.max(0, gallerySrcs.length - 1));
+  const lightboxImages = gallerySrcs.map((src, i) => ({
+    src,
+    alt: `${product.name} ${galleryAlts[i]}`,
   }));
 
   return (
     <>
       <section className="pd">
         <div className="thumbs">
-          {ANGLES.map((a, i) => (
+          {gallerySrcs.map((src, i) => (
             <div
-              key={a}
-              className={`thumb ${i === angleIdx ? "on" : ""}`}
+              key={`${src}-${i}`}
+              className={`thumb ${i === safeAngleIdx ? "on" : ""}`}
               role="button"
               tabIndex={0}
-              aria-label={`Show ${ANGLE_LABELS[i]} view`}
-              aria-pressed={i === angleIdx}
+              aria-label={`Show ${galleryAlts[i]} view`}
+              aria-pressed={i === safeAngleIdx}
               onClick={() => setAngleIdx(i)}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setAngleIdx(i); } }}
             >
               <Image
-                src={imgSrc(product.slug, a)}
-                alt={`${ANGLE_LABELS[i]} view`}
+                src={src}
+                alt={`${galleryAlts[i]} view`}
                 fill
                 sizes="88px"
                 loading="lazy"
               />
-              <span className="num">0{i + 1}</span>
+              <span className="num">{String(i + 1).padStart(2, "0")}</span>
             </div>
           ))}
         </div>
@@ -96,11 +104,11 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLbOpen(true); } }}
           data-zoom-host="tailored"
         >
-          {ANGLES.map((a, i) => (
-            <div key={a} className={`photo ${i === angleIdx ? "show" : ""}`}>
+          {gallerySrcs.map((src, i) => (
+            <div key={`${src}-${i}`} className={`photo ${i === safeAngleIdx ? "show" : ""}`}>
               <Image
-                src={imgSrc(product.slug, a)}
-                alt={`${product.name} ${ANGLE_LABELS[i]}`}
+                src={src}
+                alt={`${product.name} ${galleryAlts[i]}`}
                 fill
                 sizes="(max-width: 1100px) 100vw, 60vw"
                 priority={i === 0}
@@ -111,7 +119,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
         </div>
         <ZoomLens
           targetSelector="[data-zoom-host='tailored']"
-          imageSrc={imgSrc(product.slug, ANGLES[angleIdx])}
+          imageSrc={gallerySrcs[safeAngleIdx]}
         />
 
         <div className="info">
@@ -277,7 +285,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
                     onClick={(e) => { e.preventDefault(); setCurrentSlug(p.slug); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                   >
                     <Image
-                      src={imgSrc(p.slug, "01-front")}
+                      src={p.thumbnail || p.images?.[0] || imgSrc(p.slug, "01-front")}
                       alt={p.name}
                       fill
                       sizes="(max-width: 720px) 100vw, 33vw"
