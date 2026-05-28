@@ -50,6 +50,8 @@ export function adaptDbProduct(p: StorefrontProduct): LegacyProduct {
       return undefined;
     })(),
     sizeGuide: p.size_guide || undefined,
+    images: p.images,
+    thumbnail: p.thumbnail,
   };
 }
 

@@ -7,17 +7,25 @@ import { fmtINR } from "@/lib/format";
 import WishlistButton from "./WishlistButton";
 import QuickAddButton from "./QuickAddButton";
 
-const VARIANTS = [
-  { suffix: "01-front",    cls: "primary", label: "front view" },
-  { suffix: "02-overview", cls: "alt",     label: "overview" },
-  { suffix: "05-detail",   cls: "alt-2",   label: "detail" },
-] as const;
+const FALLBACK_VARIANTS = ["01-front", "02-overview", "05-detail"] as const;
+const CLS = ["primary", "alt", "alt-2"] as const;
 
 const SLIDE_MS = 3500;
 
 export default function ProductCard({ p, priority = false }: { p: Product; priority?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+
+  // Prefer uploaded images (product_images via Studio); fall back to the
+  // legacy /generated/<slug>/<angle>.webp filesystem layout when none exist.
+  const uploaded = p.images ?? [];
+  const cardSrcs: string[] = uploaded.length > 0
+    ? uploaded.slice(0, 3)
+    : FALLBACK_VARIANTS.map((s) => `/generated/${p.slug}/${s}.webp`);
+  const VARIANTS = cardSrcs.map((src, i) => ({
+    src,
+    cls: CLS[i] ?? "alt-2",
+  }));
 
   useEffect(() => {
     const el = ref.current;
@@ -88,9 +96,9 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
         <Link href={`/products/${p.slug}`} aria-label={p.name}>
           {VARIANTS.map((v, i) => (
             <Image
-              key={v.suffix}
+              key={`${v.src}-${i}`}
               className={v.cls}
-              src={`/generated/${p.slug}/${v.suffix}.webp`}
+              src={v.src}
               alt={i === 0 ? p.name : ""}
               fill
               sizes="(max-width: 720px) 50vw, (max-width: 1024px) 33vw, 25vw"

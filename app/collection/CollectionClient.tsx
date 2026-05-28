@@ -222,8 +222,8 @@ export default function CollectionClient({
               <Reveal as="div" key={p.slug} className="pcard qa-host" delay={(i % 4) as 0 | 1 | 2 | 3}>
                 <div className="plate">
                   <Link href={`/products/${p.slug}`} aria-label={p.name}>
-                    <Image className="primary" src={`/generated/${p.slug}/01-front.webp`} alt={`${p.name} front`} fill sizes="(max-width: 720px) 50vw, 33vw" priority={i === 0} loading={i === 0 ? "eager" : "lazy"} />
-                    <Image className="alt" src={`/generated/${p.slug}/02-overview.webp`} alt={`${p.name} overview`} fill sizes="(max-width: 720px) 50vw, 33vw" loading="lazy" />
+                    <Image className="primary" src={p.thumbnail || p.images?.[0] || `/generated/${p.slug}/01-front.webp`} alt={`${p.name} front`} fill sizes="(max-width: 720px) 50vw, 33vw" priority={i === 0} loading={i === 0 ? "eager" : "lazy"} />
+                    <Image className="alt" src={p.images?.[1] || `/generated/${p.slug}/02-overview.webp`} alt={`${p.name} overview`} fill sizes="(max-width: 720px) 50vw, 33vw" loading="lazy" />
                   </Link>
                   {(p.badge || p.salePrice) && (
                     <div className="badge-stack">
