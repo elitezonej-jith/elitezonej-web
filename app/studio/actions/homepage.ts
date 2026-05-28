@@ -119,7 +119,7 @@ async function defaultConfigFor(type: HomepageBlockType): Promise<Record<string,
         { kicker: "Step one", title: "Choose your cloth.", body: "", image: "" },
       ] };
     case "trust_strip":
-      return { items: [{ kicker: "01", label: "Free shipping over ₹5,000" }] };
+      return { items: [{ kicker: "01", label: "Free shipping over ₹15,000" }] };
     case "wedding_editorial":
       return { image: "", headline: "The Wedding Wardrobe", body: "", cta: { label: "Shop Festive", href: "/collection?c=festive" } };
     case "bespoke_teaser": {

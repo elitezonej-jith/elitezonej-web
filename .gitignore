@@ -63,3 +63,6 @@ cookies.txt
 AGENTS.md
 CLAUDE.md
 .gstack/
+
+# local screenshots from chrome devtools verification
+.screenshots/

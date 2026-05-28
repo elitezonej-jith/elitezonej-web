@@ -40,6 +40,7 @@ export default async function BookingDetailPage({ params }: Params) {
               <li><span className="adm-mono" style={{ minWidth: 96 }}>Phone</span> {booking.phone}</li>
               <li><span className="adm-mono" style={{ minWidth: 96 }}>Email</span> {booking.email ?? "—"}</li>
               <li><span className="adm-mono" style={{ minWidth: 96 }}>City</span> {booking.city}</li>
+              <li><span className="adm-mono" style={{ minWidth: 96 }}>State</span> {booking.state || "—"}</li>
               <li><span className="adm-mono" style={{ minWidth: 96 }}>Service</span> {booking.service}</li>
               <li><span className="adm-mono" style={{ minWidth: 96 }}>Source</span> {booking.source}</li>
               <li><span className="adm-mono" style={{ minWidth: 96 }}>Received</span> {dateTime(booking.created_at)}</li>

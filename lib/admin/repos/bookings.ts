@@ -36,6 +36,7 @@ export type BookingInput = {
   phone: string;
   email?: string | null;
   city: string;
+  state?: string;
   service: string;
   message?: string | null;
   source?: string;
@@ -43,14 +44,15 @@ export type BookingInput = {
 
 export async function createBooking(input: BookingInput): Promise<number> {
   const r = await sql.run(
-    `INSERT INTO bookings (first_name, last_name, phone, email, city, service, message, source)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+    `INSERT INTO bookings (first_name, last_name, phone, email, city, state, service, message, source)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
     [
       input.first_name,
       input.last_name,
       input.phone,
       input.email ?? null,
       input.city,
+      input.state ?? "",
       input.service,
       input.message ?? null,
       input.source ?? "web",
