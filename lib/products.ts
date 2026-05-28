@@ -47,6 +47,14 @@ export type Product = {
   // they fall back to /generated/<slug>/<angle>.webp.
   images?: string[];
   thumbnail?: string | null;
+  // Studio's "Short description" (meta.short_description) — used on tiles
+  // and as a PDP fallback when "Full description" is empty.
+  shortDescription?: string;
+  // Visibility flags from product_meta. Rendered as auto-badges on tiles
+  // (in addition to the free-form `badge` text field).
+  isNewArrival?: boolean;
+  isFeatured?: boolean;
+  isTrending?: boolean;
 };
 
 export const PRODUCTS: Product[] = [

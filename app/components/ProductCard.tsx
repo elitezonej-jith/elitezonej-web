@@ -107,10 +107,13 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
             />
           ))}
         </Link>
-        {(p.badge || p.salePrice) && (
+        {(p.badge || p.salePrice || p.isNewArrival || p.isFeatured || p.isTrending) && (
           <div className="badge-stack">
             {p.salePrice && <span className="badge badge-sale t-mono-xs">Sale</span>}
             {p.badge && p.badge !== "Sale" && <span className="badge badge-new t-mono-xs">{p.badge}</span>}
+            {!p.badge && p.isNewArrival && <span className="badge badge-new t-mono-xs">New</span>}
+            {!p.badge && !p.isNewArrival && p.isFeatured && <span className="badge badge-new t-mono-xs">Featured</span>}
+            {!p.badge && !p.isNewArrival && !p.isFeatured && p.isTrending && <span className="badge badge-new t-mono-xs">Trending</span>}
           </div>
         )}
         <WishlistButton slug={p.slug} name={p.name} />
