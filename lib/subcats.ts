@@ -8,8 +8,9 @@ export const CAT_DATA: Record<string, SubcatMeta> = {
   suits:      { title: "Suits",     stand: "Tailored two-piece, three-piece, and bandhgala suits in fine wool and linen — the foundation of the Elite Zone J wardrobe." },
   sherwani:   { title: "Sherwani",  stand: "Festive sherwanis cut for the front row at the family wedding — ivory raw silks, hand-worked zardozi, full ensembles with churidar and dupatta included." },
   shirts:     { title: "Shirts",    stand: "Italian-mill cottons, Egyptian poplin, single-needle stitching at twenty-two stitches per inch. The shirt you'll keep reaching for." },
-  fabrics:    { title: "Fabrics",   stand: "Cloth from our library — Italian wools, Egyptian poplins, hand-woven Indian silks and heavy linens. Sold by the metre, cut from a single piece, ships from our atelier." },
-  essentials: { title: "Essentials",stand: "The wardrobe foundations — cotton tees, fine-gauge knitwear, soft-shoulder jackets — all in the same restrained palette." },
+  fabrics:      { title: "Fabrics",      stand: "Cloth from our library — Italian wools, Egyptian poplins, hand-woven Indian silks and heavy linens. Sold by the metre, cut from a single piece, ships from our atelier." },
+  accessories:  { title: "Accessories",  stand: "Brooches, belts, glasses, and chains — the small pieces that finish a look. Hand-finished in brass, silver, and Italian leather." },
+  essentials:   { title: "Essentials",   stand: "The wardrobe foundations — cotton tees, fine-gauge knitwear, soft-shoulder jackets — all in the same restrained palette." },
 };
 
 export const SUBCATS: Record<string, Record<string, SubcatMeta>> = {
@@ -41,5 +42,12 @@ export const SUBCATS: Record<string, Record<string, SubcatMeta>> = {
     "rings":           { title: "Rings",           stand: "Sterling silver stacking rings — alone, restrained; together, a quiet declaration." },
     "glasses":         { title: "Glasses",         stand: "Italian acetate and metal frames — prescription or plano, the modern Indian woman's third accessory." },
     "belts":           { title: "Belts",           stand: "Calfskin belts in classic and corseted widths — to cinch the trench, the silk slip, or the linen kurta." },
+  },
+  accessories: {
+    "brooches": { title: "Brooches", stand: "Hand-finished brass and silver brooches for lapel, sherwani, and saree pleat — small punctuation." },
+    "chains":   { title: "Chains",   stand: "Pocket-watch and collar chains in oxidised silver and aged brass." },
+    "rings":    { title: "Rings",    stand: "Sterling silver signet and stacking rings — hand-engraved on request." },
+    "glasses":  { title: "Glasses",  stand: "Italian acetate and metal frames — prescription or plano." },
+    "belts":    { title: "Belts",    stand: "Italian calfskin belts in classic and corseted widths — the finishing piece." },
   },
 };

@@ -11,14 +11,15 @@ import { useModalA11y } from "./useModalA11y";
 
 type Props = { open: boolean; onClose: () => void; products: Product[] };
 
-type CatChip = "all" | "men" | "women" | "fabrics" | "festive";
+type CatChip = "all" | "men" | "women" | "accessories" | "fabrics" | "festive";
 type FabricChip = "Wool" | "Linen" | "Cotton" | "Silk" | "Velvet";
 
 const CAT_CHIPS: { value: CatChip; label: string }[] = [
   { value: "all",      label: "All" },
   { value: "men",      label: "Men" },
-  { value: "women",    label: "Women" },
-  { value: "fabrics",  label: "Fabrics" },
+  { value: "women",       label: "Women" },
+  { value: "accessories", label: "Accessories" },
+  { value: "fabrics",     label: "Fabrics" },
   { value: "festive",  label: "Festive" },
 ];
 const FABRIC_CHIPS: FabricChip[] = ["Wool", "Linen", "Cotton", "Silk", "Velvet"];
@@ -41,8 +42,9 @@ function matchesQuery(p: Product, tokens: string[]) {
 function matchesCat(p: Product, cat: CatChip) {
   switch (cat) {
     case "all":     return true;
-    case "men":     return p.gender === "men";
-    case "women":   return p.gender === "women";
+    case "men":         return p.gender === "men" && p.category !== "accessories";
+    case "women":       return p.gender === "women" && p.category !== "accessories";
+    case "accessories": return p.category === "accessories";
     case "fabrics": return p.kind === "fabric";
     case "festive": return p.occasion === "Festive" || p.category === "festive";
   }

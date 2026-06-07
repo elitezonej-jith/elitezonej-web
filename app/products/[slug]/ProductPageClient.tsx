@@ -35,7 +35,7 @@ export default function ProductPageClient({
     <>
       <div className="crumb t-mono-xs">
         <Link href="/">Home</Link><span className="sep">/</span>
-        <Link href={`/collection?c=${isFabric ? "fabrics" : product.gender}`}>{product.catLink}</Link>
+        <Link href={`/collection?c=${isFabric ? "fabrics" : product.category === "accessories" ? "accessories" : product.gender}`}>{product.catLink}</Link>
         <span className="sep">/</span>
         <span>{product.name}</span>
       </div>
