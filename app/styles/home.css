@@ -414,7 +414,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.pcard .row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); }
+.pcard .row { display: flex; justify-content: center; align-items: baseline; gap: var(--s-3); }
 .pcard .price {
   font-family: var(--font-mono);
   font-weight: 500;
