@@ -1015,7 +1015,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--ink); }
 .carousel-track {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 20px;
+  gap: 2px;
   overflow-x: auto;
   scrollbar-width: thin;
   min-width: 0;
@@ -1035,7 +1035,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--ink); }
   .carousel-track { grid-template-columns: repeat(3, minmax(180px, 1fr)); }
 }
 @media (max-width: 520px) {
-  .carousel-track { grid-template-columns: repeat(2, minmax(140px, 1fr)); gap: 8px; }
+  .carousel-track { grid-template-columns: repeat(2, minmax(140px, 1fr)); gap: 2px; }
 }
 
 /* =============================================================
