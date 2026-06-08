@@ -82,7 +82,7 @@ export default function CategoryForm({ tops, category }: {
               <button type="button" className="stu-btn stu-btn--ghost stu-btn--sm" onClick={() => setImage("")}>Remove image</button>
             </div>
           ) : (
-            <ImageUploader folder="categories" multiple={false} onUploaded={({ path }) => setImage(path)} hint="Optional. 1200×900 ideal." />
+            <ImageUploader folder="categories" multiple={false} aspect={1200 / 900} onUploaded={({ path }) => setImage(path)} hint="Optional. 1200×900 ideal." />
           )}
           <div style={{ marginTop: 18 }}>
             <Switch name="enabled" label="Show in storefront" defaultChecked={(category?.enabled ?? 1) === 1} />

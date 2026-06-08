@@ -101,7 +101,7 @@ export default function BannerForm({ banner }: { banner?: Banner }) {
                   </div>
                 </div>
               ) : (
-                <ImageUploader folder="banners" multiple={false}
+                <ImageUploader folder="banners" multiple={false} aspect={2400 / 1000}
                                onUploaded={({ path }) => setImage(path)}
                                hint="Wide hero image, 2400×1000 ideal" />
               )}
@@ -120,7 +120,7 @@ export default function BannerForm({ banner }: { banner?: Banner }) {
                   </div>
                 </div>
               ) : (
-                <ImageUploader folder="banners" multiple={false}
+                <ImageUploader folder="banners" multiple={false} aspect={800 / 1000}
                                onUploaded={({ path }) => setMobile(path)}
                                hint="Mobile-friendly crop, 800×1000 ideal" />
               )}
