@@ -305,7 +305,7 @@ header.site {
   padding: 18px 48px;          /* aligned with container padding */
 }
 .header-left { display: flex; align-items: center; gap: 32px; }
-.header-right { display: flex; align-items: center; gap: 24px; justify-content: flex-end; }
+.header-right { display: flex; align-items: center; gap: 0; justify-content: flex-end; }
 
 .brand {
   font-family: var(--font-display);
@@ -2678,7 +2678,7 @@ section.page { padding-top: 64px; padding-bottom: 64px; }
      hamburger / cart icons share a 56px row. */
   .header-top { padding: 12px 16px !important; gap: 12px !important; min-height: 56px; }
   .header-left { gap: 8px !important; }
-  .header-right { gap: 8px !important; }
+  .header-right { gap: 0 !important; }
   /* Hide secondary util chips on phone — drawer covers Account / Currency */
   .util-account, .util-currency { display: none !important; }
 
