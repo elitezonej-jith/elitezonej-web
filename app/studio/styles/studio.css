@@ -867,6 +867,59 @@
   display: flex; gap: 8px; justify-content: flex-end;
 }
 
+/* ── Image adjust (zoom / crop) modal ────────────────────────────────── */
+.stu-crop-overlay {
+  position: fixed; inset: 0;
+  background: rgba(20, 16, 12, 0.6);
+  z-index: 100;
+  display: grid; place-items: center;
+  padding: 16px;
+  backdrop-filter: blur(4px);
+}
+.stu-crop {
+  width: 100%; max-width: 760px;
+  max-height: 92vh;
+  background: var(--stu-surface);
+  border-radius: var(--stu-radius);
+  box-shadow: var(--stu-shadow-lg);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.stu-crop__head {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--stu-border);
+  display: flex; align-items: baseline; gap: 10px;
+}
+.stu-crop__head h3 { font-size: 16px; font-weight: 700; margin: 0; }
+.stu-crop__name {
+  font-size: 12px; color: var(--stu-text-3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.stu-crop__stage {
+  flex: 1; min-height: 0; overflow: auto;
+  background: var(--stu-bg);
+  display: grid; place-items: center;
+  padding: 16px;
+}
+.stu-crop__stage .ReactCrop { max-width: 100%; }
+.stu-crop__stage img { max-height: 56vh; display: block; }
+.stu-crop__controls {
+  display: flex; align-items: center; gap: 18px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--stu-border);
+  flex-wrap: wrap;
+}
+.stu-crop__ctrl {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: var(--stu-text-2);
+}
+.stu-crop__ctrl input[type="range"] { width: 160px; accent-color: var(--stu-brand); }
+.stu-crop__foot {
+  display: flex; justify-content: flex-end; gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--stu-border);
+}
+
 /* ── Tabs ────────────────────────────────────────────────────────────── */
 .stu-tabs {
   display: flex; gap: 4px;
