@@ -13,7 +13,7 @@ export type Product = {
   slug: string;
   name: string;
   cat: string;        // breadcrumb-style "Category · Subcategory"
-  catLink: "Men" | "Women" | "Fabrics";
+  catLink: "Men" | "Women" | "Fabrics" | "Accessories";
   price: number;
   salePrice?: number;
   line: string;       // editorial one-liner
@@ -410,7 +410,7 @@ export const PRODUCTS: Product[] = [
     slug: "lapel-brooch-set",
     name: "Mughal Brass Lapel Brooch",
     cat: "Men · Accessories · Brooch",
-    catLink: "Men",
+    catLink: "Accessories",
     price: 4800,
     line: "Hand-finished antique brass, set with a single freshwater pearl — small punctuation for the lapel.",
     sizes: ["One size"],
@@ -433,7 +433,7 @@ export const PRODUCTS: Product[] = [
     slug: "calfskin-belt",
     name: "Italian Calfskin Belt",
     cat: "Men · Accessories · Belt",
-    catLink: "Men",
+    catLink: "Accessories",
     price: 6200,
     line: "Tan Italian calfskin, hand-finished brass buckle — the only belt you'll need this year.",
     sizes: ["32","34","36","38","40","42"],
@@ -456,7 +456,7 @@ export const PRODUCTS: Product[] = [
     slug: "acetate-glasses",
     name: "Tortoiseshell Acetate Frames",
     cat: "Men · Accessories · Glasses",
-    catLink: "Men",
+    catLink: "Accessories",
     price: 12800,
     line: "Italian acetate, gold-metal hinges — the third item on the lapel, the first thing remembered.",
     sizes: ["52mm", "54mm"],
@@ -531,7 +531,7 @@ export const PRODUCTS: Product[] = [
     slug: "wide-calfskin-belt",
     name: "Wide Corseted Calfskin Belt",
     cat: "Women · Accessories · Belt",
-    catLink: "Women",
+    catLink: "Accessories",
     price: 7800,
     line: "Tan Italian calfskin, antique brass corset buckle — to cinch the trench, the silk, the linen.",
     sizes: ["XS","S","M","L"],

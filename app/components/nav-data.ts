@@ -38,16 +38,6 @@ export const NAV: NavCategory[] = [
           { href: "/collection?c=men&sub=pleated-pants", label: "Pleated Pant", meta: "Single & double pleat" },
         ],
       },
-      {
-        title: "Accessories",
-        items: [
-          { href: "/collection?c=men&sub=brooches", label: "Brooch", meta: "Lapel & sherwani" },
-          { href: "/collection?c=men&sub=chains", label: "Chain", meta: "Pocket-watch & collar" },
-          { href: "/collection?c=men&sub=rings", label: "Ring", meta: "Sterling silver, signet" },
-          { href: "/collection?c=men&sub=glasses", label: "Glasses", meta: "Acetate & metal" },
-          { href: "/collection?c=men&sub=belts", label: "Belt", meta: "Italian calfskin · Reversible" },
-        ],
-      },
     ],
     footer: {
       caption: "The Men’s Edit · Spring/Summer 2026",
@@ -79,21 +69,37 @@ export const NAV: NavCategory[] = [
           { href: "/collection?c=women&sub=evening-gowns", label: "Evening Gowns", meta: "Bias-silk · Velvet · Lehenga" },
         ],
       },
-      {
-        title: "Accessories",
-        items: [
-          { href: "/collection?c=women&sub=brooches", label: "Brooch", meta: "Statement & minimal" },
-          { href: "/collection?c=women&sub=chains", label: "Chain", meta: "Layered & dainty" },
-          { href: "/collection?c=women&sub=rings", label: "Ring", meta: "Sterling silver · Stack" },
-          { href: "/collection?c=women&sub=glasses", label: "Glasses", meta: "Acetate & metal" },
-          { href: "/collection?c=women&sub=belts", label: "Belt", meta: "Calfskin · Wide & corseted" },
-        ],
-      },
     ],
     footer: {
       caption: "The Women’s Edit · Spring/Summer 2026",
       ctaHref: "/collection?c=women",
       ctaLabel: "View all women",
+    },
+  },
+  {
+    href: "/collection?c=accessories",
+    label: "Accessories",
+    groups: [
+      {
+        title: "Jewellery",
+        items: [
+          { href: "/collection?c=accessories&sub=brooches", label: "Brooches", meta: "Lapel, sherwani & saree" },
+          { href: "/collection?c=accessories&sub=chains", label: "Chains", meta: "Pocket-watch & collar" },
+          { href: "/collection?c=accessories&sub=rings", label: "Rings", meta: "Sterling silver · Signet" },
+        ],
+      },
+      {
+        title: "Finish",
+        items: [
+          { href: "/collection?c=accessories&sub=glasses", label: "Glasses", meta: "Acetate & metal frames" },
+          { href: "/collection?c=accessories&sub=belts", label: "Belts", meta: "Italian calfskin" },
+        ],
+      },
+    ],
+    footer: {
+      caption: "The Accessories Edit · Spring/Summer 2026",
+      ctaHref: "/collection?c=accessories",
+      ctaLabel: "View all accessories",
     },
   },
   { href: "/collection?c=fabrics", label: "Fabrics" },

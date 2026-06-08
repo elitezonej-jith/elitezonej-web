@@ -74,8 +74,10 @@ export default function CollectionClient({
       list = list.filter(p => p.kind === "fabric");
     } else {
       list = list.filter(p => p.kind !== "fabric");
-      if (cat === "men" || cat === "women") list = list.filter(p => p.gender === cat);
-      else if (cat === "festive") list = list.filter(p => p.occasion === "Festive");
+      if (cat === "accessories") list = list.filter(p => p.category === "accessories");
+      else if (cat === "men" || cat === "women") {
+        list = list.filter(p => p.gender === cat && p.category !== "accessories");
+      } else if (cat === "festive") list = list.filter(p => p.occasion === "Festive");
       else if (cat === "new") list = list.filter(p => p.badge === "New");
       else if (cat !== "all") list = list.filter(p => p.category === cat);
     }

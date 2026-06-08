@@ -7,6 +7,8 @@ const initial: ActionState = {};
 export default function LoginForm({ next }: { next: string }) {
   const [state, formAction, pending] = useActionState(signInAction, initial);
   const [showPw, setShowPw] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   return (
     <form action={formAction} className="adm-form adm-form--auth">
       <input type="hidden" name="next" value={next} />
@@ -19,6 +21,8 @@ export default function LoginForm({ next }: { next: string }) {
           autoComplete="email"
           required
           autoFocus
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="adm-field__input"
           placeholder="atelier@elitezonej.com"
         />
@@ -32,6 +36,8 @@ export default function LoginForm({ next }: { next: string }) {
             type={showPw ? "text" : "password"}
             autoComplete="current-password"
             required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="adm-field__input"
             style={{ paddingRight: 64 }}
           />
