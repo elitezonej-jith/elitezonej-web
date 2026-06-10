@@ -1,0 +1,41 @@
+# Keep the build context small and reproducible. Anything listed here is NOT
+# sent to the Docker daemon / not copied by `COPY . .` in the builder.
+
+# Dependencies & build output (rebuilt inside the image)
+node_modules
+.next
+out
+build
+
+# Secrets & local env — NEVER bake these into the image. Supply at runtime
+# via --env-file (see DEPLOY.md).
+.env
+.env.*
+!.env.example
+
+# Local SQLite database & WAL files — the image starts with an empty data dir;
+# real data lives on the mounted volume, not in the image.
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/*.db-journal
+
+# Vercel / platform & local tooling artifacts
+.vercel
+.gstack
+.screenshots
+.remember
+.git
+.gitignore
+
+# Editor / OS noise
+.DS_Store
+.vscode
+.idea
+*.log
+*.tsbuildinfo
+
+# Docs & agent files not needed at runtime
+docs
+*.md
+!README.md
