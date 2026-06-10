@@ -101,21 +101,23 @@ This is the most important decision. Self-hosting on a real server with a
 - The schema is created automatically on first boot; the first owner account is
   bootstrapped from `ADMIN_BOOTSTRAP_PASSWORD`.
 
-### Option B — PostgreSQL (recommended for production / multiple instances)
-- A managed Postgres (Neon) is already provisioned for this project, or use the
-  company's own Postgres.
+### Option B — PostgreSQL  ← **this is what production already uses**
+The **live site on Vercel already runs on Postgres (Neon)** — that is where all
+current data (products, orders, customers) lives. To keep that data, point the
+new server at the **same Neon database**. See §10 (Migrating from Vercel).
 - Set in `.env.production`:
   ```env
   DB_DRIVER=postgres
   DATABASE_URL=postgres://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require   # pooled connection
   DATABASE_URL_UNPOOLED=postgres://USER:PASSWORD@HOST:5432/DBNAME?sslmode=require  # direct, for migrations
   ```
-- Run the migrations once against the database (see §7).
+- The exact values are in the Vercel project's Environment Variables (copy them
+  over — see §10). Use the **same** Neon DB to inherit all existing data, or a
+  fresh Neon/Postgres instance for a clean start.
 - With Postgres you do **not** need the `ezj_data` volume.
 
-> ⚠️ Switching `DB_DRIVER` to `postgres` touches ring-fenced money/persistence
-> code paths. Confirm with the app owner before flipping it in production, and
-> migrate + verify on a staging copy first.
+> ⚠️ Do **not** have the new server and Vercel both taking real orders against
+> the same database at the same time. Use the cutover sequence in §10.
 
 ---
 
@@ -174,14 +176,55 @@ database files — the DevOps engineer creates fresh ones on the server.
 
 ---
 
+## 10. Migrating from Vercel (keep all existing data)
+
+The app currently runs on **Vercel**, with its data in **Neon Postgres** and its
+config in **Vercel's Environment Variables**. The code (this repo) is the only
+piece that moves to the new server — the database does not move.
+
+**Sequence (zero data risk — both ends read the same Neon DB):**
+
+1. **Copy the env vars out of Vercel.** Vercel dashboard → project `elitezonej`
+   → Settings → Environment Variables (or `vercel env pull .env.production`).
+   These become the new server's `.env.production`. The checklist below lists
+   what to copy.
+2. **Build & run on the company server** pointed at the **same** `DATABASE_URL`
+   (Neon). The site comes up fully populated — same products, orders, accounts.
+3. **Verify** the company-server URL looks identical to the live site.
+4. **Switch the domain** (DNS) to the new server only after it checks out.
+5. **Keep Vercel as a warm backup**, then decommission once confident.
+
+> Avoid the one bad state: the new server **and** Vercel both accepting **real
+> orders** against the same Neon DB simultaneously. Cut payments over in one
+> direction during the switch.
+
+### Env-var checklist (copy these from Vercel → `.env.production`)
+
+| Variable | Needed when | Notes |
+|---|---|---|
+| `DB_DRIVER` | always | set to `postgres` to use Neon (matches current prod) |
+| `DATABASE_URL` | postgres | pooled Neon connection string (the live data) |
+| `DATABASE_URL_UNPOOLED` | postgres | direct connection, for migrations |
+| `CHECKOUT_TOKEN_SECRET` | always | **reuse the same value as Vercel** so existing checkout links/tokens stay valid |
+| `ADMIN_BOOTSTRAP_PASSWORD` | always | first owner login |
+| `RAZORPAY_KEY_ID` | live payments | server secret |
+| `RAZORPAY_KEY_SECRET` | live payments | server secret |
+| `RAZORPAY_WEBHOOK_SECRET` | live payments | server secret |
+| `NEXT_PUBLIC_RAZORPAY_KEY_ID` | live payments | **build-time** → pass as `--build-arg`, not runtime |
+| `BLOB_READ_WRITE_TOKEN` | only if keeping Vercel Blob for image uploads | omit to store uploads on the server disk instead |
+| `SHIPPING_FLAT_INR` / `FREE_SHIP_OVER_INR` / `TAX_RATE` | optional | commerce policy overrides |
+
+---
+
 ## Quick reference
 
 | Concern            | Value / location                                  |
 |--------------------|---------------------------------------------------|
 | Build file         | `Dockerfile` (repo root)                           |
 | Listens on         | port `3000`                                        |
-| Persist DB (sqlite)| volume → `/app/data`                               |
+| Live database      | **Neon Postgres** (`DB_DRIVER=postgres`) — keep using it |
+| Persist DB (sqlite)| volume → `/app/data` (only if using sqlite instead)|
 | Persist uploads    | volume → `/app/public/uploads`                     |
 | Build-time var     | `NEXT_PUBLIC_RAZORPAY_KEY_ID` (via `--build-arg`)  |
-| Runtime secrets    | `--env-file .env.production`                        |
+| Runtime secrets    | `--env-file .env.production` (copied from Vercel)   |
 | Node version       | 22 (Next.js 16 requires ≥ 20.9)                     |
