@@ -18,6 +18,41 @@ export async function listImages(slug: string): Promise<ProductImage[]> {
   );
 }
 
+// Batched read for the storefront list path — one query for many slugs instead
+// of one `listImages` + one/two `getThumbnail` queries per product (kills the
+// N+1). Rows arrive pre-sorted; grouped by slug preserving `sort_order ASC, id
+// ASC`. Slugs with no rows are simply absent from the Map (callers fall back to
+// `fallbackImages(slug)`, exactly as the per-product path does).
+export async function listImagesForSlugs(slugs: string[]): Promise<Map<string, ProductImage[]>> {
+  const map = new Map<string, ProductImage[]>();
+  if (slugs.length === 0) return map; // never emit `IN ()`
+  const placeholders = slugs.map(() => "?").join(",");
+  const rows = await sql.all<ProductImage>(
+    `SELECT * FROM product_images WHERE product_slug IN (${placeholders})
+     ORDER BY sort_order ASC, id ASC`,
+    slugs,
+  );
+  for (const r of rows) {
+    let arr = map.get(r.product_slug);
+    if (!arr) {
+      arr = [];
+      map.set(r.product_slug, arr);
+    }
+    arr.push(r);
+  }
+  return map;
+}
+
+// Derive the thumbnail from an already-fetched, sort-ordered image list without
+// another query. Mirrors `getThumbnail`'s rule precisely: an explicit
+// `is_thumbnail = 1` row wins, else the first image by sort order. Returns null
+// for an empty list (caller then falls back to the first fallback image).
+export function thumbnailFromImages(images: ProductImage[]): string | null {
+  if (images.length === 0) return null;
+  const flagged = images.find((i) => i.is_thumbnail === 1);
+  return (flagged ?? images[0]).image_path;
+}
+
 export async function getThumbnail(slug: string): Promise<string | null> {
   const r = await sql.get<{ image_path: string }>(
     `SELECT image_path FROM product_images

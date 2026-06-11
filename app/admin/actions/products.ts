@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { bustProducts, bustInventory } from "../../../lib/storefront/cache";
 import { z } from "zod";
 import { requireUser } from "../../../lib/admin/session";
 import {
@@ -105,6 +106,7 @@ export async function saveProductAction(_prev: ActionState, fd: FormData): Promi
 
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${v.slug}`);
+  bustProducts(); // also busts the stock map (tagged "products")
   redirect(`/admin/products/${v.slug}?saved=1`);
 }
 
@@ -119,6 +121,7 @@ export async function setProductStatusAction(fd: FormData): Promise<void> {
   await logAudit({ user_id: me.id, action: "set_product_status", entity: "product", entity_id: slug, payload: { status } });
   revalidatePath("/admin/products");
   revalidatePath(`/admin/products/${slug}`);
+  bustProducts();
 }
 
 export async function deleteProductAction(fd: FormData): Promise<void> {
@@ -130,6 +133,7 @@ export async function deleteProductAction(fd: FormData): Promise<void> {
   revalidatePath("/admin/products");
   revalidatePath(`/products/${slug}`);
   revalidatePath("/collection");
+  bustProducts();
   redirect(`/admin/products?flash=${encodeURIComponent("Product removed")}`);
 }
 
@@ -149,4 +153,5 @@ export async function saveInventoryAction(fd: FormData): Promise<void> {
   await logAudit({ user_id: me.id, action: "set_inventory", entity: "product", entity_id: slug, payload: { rows } });
   revalidatePath(`/admin/products/${slug}`);
   revalidatePath("/admin/inventory");
+  bustInventory();
 }

@@ -1,5 +1,7 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { sql } from "../admin/db";
+import { CACHE_TAGS } from "./cache";
 import { NAV, type NavCategory, type NavGroup } from "../../app/components/nav-data";
 import { CAT_DATA, SUBCATS, type SubcatMeta } from "../subcats";
 
@@ -15,18 +17,30 @@ import { CAT_DATA, SUBCATS, type SubcatMeta } from "../subcats";
 // copy always stay static (no DB column exists for them).
 
 type DbCat = { name: string; enabled: number };
+type DbCatRow = { slug: string; name: string; gender: string | null; enabled: number };
+
+// Cached raw category rows. This read previously ran on EVERY route (the nav
+// renders in the shared header), so it dominated per-request Neon egress on
+// non-product pages — including 404s. 1h TTL; Studio/Admin category edits call
+// `bustCategories()`. Rows (not the Map) are cached because `unstable_cache`
+// only stores JSON-serialisable values; an empty array also covers the
+// no-table / ephemeral fallback so the Map stays empty → static NAV.
+const _dbCatRows = unstable_cache(
+  async (): Promise<DbCatRow[]> => {
+    try {
+      return await sql.all<DbCatRow>("SELECT slug, name, gender, enabled FROM categories");
+    } catch {
+      return [];
+    }
+  },
+  ["storefront-categories"],
+  { revalidate: 3600, tags: [CACHE_TAGS.categories] },
+);
 
 async function loadDbCats(): Promise<Map<string, DbCat>> {
   const map = new Map<string, DbCat>();
-  try {
-    const rows = await sql.all<{ slug: string; name: string; gender: string | null; enabled: number }>(
-      "SELECT slug, name, gender, enabled FROM categories",
-    );
-    for (const r of rows) {
-      map.set(`${r.gender ?? ""}:${r.slug}`, { name: r.name, enabled: r.enabled });
-    }
-  } catch {
-    /* no categories table / ephemeral — leave map empty → static NAV */
+  for (const r of await _dbCatRows()) {
+    map.set(`${r.gender ?? ""}:${r.slug}`, { name: r.name, enabled: r.enabled });
   }
   return map;
 }
