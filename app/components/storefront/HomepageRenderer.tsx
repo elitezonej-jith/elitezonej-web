@@ -33,7 +33,6 @@ import HeroGridDynamic from "./blocks/HeroGridDynamic";
 import BannerCarousel from "./blocks/BannerCarousel";
 import ProductCarousel from "./blocks/ProductCarousel";
 import EditorialSplit from "./blocks/EditorialSplit";
-import ServiceCards from "./blocks/ServiceCards";
 import ProcessStrip from "./blocks/ProcessStrip";
 import FullBanner from "./blocks/FullBanner";
 import TrustStrip from "./blocks/TrustStrip";
@@ -54,7 +53,10 @@ export default async function HomepageRenderer() {
   const announce = blocks.filter((b) => b.type === "announce_bar");
   const promos = blocks.filter((b) => b.type === "promo_modal");
   const rest = blocks.filter(
-    (b) => b.type !== "announce_bar" && b.type !== "promo_modal",
+    (b) =>
+      b.type !== "announce_bar" &&
+      b.type !== "promo_modal" &&
+      b.type !== "service_cards",
   );
 
   return (
@@ -141,14 +143,6 @@ function Block({
         />
       );
     }
-    case "service_cards":
-      return (
-        <ServiceCards
-          cards={(cfg.items as RC[]) ?? (cfg.cards as RC[]) ?? []}
-          heading={cfg.heading ? String(cfg.heading) : undefined}
-          meta={cfg.meta ? String(cfg.meta) : undefined}
-        />
-      );
     case "process_strip":
       return <ProcessStrip cfg={cfg} />;
     case "trust_strip":

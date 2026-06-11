@@ -12,7 +12,7 @@ import { getSiteSettings } from "../../../lib/storefront/site-settings";
 
 const VALID_TYPES: HomepageBlockType[] = [
   "hero_grid","hero_banner","banner_carousel","product_carousel",
-  "editorial_split","service_cards","process_strip","full_banner",
+  "editorial_split","process_strip","full_banner",
   "trust_strip","wedding_editorial","bespoke_teaser","category_grid",
   "announce_bar","promo_modal","custom_html",
 ];
@@ -110,10 +110,6 @@ async function defaultConfigFor(type: HomepageBlockType): Promise<Record<string,
       return { filter: { kind: "tailored", status: "active", limit: 6 }, cta: { label: "View all", href: "/collection" } };
     case "editorial_split":
       return { image: "", headline: "", body: "", link: { label: "", href: "" }, align: "left" };
-    case "service_cards":
-      return { cards: [
-        { kicker: "Service", title: "Bespoke Suit", body: "", image: "", cta: "Begin", href: "/bespoke" },
-      ] };
     case "process_strip":
       return { steps: [
         { kicker: "Step one", title: "Choose your cloth.", body: "", image: "" },

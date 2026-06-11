@@ -56,7 +56,16 @@ function Editor({ type, config, update }: { type: string; config: RC; update: (n
     case "hero_grid":
       return <TilesEditor name="tiles" config={config} update={update} fields={["eyebrow","title","sub","cta","href","img","pos","veil"]} imageKeys={["img"]} title="Hero tiles" min={1} max={4} />;
     case "service_cards":
-      return <ServiceCardsEditor config={config} update={update} />;
+      return (
+        <section className="stu-card">
+          <header className="stu-card__head"><h3>Service cards (removed)</h3></header>
+          <div className="stu-card__body">
+            <p style={{ fontSize: 13.5, color: "var(--stu-text-3)" }}>
+              This section type is no longer shown on the storefront. Hide or delete it from the homepage list.
+            </p>
+          </div>
+        </section>
+      );
     case "process_strip":
       return <ProcessStripEditor config={config} update={update} />;
     case "trust_strip":
@@ -217,25 +226,6 @@ function PromoModalEditor({ config, update }: { config: RC; update: (n: RC) => v
               onChange={(v) => update({ ...config, countries: v.split("\n").map((s) => s.trim()).filter(Boolean) })} area />
       </div>
     </section>
-  );
-}
-
-function ServiceCardsEditor({ config, update }: { config: RC; update: (n: RC) => void }) {
-  return (
-    <>
-      <section className="stu-card">
-        <header className="stu-card__head"><h3>Section header</h3></header>
-        <div className="stu-card__body">
-          <div className="stu-row">
-            <Text label="Heading" value={String(config.heading ?? "")} onChange={(v) => update({ ...config, heading: v })} />
-            <Text label="Meta label" value={String(config.meta ?? "")} onChange={(v) => update({ ...config, meta: v })} />
-          </div>
-        </div>
-      </section>
-      <TilesEditor name="items" config={config} update={update}
-                   fields={["eyebrow","title","body","cta","href","photo","alt"]}
-                   title="Service cards" min={1} max={4} />
-    </>
   );
 }
 

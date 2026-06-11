@@ -110,6 +110,21 @@ function setSeedVersion(db: Database.Database, v: number): void {
   ).run(String(v));
 }
 
+function removeDeprecatedHomepageBlocks(db: Database.Database): void {
+  try {
+    const done = db
+      .prepare("SELECT value FROM settings WHERE key = 'removed_service_cards_v1'")
+      .get() as { value: string } | undefined;
+    if (done) return;
+    db.prepare("DELETE FROM homepage_blocks WHERE type = 'service_cards'").run();
+    db.prepare(
+      "INSERT INTO settings (key, value) VALUES ('removed_service_cards_v1', '1') ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    ).run();
+  } catch {
+    // homepage_blocks may not exist yet on a very early schema pass.
+  }
+}
+
 function reseedStudioIfStale(db: Database.Database): void {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { seedStudioDefaults, SEED_VERSION } =
@@ -179,6 +194,7 @@ function open(): Database.Database {
   // Seed the static owner account if missing — runs before catalog seed so
   // the first /admin visit can log straight in without going through /setup.
   ensureDefaultAdmin(db);
+  removeDeprecatedHomepageBlocks(db);
 
   // Seed catalog from lib/products.ts on first run.
   const productCount = (db

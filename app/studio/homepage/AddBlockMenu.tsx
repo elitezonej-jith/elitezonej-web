@@ -11,7 +11,6 @@ const OPTIONS: Array<{ value: string; label: string; sub: string }> = [
   { value: "banner_carousel", label: "Banner carousel", sub: "Rotating banners from /studio/banners" },
   { value: "product_carousel", label: "Product carousel", sub: "Auto from filter (e.g. featured, new)" },
   { value: "editorial_split", label: "Editorial split", sub: "Image on one side, text on the other" },
-  { value: "service_cards", label: "Service cards", sub: "Three cards (e.g. Bespoke, Sherwani, Shirts)" },
   { value: "process_strip", label: "Process strip", sub: "Step 1 / 2 / 3 illustration" },
   { value: "full_banner", label: "Full-width banner", sub: "Cinematic image + headline + button" },
   { value: "wedding_editorial", label: "Wedding editorial", sub: "Festive feature block" },
