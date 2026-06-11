@@ -856,7 +856,7 @@
   }
 
   .hg-copy { padding: 28px 24px; gap: 10px; }
-  .hg-title { font-size: clamp(34px, 9vw, 50px); }
+  .hg-title { font-size: clamp(34px, 9vw, 35px); }
   .hg-eyebrow { font-size: 11px; letter-spacing: 0.32em; }
 
   .hg-dots {

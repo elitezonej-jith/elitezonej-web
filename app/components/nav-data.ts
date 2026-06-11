@@ -105,7 +105,7 @@ export const NAV: NavCategory[] = [
   { href: "/collection?c=fabrics", label: "Fabrics" },
   { href: "/collection?c=festive", label: "Festive" },
   { href: "/bespoke", label: "Bespoke" },
-  { href: "/#editorial", label: "Seasons" },
+  { href: "/#editorial", label: "In Trends" },
   { href: "/collection?c=men", label: "View All" },
   { href: "/collection?c=festive", label: "Sale", sale: true },
 ];

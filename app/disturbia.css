@@ -323,12 +323,12 @@ header.site {
 .brand-logo-link { display: flex; align-items: center; color: var(--ink); }
 .foot-logo-link  { display: flex; justify-content: center; margin-bottom: 28px; }
 .brand-wordmark {
-  height: clamp(28px, 4vw, 50px);
+  height: clamp(28px, 4vw, 35px);
   width: auto;
   display: block;
 }
 @media (max-width: 600px) {
-  .brand-wordmark { height: clamp(26px, 7vw, 32px); }
+  .brand-wordmark { height: clamp(26px, 7vw, 25px); }
 }
 
 /* =============================================================
