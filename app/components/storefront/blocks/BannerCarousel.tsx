@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { Banner } from "../../../../lib/admin/repos/banners";
 
@@ -19,8 +20,14 @@ export default function BannerCarousel({ banners, autoplay }: { banners: Banner[
       overflow: "hidden", background: "#1A1613",
     }}>
       {b.image_path && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={b.image_path} alt={b.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+        <Image
+          src={b.image_path}
+          alt={b.title}
+          fill
+          sizes="100vw"
+          priority={i === 0}
+          style={{ objectFit: "cover" }}
+        />
       )}
       <div style={{
         position: "absolute", inset: 0,

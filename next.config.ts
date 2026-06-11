@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "node:path";
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   // Pin Turbopack's workspace root explicitly so it doesn't pick up the
   // orphan package-lock.json sitting in C:/Users/JOYISA/.
   turbopack: {
