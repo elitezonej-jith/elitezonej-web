@@ -350,8 +350,15 @@
 .booking-field input::placeholder {
   color: transparent; /* hidden — the label takes its place */
 }
+/* select: hide the placeholder text while nothing is chosen so the
+   resting label stands in for it (mirrors the text inputs) and the two
+   don't overlap. */
+.booking-field select:required:invalid {
+  color: transparent;
+}
 .booking-field input:focus + .booking-field__rule,
 .booking-field select:focus ~ .booking-field__rule,
+.booking-field:has(select:valid) .booking-field__rule,
 .booking-field.is-filled .booking-field__rule {
   transform: scaleX(1);
 }
@@ -366,6 +373,7 @@
 }
 .booking-field input:focus ~ .booking-field__label,
 .booking-field select:focus ~ .booking-field__label,
+.booking-field:has(select:valid) .booking-field__label,
 .booking-field.is-filled .booking-field__label {
   transform: translateY(-22px);
   color: var(--accent);
