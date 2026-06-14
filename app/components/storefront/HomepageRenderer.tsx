@@ -116,11 +116,12 @@ function Block({
     case "product_carousel": {
       const f = (cfg.filter as RC) ?? {};
       const cta = (cfg.cta as RC) ?? {};
+      const ctaHref = sectionCtaHref(cfg, cta, f);
       return (
         <ProductCarousel
           title={block.title}
           ctaLabel={cfg.ctaLabel ? String(cfg.ctaLabel) : (cta.label ? String(cta.label) : undefined)}
-          ctaHref={String(cfg.ctaHref ?? cta.href ?? "/collection")}
+          ctaHref={ctaHref}
           headingSide={(cfg.headingSide as "left" | "right" | undefined) ?? "left"}
           gender={f.gender ? String(f.gender) : undefined}
           category={f.category ? String(f.category) : undefined}
@@ -130,11 +131,12 @@ function Block({
     }
     case "editorial_split": {
       const f = (cfg.filter as RC) ?? {};
+      const cta = (cfg.cta as RC) ?? {};
       return (
         <EditorialSplit
           title={String(cfg.title ?? block.title)}
-          ctaLabel={String(cfg.ctaLabel ?? "")}
-          ctaHref={String(cfg.ctaHref ?? "")}
+          ctaLabel={String(cfg.ctaLabel ?? cta.label ?? "")}
+          ctaHref={sectionCtaHref(cfg, cta, f)}
           image={String(cfg.image ?? "")}
           imageAlt={String(cfg.imageAlt ?? "")}
           imageSide={(cfg.imageSide as "left" | "right" | undefined) ?? "left"}
@@ -158,4 +160,19 @@ function Block({
     default:
       return null;
   }
+}
+
+function sectionCtaHref(cfg: RC, cta: RC, filter: RC) {
+  const explicit = [cfg.ctaHref, cta.href]
+    .map((v) => (typeof v === "string" ? v.trim() : ""))
+    .find((v) => v.length > 0 && v !== "/collection");
+  if (explicit) return explicit;
+
+  const category = typeof filter.category === "string" ? filter.category.trim() : "";
+  if (category) return `/collection?c=${encodeURIComponent(category)}`;
+
+  const gender = typeof filter.gender === "string" ? filter.gender.trim() : "";
+  if (gender) return `/collection?c=${encodeURIComponent(gender)}`;
+
+  return "/collection?c=all";
 }
