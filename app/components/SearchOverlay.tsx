@@ -164,9 +164,10 @@ export default function SearchOverlay({ open, onClose, products }: Props) {
               <div className="search-grid">
                 {results.map(p => {
                   const isFab = p.kind === "fabric";
-                  const src = isFab && p.colour
+                  const uploaded = p.thumbnail || p.images?.[0];
+                  const src = uploaded || (isFab && p.colour
                     ? imgFabric(p.slug, p.colour, "front")
-                    : `/generated/${p.slug}/01-front.webp`;
+                    : `/generated/${p.slug}/01-front.webp`);
                   return (
                     <Link key={p.slug} className="search-card" href={`/products/${p.slug}`} onClick={onClose}>
                       <div className="search-card-img" style={isFab && p.colourHex ? { backgroundColor: p.colourHex } : undefined}>
