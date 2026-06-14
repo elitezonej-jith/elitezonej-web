@@ -215,11 +215,6 @@ export default function CollectionClient({
                 </Link>
                 <Link href={`/products/${p.slug}`}>
                   <h3>{p.name}</h3>
-                  <div className="col-row">
-                    <span className="col-dot" style={{ backgroundColor: p.colourHex || "transparent" }} aria-hidden="true" />
-                    <span>Colour · {p.colour}</span>
-                  </div>
-                  <p className="desc">{p.description || p.shortDescription}</p>
                 </Link>
               </Reveal>
             ))
