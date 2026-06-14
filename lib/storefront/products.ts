@@ -15,11 +15,22 @@ export type StorefrontProduct = Product & {
   thumbnail: string | null;
 };
 
+function isLocalProductUpload(src: string): boolean {
+  return src.startsWith("/uploads/products/") || src.startsWith("/admin-uploads/products/");
+}
+
 async function decorate(p: Product): Promise<StorefrontProduct> {
   const meta = await getMeta(p.slug);
   const dbImages = (await listImages(p.slug)).map((i) => i.image_path);
-  const images = dbImages.length ? dbImages : fallbackImages(p.slug);
-  const thumb = (await getThumbnail(p.slug)) ?? images[0] ?? null;
+  const fallback = fallbackImages(p.slug);
+  const hasOnlyLocalUploads = dbImages.length > 0 && dbImages.every(isLocalProductUpload);
+  const images = hasOnlyLocalUploads && fallback.length > 0
+    ? fallback
+    : (dbImages.length ? dbImages : fallback);
+  const dbThumb = await getThumbnail(p.slug);
+  const thumb = dbThumb && !(isLocalProductUpload(dbThumb) && fallback.length > 0)
+    ? dbThumb
+    : images[0] ?? null;
   return { ...p, meta, images, thumbnail: thumb };
 }
 

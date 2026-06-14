@@ -627,12 +627,12 @@
   .hg-rail {
     display: flex;
     grid-template-columns: none;
-    gap: 2vw;
-    padding: 0 4vw;
+    gap: 0;
+    padding: 0;
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
-    scroll-padding-inline: 4vw;
+    scroll-padding-inline: 0;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
@@ -640,7 +640,7 @@
   .hg-rail::-webkit-scrollbar { display: none; }
 
   .hg-tile {
-    flex: 0 0 92vw;
+    flex: 0 0 100vw;
     aspect-ratio: 4/5;
     min-height: 0;
     max-height: 80vh;
@@ -655,14 +655,15 @@
   .hg-dots {
     display: flex;
     justify-content: center;
-    gap: 6px;
-    padding: 16px 0 22px;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0 5px;
     background: var(--ink);
     border-top: 1px solid rgba(250, 247, 242, 0.08);
   }
   .hg-dot {
-    width: 44px;
-    height: 36px;
+    width: 16px;
+    height: 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -671,31 +672,32 @@
   .hg-dot-track {
     display: block;
     position: relative;
-    width: 24px;
-    height: 1px;
-    background: rgba(250, 247, 242, 0.24);
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: rgba(250, 247, 242, 0.28);
     overflow: hidden;
-    transition: width 320ms cubic-bezier(.22, 1, .36, 1),
-                height 200ms cubic-bezier(.22, 1, .36, 1);
+    transition:
+      transform 220ms cubic-bezier(.22, 1, .36, 1),
+      background 200ms;
   }
   .hg-dot[data-active="true"] .hg-dot-track {
-    width: 36px;
-    height: 2px;
-    background: rgba(250, 247, 242, 0.18);
+    transform: scale(1.28);
+    background: rgba(250, 247, 242, 0.42);
   }
   .hg-dot-fill {
     display: block;
     position: absolute;
     inset: 0 auto 0 0;
     width: 0;
-    background: var(--accent);
+    border-radius: inherit;
+    background: var(--paper);
     transition: background 200ms;
   }
-  /* Active dot fills 0→100% across the slide duration via inline --p */
+  /* Active slide uses a filled dot instead of the previous progress dash. */
   .hg-dot[data-active="true"] .hg-dot-fill {
-    width: calc(var(--p, 0) * 100%);
+    width: 100%;
   }
-  /* Inactive dots: subtle accent dash to mark the position */
   .hg-dot:not([data-active="true"]) .hg-dot-fill {
     width: 0;
   }
