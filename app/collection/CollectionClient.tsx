@@ -79,6 +79,7 @@ export default function CollectionClient({
         list = list.filter(p => p.gender === cat && p.category !== "accessories");
       } else if (cat === "festive") list = list.filter(p => p.occasion === "Festive");
       else if (cat === "new") list = list.filter(p => p.badge === "New");
+      else if (cat === "sale") list = list.filter(p => p.salePrice);
       else if (cat !== "all") list = list.filter(p => p.category === cat);
     }
     if (sub) list = list.filter(p => p.sub === sub);
