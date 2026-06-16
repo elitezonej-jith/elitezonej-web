@@ -79,6 +79,7 @@ export default function CollectionClient({
         list = list.filter(p => p.gender === cat && p.category !== "accessories");
       } else if (cat === "festive") list = list.filter(p => p.occasion === "Festive");
       else if (cat === "new") list = list.filter(p => p.badge === "New");
+      else if (cat === "sale") list = list.filter(p => p.salePrice);
       else if (cat !== "all") list = list.filter(p => p.category === cat);
     }
     if (sub) list = list.filter(p => p.sub === sub);
@@ -215,11 +216,6 @@ export default function CollectionClient({
                 </Link>
                 <Link href={`/products/${p.slug}`}>
                   <h3>{p.name}</h3>
-                  <div className="col-row">
-                    <span className="col-dot" style={{ backgroundColor: p.colourHex || "transparent" }} aria-hidden="true" />
-                    <span>Colour · {p.colour}</span>
-                  </div>
-                  <p className="desc">{p.description || p.shortDescription}</p>
                 </Link>
               </Reveal>
             ))

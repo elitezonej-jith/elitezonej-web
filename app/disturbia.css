@@ -323,12 +323,12 @@ header.site {
 .brand-logo-link { display: flex; align-items: center; color: var(--ink); }
 .foot-logo-link  { display: flex; justify-content: center; margin-bottom: 28px; }
 .brand-wordmark {
-  height: clamp(28px, 4vw, 50px);
+  height: clamp(20px, 3vw, 25px);
   width: auto;
   display: block;
 }
 @media (max-width: 600px) {
-  .brand-wordmark { height: clamp(26px, 7vw, 32px); }
+  .brand-wordmark { height: clamp(18px, 6vw, 20px); }
 }
 
 /* =============================================================
@@ -1252,18 +1252,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--ink); }
   letter-spacing: -0.005em;
 }
 .sec-head .meta { display: none !important; }
-
-/* =============================================================
-   Made-for-you cards — neutralise hover, drop accent
-   ============================================================= */
-.mfy { background: var(--paper); }
-.mfy .grid { background: var(--paper-3); }
-.mfy .card { background: var(--paper); }
-.mfy .card:hover { background: var(--paper-2); }
-.mfy .card:hover .photo { transform: none; }
-.mfy h3 { font-weight: 400; font-size: 22px; }
-.mfy .arrow { color: var(--ink); }
-.mfy .card:hover .arrow { color: var(--ink-3); }
 
 /* =============================================================
    Editorial section (legacy — single split image+copy block)
@@ -2467,7 +2455,7 @@ section.page { padding-top: 64px; padding-bottom: 64px; }
 /* Tap-press feedback — subtle scale-down on press for premium "weight".
    Constrained to interactive elements that don't already have it. */
 @media (hover: none) and (pointer: coarse) {
-  .btn, .pcard, .mfy .card, .hg-tile, .pdp-buy-bar__cta, .util-link,
+  .btn, .pcard, .hg-tile, .pdp-buy-bar__cta, .util-link,
   .icon-btn, .cart-trigger, .promo-sticker, .promo-modal-close,
   .mobile-drawer__row, .mobile-drawer__shopall, .mobile-drawer__atelier {
     -webkit-tap-highlight-color: transparent;
@@ -2622,11 +2610,6 @@ section.page { padding-top: 64px; padding-bottom: 64px; }
   .pcard[data-active="2"] .plate img.alt { opacity: 0; }
   .pcard[data-active="2"] .plate img.alt-2 { opacity: 1; }
 
-  /* Made-for-you cards on home — drop the photo zoom & background swap */
-  .mfy .card:hover { background: var(--paper); }
-  .mfy .card:hover .photo { transform: none; }
-  .mfy .card:hover .arrow { color: var(--ink); }
-
   /* Editorial split / worn-shot zoom-on-hover */
   .worn .pcard:hover .plate img { transform: none; }
 
@@ -2717,13 +2700,6 @@ section.page { padding-top: 64px; padding-bottom: 64px; }
   .bespoke-teaser { padding: 48px 0 !important; }
   .bespoke-teaser h3 { font-size: clamp(28px, 7.2vw, 38px) !important; line-height: 1.08 !important; }
   .bespoke-teaser .row { padding: 0 16px !important; gap: 20px !important; }
-
-  /* Made-for-you cards — single column already (≤720), but tighten gaps */
-  .mfy .grid { gap: 1px; }
-  .mfy h3 { font-size: clamp(22px, 6vw, 26px) !important; }
-  .mfy .card { padding-bottom: 24px; }
-  .mfy .card .body { padding: 0 16px; gap: 8px; }
-  .mfy .card .photo { aspect-ratio: 16/11; margin-bottom: 16px; }
 
   /* Process strip — peek the next pane on phone */
   .process-strip { padding: 40px 0 32px !important; }

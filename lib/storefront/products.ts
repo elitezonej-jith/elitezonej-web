@@ -20,6 +20,10 @@ export type StorefrontProduct = Product & {
   thumbnail: string | null;
 };
 
+function isLocalProductUpload(src: string): boolean {
+  return src.startsWith("/uploads/products/") || src.startsWith("/admin-uploads/products/");
+}
+
 // Batched decoration for a list of products — ONE meta query + ONE images query
 // for the whole page instead of 3-4 queries per product (the old N+1). Each
 // product's fallback behaviour is preserved exactly: missing meta →
@@ -35,7 +39,11 @@ async function decorateList(products: Product[]): Promise<StorefrontProduct[]> {
     const meta = metaMap.get(p.slug) ?? emptyMeta(p.slug);
     const imgRows = imagesMap.get(p.slug) ?? [];
     const dbImages = imgRows.map((i) => i.image_path);
-    const images = dbImages.length ? dbImages : fallbackImages(p.slug);
+    const fallback = fallbackImages(p.slug);
+    const hasOnlyLocalUploads = dbImages.length > 0 && dbImages.every(isLocalProductUpload);
+    const images = hasOnlyLocalUploads && fallback.length > 0
+      ? fallback
+      : (dbImages.length ? dbImages : fallback);
     const thumb = thumbnailFromImages(imgRows) ?? images[0] ?? null;
     return { ...p, meta, images, thumbnail: thumb };
   });
@@ -139,6 +147,7 @@ export type SearchIndexItem = {
   colour?: string;
   colourHex?: string;
   colourVariants?: FabricColour[];
+  thumbnail?: string | null;
 };
 
 // Fabric extras still live on the static catalogue record (mirrors the
@@ -167,6 +176,7 @@ const _getSearchIndexCached = unstable_cache(
         colour: staticMatch?.colour,
         colourHex: staticMatch?.colourHex,
         colourVariants: staticMatch?.colourVariants,
+        thumbnail: p.thumbnail,
       };
     });
   },

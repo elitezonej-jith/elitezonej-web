@@ -58,12 +58,17 @@
 
 .plp {
   max-width: var(--container);
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: var(--s-5) var(--pad-x-d) var(--s-9);
   display: grid;
-  grid-template-columns: 240px 1fr;
+  grid-template-columns: 240px minmax(0, 1fr);
   gap: var(--s-7);
   align-items: start;
+}
+@media (max-width: 1100px) {
+  .plp { grid-template-columns: 220px minmax(0, 1fr); gap: var(--s-5); }
 }
 @media (max-width: 900px) {
   .plp { grid-template-columns: 1fr; gap: var(--s-5); padding: var(--s-5) var(--pad-x-m) var(--s-9); }
@@ -124,7 +129,8 @@
   .filters { position: static; padding-bottom: var(--s-5); border-bottom: var(--rule); }
 }
 
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-5); }
+.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-5); min-width: 0; }
+@media (max-width: 1100px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); } }
 @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); gap: var(--s-3); } }
 /* Keep 2-up on phones — denser browsing, more product per scroll. Drop to
    1-up only at extreme small (≤375px) where 2 cards become unreadable. */
@@ -230,6 +236,7 @@
 .pcard {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   cursor: pointer;
   transition: transform 500ms var(--ease);
   color: inherit;
@@ -237,7 +244,7 @@
 }
 .pcard:hover { transform: translateY(-3px); }
 .pcard .plate {
-  aspect-ratio: 3/4;
+  aspect-ratio: 7/10 !important;
   position: relative;
   overflow: hidden;
   background: var(--paper-2);
@@ -245,7 +252,13 @@
   transition: box-shadow 500ms var(--ease);
 }
 .pcard:hover .plate { box-shadow: 0 18px 40px -22px rgba(26, 22, 19, 0.45); }
-.pcard .plate img { object-fit: cover; transition: opacity var(--d-slow) var(--ease); }
+.pcard .plate img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center top;
+  transition: opacity var(--d-slow) var(--ease);
+}
 .pcard .plate img.alt,
 .pcard .plate img.alt-2 { opacity: 0; }
 .pcard:hover .plate img.primary { opacity: 0; }
@@ -262,7 +275,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.pcard .row { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-3); }
+.pcard .row { display: flex; justify-content: center; align-items: baseline; gap: var(--s-3); }
 .pcard .price {
   font-family: var(--font-mono);
   font-weight: 500;

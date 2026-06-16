@@ -1,7 +1,9 @@
 export type SubcatMeta = { title: string; stand: string; empty?: boolean };
 
 export const CAT_DATA: Record<string, SubcatMeta> = {
+  all:        { title: "All Pieces", stand: "The complete Elite Zone J wardrobe — every tailored piece, festive look, and accessory across men's and women's, cut and finished in our atelier." },
   new:        { title: "New Arrivals", stand: "Just arrived to the atelier — the freshest tailoring, festive pieces, and accessories of the season, photographed in our workroom this month." },
+  sale:       { title: "Sale", stand: "Limited-time reductions on tailored pieces, festive looks, and accessories from the current atelier edit." },
   men:        { title: "Men",       stand: "Tailored pieces for the eight hours of a wedding day, the boardroom on Tuesday, and the dinner table on Saturday. Cut in our atelier in Italian wool, finished by hand." },
   women:      { title: "Women",     stand: "A capsule for the modern Indian woman — sharp tailoring, bias-cut silks, and festive lehengas, photographed in the same warm cream of our atelier. Designed with quiet confidence." },
   festive:    { title: "Festive",   stand: "For the Indian wedding season. Sherwanis, lehengas, sarees and bandhgalas — each piece either ready-to-wear or made-to-measure in seven days." },

@@ -364,7 +364,7 @@ html[data-scrolled="true"] .header-top {
   padding-bottom: var(--s-3) !important;
 }
 html[data-scrolled="true"] .brand-logo-link img {
-  height: clamp(24px, 2.6vw, 36px) !important;
+  height: clamp(18px, 2.2vw, 25px) !important;
   transition: height 360ms cubic-bezier(.22, 1, .36, 1);
 }
 .brand-logo-link img { transition: height 360ms cubic-bezier(.22, 1, .36, 1); }
