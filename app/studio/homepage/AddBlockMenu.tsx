@@ -8,6 +8,7 @@ const OPTIONS: Array<{ value: string; label: string; sub: string }> = [
   { value: "announce_bar", label: "Announce bar", sub: "Scrolling ticker above the header" },
   { value: "hero_grid", label: "Hero grid", sub: "Three image tiles, top of page" },
   { value: "hero_banner", label: "Hero banner", sub: "Single full-width image with text" },
+  { value: "banner_carousel", label: "Banner carousel", sub: "Rotating banners from /studio/banners" },
   { value: "product_carousel", label: "Product carousel", sub: "Auto from filter (e.g. featured, new)" },
   { value: "editorial_split", label: "Editorial split", sub: "Image on one side, text on the other" },
   { value: "service_cards", label: "Service cards", sub: "Three cards (e.g. Bespoke, Sherwani, Shirts)" },

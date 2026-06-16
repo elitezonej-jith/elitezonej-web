@@ -1,6 +1,7 @@
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
+import { del as blobDel } from "@vercel/blob";
 import { sql } from "../db";
 
 export type MediaAsset = {
@@ -77,10 +78,15 @@ export async function deleteAsset(id: number): Promise<void> {
     [id],
   );
   if (!row) return;
-  // Try to remove the on-disk file (don't break if it's already gone)
+  // Remove the underlying file. Blob-stored assets are full https URLs; local
+  // ones are paths under /uploads. Swallow failures (already-deleted is fine).
   try {
-    const abs = path.resolve(process.cwd(), "public", row.path.replace(/^\//, ""));
-    if (abs.startsWith(path.resolve(process.cwd(), "public", "uploads"))) fs.unlinkSync(abs);
+    if (/^https?:\/\//.test(row.path)) {
+      if (process.env.BLOB_READ_WRITE_TOKEN) await blobDel(row.path);
+    } else {
+      const abs = path.resolve(process.cwd(), "public", row.path.replace(/^\//, ""));
+      if (abs.startsWith(path.resolve(process.cwd(), "public", "uploads"))) fs.unlinkSync(abs);
+    }
   } catch { /* */ }
   await sql.run("DELETE FROM media_assets WHERE id = ?", [id]);
 }

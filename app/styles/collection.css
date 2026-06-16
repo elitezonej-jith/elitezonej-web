@@ -9,7 +9,7 @@
   border-bottom: var(--rule-strong);
 }
 .cat-header .crumb { color: var(--ink-3); margin-bottom: var(--s-4); display: flex; gap: var(--s-3); }
-.cat-header .crumb .sep { color: var(--ink-4); }
+.cat-header .crumb .sep { color: var(--ink-3); }
 .cat-header h1 {
   margin: 0 0 var(--s-4);
   font-family: var(--font-display);

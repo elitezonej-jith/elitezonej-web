@@ -11,8 +11,8 @@ export type Banner = {
   mobile_image_path: string;
   text_align: "left" | "center" | "right";
   text_color: "light" | "dark";
-  starts_at: string | null;
-  ends_at: string | null;
+  starts_at: string | Date | null;
+  ends_at: string | Date | null;
   status: "draft" | "scheduled" | "published";
   enabled: number;
   sort_order: number;

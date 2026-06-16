@@ -156,6 +156,6 @@ export function seedFixtures(db: Database.Database): void {
   `);
   insertPromo.run("WEDDING24", "percent", 10, daysAgo(30), daysAgo(-30), 25000, 200, "active", "Wedding-season 10% off, min cart ₹25,000");
   insertPromo.run("FESTIVE",   "percent", 15, daysAgo(60), daysAgo(-15), 40000, 100, "active", "Festive sherwani / lehenga 15% off");
-  insertPromo.run("FREESHIP",  "free_ship", 0, null, null, 5000, null, "active", "Free shipping over ₹5,000");
+  insertPromo.run("FREESHIP",  "free_ship", 0, null, null, 15000, null, "active", "Free shipping over ₹15,000");
   insertPromo.run("WELCOME10", "percent", 10, null, null, 0, 1000, "active", "First-order welcome 10% off");
 }

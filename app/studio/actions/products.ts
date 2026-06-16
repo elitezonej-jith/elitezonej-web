@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { bustProducts } from "../../../lib/storefront/cache";
 import { z } from "zod";
 import { requireUser } from "../../../lib/admin/session";
 import {
@@ -41,6 +42,7 @@ const ProductSchema = z.object({
   meta_title: z.string().max(120).default(""),
   meta_description: z.string().max(240).default(""),
   og_image_path: z.string().max(240).default(""),
+  size_guide: z.string().max(8000).default(""),
 });
 
 function splitLines(raw: string): string[] {
@@ -83,6 +85,7 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
     gender: v.gender, category: v.category, sub: v.sub?.trim() || null,
     kind: v.kind, status: v.status,
     description: v.long_description || null,
+    size_guide: v.size_guide,
   };
   await upsertProduct(input);
 
@@ -112,6 +115,7 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
   revalidatePath(`/studio/products/${v.slug}`);
   revalidatePath("/");
   revalidatePath(`/products/${v.slug}`);
+  bustProducts(); // also busts the stock map (tagged "products")
   redirect(`/studio/products/${v.slug}?saved=1`);
 }
 
@@ -122,6 +126,7 @@ export async function deleteProductAction(fd: FormData): Promise<void> {
   await deleteProduct(slug);
   await logAudit({ user_id: me.id, action: "delete_product", entity: "product", entity_id: slug });
   revalidatePath("/studio/products");
+  bustProducts();
   redirect("/studio/products?flash=Product%20removed");
 }
 
@@ -134,6 +139,7 @@ export async function archiveProductAction(fd: FormData): Promise<void> {
   await logAudit({ user_id: me.id, action: "set_product_status", entity: "product", entity_id: slug, payload: { status } });
   revalidatePath("/studio/products");
   revalidatePath(`/studio/products/${slug}`);
+  bustProducts();
 }
 
 export async function duplicateProductAction(fd: FormData): Promise<void> {
@@ -156,11 +162,13 @@ export async function duplicateProductAction(fd: FormData): Promise<void> {
     note: src.note, fit: src.fit, fabric: src.fabric, occasion: src.occasion,
     badge: src.badge, gender: src.gender, category: src.category, sub: src.sub,
     kind: src.kind, status: "draft", description: src.description,
+    size_guide: src.size_guide,
   });
   const meta = await getMeta(slug);
   await upsertMeta({ ...meta, product_slug: newSlug });
   await logAudit({ user_id: me.id, action: "duplicate_product", entity: "product", entity_id: newSlug, payload: { src: slug } });
   revalidatePath("/studio/products");
+  bustProducts();
   redirect(`/studio/products/${newSlug}?flash=Duplicate%20created`);
 }
 
@@ -175,6 +183,7 @@ export async function attachImageAction(fd: FormData): Promise<void> {
   const id = await addImage(slug, imagePath, alt);
   await logAudit({ user_id: me.id, action: "attach_image", entity: "product", entity_id: slug, payload: { id, imagePath } });
   revalidatePath(`/studio/products/${slug}`);
+  bustProducts();
 }
 
 export async function deleteImageAction(fd: FormData): Promise<void> {
@@ -185,6 +194,7 @@ export async function deleteImageAction(fd: FormData): Promise<void> {
   await deleteProductImage(id, slug);
   await logAudit({ user_id: me.id, action: "delete_image", entity: "product", entity_id: slug, payload: { id } });
   revalidatePath(`/studio/products/${slug}`);
+  bustProducts();
 }
 
 export async function reorderImagesAction(fd: FormData): Promise<void> {
@@ -194,6 +204,7 @@ export async function reorderImagesAction(fd: FormData): Promise<void> {
   if (!slug || !ordered.length) return;
   await reorderImages(slug, ordered);
   revalidatePath(`/studio/products/${slug}`);
+  bustProducts();
 }
 
 export async function setThumbnailAction(fd: FormData): Promise<void> {
@@ -203,6 +214,7 @@ export async function setThumbnailAction(fd: FormData): Promise<void> {
   if (!slug || !id) return;
   await setThumbnail(slug, id);
   revalidatePath(`/studio/products/${slug}`);
+  bustProducts();
 }
 
 export async function setHoverAction(fd: FormData): Promise<void> {
@@ -212,6 +224,7 @@ export async function setHoverAction(fd: FormData): Promise<void> {
   if (!slug || !id) return;
   await setHover(slug, id);
   revalidatePath(`/studio/products/${slug}`);
+  bustProducts();
 }
 
 export async function updateAltAction(fd: FormData): Promise<void> {

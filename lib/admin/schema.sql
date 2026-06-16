@@ -152,6 +152,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   phone         TEXT NOT NULL DEFAULT '',
   email         TEXT,
   city          TEXT NOT NULL DEFAULT '',
+  state         TEXT NOT NULL DEFAULT '',
   service       TEXT NOT NULL DEFAULT '',
   message       TEXT,
   status        TEXT NOT NULL DEFAULT 'new'

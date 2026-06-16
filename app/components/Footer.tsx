@@ -76,7 +76,7 @@ export default async function Footer({ minimal = false }: { minimal?: boolean })
             <Image src="/logo/lockup-trimmed.png" alt={s.brandName} width={860} height={227} style={{ height: "26px", width: "auto", display: "block" }} />
           </Link>
           <span>© 2026 {s.brandName}</span>
-          <span>Visa · Mastercard · UPI · Net Banking · COD</span>
+          <span>Visa · Mastercard · UPI · Net Banking</span>
           <span>Designed and tailored in India</span>
         </div>
       </footer>

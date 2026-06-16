@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { requireRole } from "../../../lib/admin/session";
 import { setSettings } from "../../../lib/admin/repos/settings";
 import { logAudit } from "../../../lib/admin/repos/audit";
+import { bustSettings } from "../../../lib/storefront/cache";
 
 const ALLOWED_SETTING_KEYS = new Set([
   "brand_name",
@@ -26,4 +27,5 @@ export async function saveSettingsAction(fd: FormData): Promise<void> {
   await setSettings(map);
   await logAudit({ user_id: me.id, action: "save_settings", entity: "settings", entity_id: null, payload: { keys: Object.keys(map) } });
   revalidatePath("/admin/settings");
+  bustSettings();
 }

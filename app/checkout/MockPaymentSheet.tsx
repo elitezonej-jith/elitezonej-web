@@ -3,7 +3,23 @@ import { useEffect, useRef, useState } from "react";
 import { fmtINR } from "@/lib/format";
 import { confirmMockPayment } from "./actions";
 
-type Method = "card" | "upi";
+type Method = "card" | "upi" | "upi-qr";
+
+const UPI_PAYEE = "elitezonej@razorpay";
+const UPI_PAYEE_NAME = "Elite Zone J";
+
+function buildUpiUri(amount: number, orderId: string): string {
+  // Standard UPI deep-link format. Real Razorpay would generate this server-
+  // side; in sandbox we render a static QR encoding it so flows match prod.
+  const params = new URLSearchParams({
+    pa: UPI_PAYEE,
+    pn: UPI_PAYEE_NAME,
+    am: amount.toFixed(2),
+    cu: "INR",
+    tn: `Order ${orderId}`,
+  });
+  return `upi://pay?${params.toString()}`;
+}
 type Phase = "idle" | "stitching" | "sealed" | "error";
 
 export default function MockPaymentSheet({
@@ -112,7 +128,7 @@ export default function MockPaymentSheet({
         {phase !== "sealed" ? (
           <>
             <div className="mps-seg" role="tablist" aria-label="Payment method">
-              {(["card", "upi"] as Method[]).map((m) => (
+              {(["card", "upi", "upi-qr"] as Method[]).map((m) => (
                 <button
                   key={m}
                   role="tab"
@@ -121,12 +137,16 @@ export default function MockPaymentSheet({
                   onClick={() => setMethod(m)}
                   disabled={busy}
                 >
-                  {m === "card" ? "Card" : "UPI"}
+                  {m === "card" ? "Card" : m === "upi" ? "UPI ID" : "UPI QR"}
                 </button>
               ))}
               <span
                 className="mps-seg__ink"
-                style={{ transform: `translateX(${method === "card" ? "0" : "100%"})` }}
+                style={{
+                  transform: `translateX(${
+                    method === "card" ? "0" : method === "upi" ? "100%" : "200%"
+                  })`,
+                }}
                 aria-hidden="true"
               />
             </div>
@@ -179,7 +199,7 @@ export default function MockPaymentSheet({
                     </label>
                   </div>
                 </>
-              ) : (
+              ) : method === "upi" ? (
                 <label className="mps-field">
                   <span>UPI ID</span>
                   <input
@@ -190,6 +210,56 @@ export default function MockPaymentSheet({
                     onChange={(e) => setUpi(e.target.value)}
                   />
                 </label>
+              ) : (
+                <div className="mps-qr-wrap">
+                  <div className="mps-qr" aria-label={`Scan to pay ${fmtINR(amount)} to ${UPI_PAYEE_NAME}`}>
+                    {/* Sandbox mock QR: a static 25×25 grid (visually QR-shaped,
+                        not scannable). Real Razorpay renders a scannable QR for
+                        the upi:// deep-link below; this is theatre. */}
+                    <svg viewBox="0 0 25 25" preserveAspectRatio="xMidYMid meet" role="img">
+                      <rect width="25" height="25" fill="#f3ede1" />
+                      {/* Three finder squares (top-left, top-right, bottom-left) */}
+                      {([[0, 0], [18, 0], [0, 18]] as const).map(([x, y], i) => (
+                        <g key={i}>
+                          <rect x={x} y={y} width="7" height="7" fill="#1c1812" />
+                          <rect x={x + 1} y={y + 1} width="5" height="5" fill="#f3ede1" />
+                          <rect x={x + 2} y={y + 2} width="3" height="3" fill="#1c1812" />
+                        </g>
+                      ))}
+                      {/* Pseudo-random data modules — deterministic via order id */}
+                      {Array.from({ length: 25 * 25 }).map((_, idx) => {
+                        const x = idx % 25;
+                        const y = Math.floor(idx / 25);
+                        // Skip the three finder areas (8x8 with separator) + their inner pad
+                        const inFinder =
+                          (x < 8 && y < 8) ||
+                          (x > 16 && y < 8) ||
+                          (x < 8 && y > 16);
+                        if (inFinder) return null;
+                        // Deterministic bit: hash of (orderId, x, y) → on/off
+                        const h = (orderId.charCodeAt((x + y * 7) % orderId.length || 1) + x * 13 + y * 7) & 1;
+                        if (!h) return null;
+                        return <rect key={idx} x={x} y={y} width="1" height="1" fill="#1c1812" />;
+                      })}
+                    </svg>
+                  </div>
+                  <div className="mps-qr-payee">
+                    <span className="mps-field-label">Pay to</span>
+                    <code>{UPI_PAYEE}</code>
+                    <span className="mps-qr-name">{UPI_PAYEE_NAME}</span>
+                  </div>
+                  <a
+                    className="mps-qr-deeplink"
+                    href={buildUpiUri(amount, orderId)}
+                    onClick={(e) => {
+                      // On desktop the upi:// scheme has no handler; let the
+                      // mock "pay" flow complete instead of leaving a dead link.
+                      e.preventDefault();
+                    }}
+                  >
+                    Open in UPI app
+                  </a>
+                </div>
               )}
 
               <p className="mps-hint">
@@ -372,7 +442,7 @@ export default function MockPaymentSheet({
         .mps-seg {
           position: relative;
           display: grid;
-          grid-template-columns: 1fr 1fr;
+          grid-template-columns: 1fr 1fr 1fr;
           border: 1px solid #cdbfa3;
           margin-bottom: 18px;
         }
@@ -400,10 +470,65 @@ export default function MockPaymentSheet({
           position: absolute;
           top: 0;
           left: 0;
-          width: 50%;
+          width: calc(100% / 3);
           height: 100%;
           background: #1c1812;
           transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .mps-qr-wrap {
+          display: grid;
+          gap: 14px;
+          justify-items: center;
+          text-align: center;
+          padding: 6px 0 2px;
+        }
+        .mps-qr {
+          width: 180px;
+          height: 180px;
+          padding: 12px;
+          background: #f3ede1;
+          border: 1px solid #cdbfa3;
+          box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 6px 18px -10px rgba(28, 20, 12, 0.4);
+        }
+        .mps-qr svg {
+          width: 100%;
+          height: 100%;
+          display: block;
+          image-rendering: pixelated;
+          shape-rendering: crispEdges;
+        }
+        .mps-qr-payee {
+          display: grid;
+          gap: 4px;
+        }
+        .mps-field-label {
+          display: block;
+          font-family: var(--font-mono, ui-monospace, monospace);
+          font-size: 9px;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: #8a7858;
+        }
+        .mps-qr-payee code {
+          font-family: var(--font-mono, ui-monospace, monospace);
+          font-size: 13px;
+          color: #1c1812;
+          letter-spacing: 0.04em;
+        }
+        .mps-qr-name {
+          font-family: var(--font-mono, ui-monospace, monospace);
+          font-size: 10px;
+          color: #94835f;
+          letter-spacing: 0.08em;
+        }
+        .mps-qr-deeplink {
+          font-family: var(--font-mono, ui-monospace, monospace);
+          font-size: 10px;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: #9c7c4f;
+          text-decoration: underline;
+          text-underline-offset: 4px;
         }
         .mps-fields {
           display: grid;

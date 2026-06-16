@@ -1,26 +1,49 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { Banner } from "../../../../lib/admin/repos/banners";
 
 export default function BannerCarousel({ banners, autoplay }: { banners: Banner[]; autoplay: number }) {
   const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
   useEffect(() => {
-    if (banners.length < 2 || autoplay < 2) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setReducedMotion(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  useEffect(() => {
+    if (banners.length < 2 || autoplay < 2 || paused || reducedMotion) return;
     const t = setInterval(() => setI((x) => (x + 1) % banners.length), autoplay * 1000);
     return () => clearInterval(t);
-  }, [banners.length, autoplay]);
+  }, [banners.length, autoplay, paused, reducedMotion]);
   if (!banners.length) return null;
   const b = banners[i];
   return (
-    <section style={{
+    <section
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onFocusCapture={() => setPaused(true)}
+      onBlurCapture={() => setPaused(false)}
+      style={{
       position: "relative",
       width: "100%", aspectRatio: "21/9", maxHeight: "70vh",
       overflow: "hidden", background: "#1A1613",
     }}>
       {b.image_path && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={b.image_path} alt={b.title} style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+        <Image
+          src={b.image_path}
+          alt={b.title}
+          fill
+          sizes="100vw"
+          priority={i === 0}
+          style={{ objectFit: "cover" }}
+        />
       )}
       <div style={{
         position: "absolute", inset: 0,
@@ -54,7 +77,8 @@ export default function BannerCarousel({ banners, autoplay }: { banners: Banner[
         <div style={{ position: "absolute", bottom: 22, left: 0, right: 0, textAlign: "center", display: "flex", gap: 8, justifyContent: "center" }}>
           {banners.map((_, k) => (
             <button key={k} onClick={() => setI(k)}
-                    aria-label={`Banner ${k + 1}`}
+                    aria-label={`Go to slide ${k + 1}`}
+                    aria-current={k === i ? "true" : undefined}
                     style={{
                       width: k === i ? 28 : 10, height: 4,
                       background: k === i ? "#FAF7F2" : "rgba(250,247,242,0.5)",

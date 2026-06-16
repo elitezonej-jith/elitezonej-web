@@ -62,3 +62,7 @@ cookies.txt
 # agent instructions (local-only)
 AGENTS.md
 CLAUDE.md
+.gstack/
+
+# local screenshots from chrome devtools verification
+.screenshots/

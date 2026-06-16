@@ -39,9 +39,9 @@ export async function getCustomer(id: number): Promise<Customer | null> {
 
 export async function getCustomerOrders(
   id: number,
-): Promise<Array<{ id: string; status: string; total: number; created_at: string }>> {
-  return sql.all<{ id: string; status: string; total: number; created_at: string }>(
-    "SELECT id, status, total, created_at FROM orders WHERE customer_id = ? ORDER BY created_at DESC",
+): Promise<Array<{ id: string; status: string; total: number; created_at: string; ship_state: string }>> {
+  return sql.all<{ id: string; status: string; total: number; created_at: string; ship_state: string }>(
+    "SELECT id, status, total, created_at, ship_state FROM orders WHERE customer_id = ? ORDER BY created_at DESC",
     [id],
   );
 }

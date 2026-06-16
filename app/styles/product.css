@@ -932,3 +932,10 @@
   .fabric-spec .inner { padding: var(--s-5) var(--s-3); }
   .fabric-faq { padding: var(--s-5) var(--s-3); }
 }
+
+/* Reviews wrap — match the page max-width so the section aligns with PDP body */
+.pdp-reviews-wrap {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 var(--pad-x-d) var(--s-8);
+}

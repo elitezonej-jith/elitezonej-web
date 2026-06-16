@@ -9,6 +9,7 @@ import { countOrders } from "../../lib/admin/repos/orders";
 import { countProducts } from "../../lib/admin/repos/products";
 import "./styles/admin.css";
 
+export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Atelier Operations · Elite Zone J",
   description: "Operator workbook for the Elite Zone J atelier.",

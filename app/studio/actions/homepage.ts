@@ -1,6 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { requireRole, requireUser } from "../../../lib/admin/session";
 import {
@@ -37,6 +37,7 @@ export async function addBlockAction(fd: FormData): Promise<void> {
   await logAudit({ user_id: me.id, action: "create_block", entity: "homepage_block", entity_id: String(id), payload: { type: parsed.data.type } });
   revalidatePath("/studio/homepage");
   revalidatePath("/");
+  updateTag("homepage");
   redirect(`/studio/homepage/${id}`);
 }
 
@@ -48,6 +49,7 @@ export async function deleteBlockAction(fd: FormData): Promise<void> {
   await logAudit({ user_id: me.id, action: "delete_block", entity: "homepage_block", entity_id: String(id) });
   revalidatePath("/studio/homepage");
   revalidatePath("/");
+  updateTag("homepage");
   redirect("/studio/homepage?flash=Section%20removed");
 }
 
@@ -60,6 +62,7 @@ export async function toggleBlockAction(fd: FormData): Promise<void> {
   await logAudit({ user_id: me.id, action: "toggle_home_block", entity: "home_block", entity_id: String(id), payload: { enabled } });
   revalidatePath("/studio/homepage");
   revalidatePath("/");
+  updateTag("homepage");
 }
 
 export async function reorderBlocksAction(fd: FormData): Promise<void> {
@@ -69,6 +72,7 @@ export async function reorderBlocksAction(fd: FormData): Promise<void> {
   await reorderBlocks(ordered);
   revalidatePath("/studio/homepage");
   revalidatePath("/");
+  updateTag("homepage");
 }
 
 export async function saveBlockConfigAction(fd: FormData): Promise<void> {
@@ -89,6 +93,7 @@ export async function saveBlockConfigAction(fd: FormData): Promise<void> {
   revalidatePath(`/studio/homepage/${id}`);
   revalidatePath("/studio/homepage");
   revalidatePath("/");
+  updateTag("homepage");
   redirect(`/studio/homepage/${id}?saved=1`);
 }
 
@@ -114,7 +119,7 @@ async function defaultConfigFor(type: HomepageBlockType): Promise<Record<string,
         { kicker: "Step one", title: "Choose your cloth.", body: "", image: "" },
       ] };
     case "trust_strip":
-      return { items: [{ kicker: "01", label: "Free shipping over ₹5,000" }] };
+      return { items: [{ kicker: "01", label: "Free shipping over ₹15,000" }] };
     case "wedding_editorial":
       return { image: "", headline: "The Wedding Wardrobe", body: "", cta: { label: "Shop Festive", href: "/collection?c=festive" } };
     case "bespoke_teaser": {

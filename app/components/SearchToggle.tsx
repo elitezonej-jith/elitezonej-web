@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import SearchOverlay from "./SearchOverlay";
-import type { Product } from "@/lib/products";
+import type { SearchIndexItem } from "@/lib/storefront/products";
 
-export default function SearchToggle({ products }: { products: Product[] }) {
+export default function SearchToggle({ products }: { products: SearchIndexItem[] }) {
   const [open, setOpen] = useState(false);
 
   return (

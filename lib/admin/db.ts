@@ -18,6 +18,8 @@ const DB_PATH = path.join(DB_DIR, "admin.db");
 const SCHEMA_PATH = path.resolve(process.cwd(), "lib/admin/schema.sql");
 const SCHEMA_V2_PATH = path.resolve(process.cwd(), "lib/admin/schema-v2.sql");
 const SCHEMA_V3_PATH = path.resolve(process.cwd(), "lib/admin/schema-v3.sql");
+const SCHEMA_V4_PATH = path.resolve(process.cwd(), "lib/admin/schema-v4.sql");
+const SCHEMA_V5_PATH = path.resolve(process.cwd(), "lib/admin/schema-v5.sql");
 
 // Read schema files once at module load instead of on every open() — keeps
 // synchronous disk I/O off the request hot path on serverless cold starts.
@@ -33,6 +35,8 @@ function parseStatements(file: string): string[] {
 }
 const SCHEMA_V2_STATEMENTS = parseStatements(SCHEMA_V2_PATH);
 const SCHEMA_V3_STATEMENTS = parseStatements(SCHEMA_V3_PATH);
+const SCHEMA_V4_STATEMENTS = parseStatements(SCHEMA_V4_PATH);
+const SCHEMA_V5_STATEMENTS = parseStatements(SCHEMA_V5_PATH);
 
 function hasColumn(db: Database.Database, table: string, column: string): boolean {
   try {
@@ -169,6 +173,8 @@ function open(): Database.Database {
   // v2/v3 additions need per-statement handling for ALTER TABLE.
   applyAdditive(db, SCHEMA_V2_STATEMENTS, "schema-v2");
   applyAdditive(db, SCHEMA_V3_STATEMENTS, "schema-v3");
+  applyAdditive(db, SCHEMA_V4_STATEMENTS, "schema-v4");
+  applyAdditive(db, SCHEMA_V5_STATEMENTS, "schema-v5");
 
   // Seed the static owner account if missing — runs before catalog seed so
   // the first /admin visit can log straight in without going through /setup.
@@ -201,6 +207,19 @@ function open(): Database.Database {
 export function getDb(): Database.Database {
   if (process.env.DB_DRIVER === "postgres") {
     throw new Error("getDb() is not available in Postgres mode. Use async sql.");
+  }
+  // Fail-loud guard: refuse to silently fall back to ephemeral SQLite on a
+  // serverless deployment. If we reach here on Vercel it means DB_DRIVER was
+  // unset/misspelled — the user-visible alternative is "site appears to work
+  // but orders/sessions vanish every 15 min", which is much worse than a
+  // hard 500 on every request until the env is fixed.
+  if (IS_SERVERLESS) {
+    throw new Error(
+      "[db] Serverless runtime without DB_DRIVER=postgres. Refusing to fall " +
+        "back to ephemeral in-memory SQLite (data would not survive cold " +
+        "starts). Set DB_DRIVER=postgres and a valid DATABASE_URL in the " +
+        "Vercel project env vars, then redeploy.",
+    );
   }
   if (!global.__ezj_admin_db) global.__ezj_admin_db = open();
   return global.__ezj_admin_db;

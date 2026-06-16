@@ -1,13 +1,12 @@
 import HomepageRenderer from "./components/storefront/HomepageRenderer";
 import "./styles/home.css";
 
-// The homepage is fully data-driven: every section (including the announce
-// ticker and promo modal) is a row in `homepage_blocks`, edited/reordered/
-// hidden from /studio/homepage. ISR: pre-render at build and refresh every
-// 60s in the background. Studio edits show up within ~1 min on production;
-// for an immediate refresh after a /studio/homepage save, call
-// `revalidatePath("/")` from that action.
-export const revalidate = 60;
+// Force-dynamic at the page level (build-time prerender can't reach Neon
+// across regions and would fail). Runtime perf still benefits from the
+// per-fetch `unstable_cache` wrappers inside HomepageRenderer — those cache
+// the four repo reads for 60s and are invalidated by revalidateTag("homepage")
+// from studio actions.
+export const dynamic = "force-dynamic";
 
 export default function Home() {
   return <HomepageRenderer />;

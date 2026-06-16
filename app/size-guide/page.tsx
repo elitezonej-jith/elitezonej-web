@@ -3,13 +3,17 @@ import Footer from "../components/Footer";
 import TrustStrip from "../components/TrustStrip";
 import "./size-guide.css";
 
+// force-dynamic: Header/Footer read site settings from the DB, which the Vercel
+// build runner can't reach (Neon pooler unreachable at build) — so this page
+// must render at request time, like home/PDP. Do not make static.
+export const dynamic = "force-dynamic";
+
 export const metadata = {
-  title: "Size guide — Elite Zone J",
+  // Plain string → root layout template "%s · Elite Zone J" adds the brand.
+  title: "Size guide",
   description:
     "How to measure for our suits, shirts, trousers and dresses. Body measurements in inches and centimetres, mapped to our standard sizes.",
 };
-
-export const revalidate = 3600;
 
 export default function SizeGuidePage() {
   return (

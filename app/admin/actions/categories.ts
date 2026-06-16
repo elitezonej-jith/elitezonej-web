@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { bustCategories } from "../../../lib/storefront/cache";
 import { z } from "zod";
 import { requireUser } from "../../../lib/admin/session";
 import { createCategory, updateCategory, deleteCategory } from "../../../lib/admin/repos/categories";
@@ -36,6 +37,7 @@ export async function createCategoryAction(fd: FormData): Promise<void> {
   });
   await logAudit({ user_id: me.id, action: "create_category", entity: "category", entity_id: String(id) });
   revalidatePath("/admin/categories");
+  bustCategories();
 }
 
 export async function updateCategoryAction(fd: FormData): Promise<void> {
@@ -46,6 +48,7 @@ export async function updateCategoryAction(fd: FormData): Promise<void> {
   await updateCategory(id, { name, slug, sort_order });
   await logAudit({ user_id: me.id, action: "update_category", entity: "category", entity_id: String(id) });
   revalidatePath("/admin/categories");
+  bustCategories();
 }
 
 export async function deleteCategoryAction(fd: FormData): Promise<void> {
@@ -55,4 +58,5 @@ export async function deleteCategoryAction(fd: FormData): Promise<void> {
   await deleteCategory(id);
   await logAudit({ user_id: me.id, action: "delete_category", entity: "category", entity_id: String(id) });
   revalidatePath("/admin/categories");
+  bustCategories();
 }

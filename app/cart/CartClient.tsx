@@ -131,7 +131,7 @@ export default function CartClient() {
 
           <div className="reassure t-mono-xs">
             <span>✓ 3-day returns · Free reverse pickup</span>
-            <span>✓ Razorpay secure · UPI · Cards · COD</span>
+            <span>✓ Razorpay secure · UPI · Cards</span>
           </div>
         </aside>
       </section>

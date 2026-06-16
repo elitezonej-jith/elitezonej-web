@@ -57,7 +57,7 @@ export default function FlashSaleForm({ sale, promos }: { sale?: FlashSale; prom
               <button type="button" className="stu-btn stu-btn--ghost stu-btn--sm" onClick={() => setImage("")}>Remove</button>
             </div>
           ) : (
-            <ImageUploader folder="flash-sales" multiple={false} onUploaded={({ path }) => setImage(path)} hint="Wide cinematic image, 2400×800 ideal." />
+            <ImageUploader folder="flash-sales" multiple={false} aspect={2400 / 800} onUploaded={({ path }) => setImage(path)} hint="Wide cinematic image, 2400×800 ideal." />
           )}
         </div>
       </section>

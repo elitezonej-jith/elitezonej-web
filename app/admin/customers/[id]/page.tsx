@@ -74,6 +74,7 @@ export default async function CustomerDetailPage({ params }: Params) {
               <li><span className="adm-mono" style={{ minWidth: 96 }}>Email</span> {customer.email}</li>
               <li><span className="adm-mono" style={{ minWidth: 96 }}>Phone</span> {customer.phone ?? "—"}</li>
               <li><span className="adm-mono" style={{ minWidth: 96 }}>City</span> {customer.city ?? "—"}</li>
+              <li><span className="adm-mono" style={{ minWidth: 96 }}>State</span> {orders.find((o) => o.ship_state)?.ship_state || "—"}</li>
               <li><span className="adm-mono" style={{ minWidth: 96 }}>Joined</span> {dateShort(customer.created_at)}</li>
               <li><span className="adm-mono" style={{ minWidth: 96 }}>Lifetime</span> <span className="adm-tbl__num--accent">{rupees(customer.total_spent)}</span></li>
             </ul>

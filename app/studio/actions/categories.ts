@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { bustCategories } from "../../../lib/storefront/cache";
 import { z } from "zod";
 import { requireUser } from "../../../lib/admin/session";
 import { sql } from "../../../lib/admin/db";
@@ -45,6 +46,7 @@ export async function saveCategoryAction(_prev: CatSaveState, fd: FormData): Pro
   }
   revalidatePath("/studio/categories");
   revalidatePath("/");
+  bustCategories();
   redirect(`/studio/categories?flash=${encodeURIComponent(id ? "Category saved" : "Category created")}`);
 }
 
@@ -55,5 +57,6 @@ export async function deleteCategoryAction(fd: FormData): Promise<void> {
   await deleteCategory(id);
   await logAudit({ user_id: me.id, action: "delete_category", entity: "category", entity_id: String(id) });
   revalidatePath("/studio/categories");
+  bustCategories();
   redirect("/studio/categories?flash=Category%20removed");
 }

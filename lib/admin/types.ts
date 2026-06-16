@@ -45,6 +45,7 @@ export type ProductRow = {
   kind: ProductKind;
   status: ProductStatus;
   description: string | null;
+  size_guide: string;
   created_at: string;
   updated_at: string;
 };
@@ -180,6 +181,7 @@ export type Booking = {
   phone: string;
   email: string | null;
   city: string;
+  state: string;
   service: string;
   message: string | null;
   status: BookingStatus;

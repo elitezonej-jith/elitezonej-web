@@ -74,8 +74,10 @@ export default function CollectionClient({
       list = list.filter(p => p.kind === "fabric");
     } else {
       list = list.filter(p => p.kind !== "fabric");
-      if (cat === "men" || cat === "women") list = list.filter(p => p.gender === cat);
-      else if (cat === "festive") list = list.filter(p => p.occasion === "Festive");
+      if (cat === "accessories") list = list.filter(p => p.category === "accessories");
+      else if (cat === "men" || cat === "women") {
+        list = list.filter(p => p.gender === cat && p.category !== "accessories");
+      } else if (cat === "festive") list = list.filter(p => p.occasion === "Festive");
       else if (cat === "new") list = list.filter(p => p.badge === "New");
       else if (cat !== "all") list = list.filter(p => p.category === cat);
     }
@@ -96,6 +98,18 @@ export default function CollectionClient({
     if (price.max !== "" && Number.isFinite(max)) list = list.filter(p => eff(p) <= max);
     if (sortKey === "price-asc") list = [...list].sort((a, b) => eff(a) - eff(b));
     if (sortKey === "price-desc") list = [...list].sort((a, b) => eff(b) - eff(a));
+    if (sortKey === "newest") {
+      // Newest first by DB createdAt (ISO). Static-only catalog entries have
+      // no timestamp — sort them last and preserve incoming order among them.
+      list = [...list].sort((a, b) => {
+        const at = a.createdAt ?? "";
+        const bt = b.createdAt ?? "";
+        if (at && bt) return bt.localeCompare(at);
+        if (at) return -1;
+        if (bt) return 1;
+        return 0;
+      });
+    }
     return list;
   }, [products, cat, sub, active, price, sortKey, isFabricMode]);
 
@@ -167,7 +181,7 @@ export default function CollectionClient({
             <div className="empty">
               <div className="t-mono-xs" style={{ color: "var(--ink-3)", marginBottom: "var(--s-4)" }}>Arriving Spring/Summer 2026</div>
               <h3>This collection is being shot.</h3>
-              <p>We&apos;re photographing the new season at our Delhi atelier this week. Message us on WhatsApp and we&apos;ll write to you the morning it goes live.</p>
+              <p>We&apos;re photographing the new season at our atelier this week. Message us on WhatsApp and we&apos;ll write to you the morning it goes live.</p>
               <a className="btn btn-primary" href={`${WHATSAPP_LINK}?text=${encodeURIComponent("Hi Elite Zone J — please notify me when the new collection goes live.")}`} target="_blank" rel="noopener noreferrer">
                 Notify me on WhatsApp
               </a>
@@ -182,15 +196,19 @@ export default function CollectionClient({
               <Reveal as="div" key={p.slug} className="fabric-card qa-host" delay={(i % 4) as 0 | 1 | 2 | 3} aria-label={`${p.name} — ${p.colour}`}>
                 <Link href={`/products/${p.slug}`} aria-label={p.name}>
                   <div className="swatch" style={{ backgroundColor: p.colourHex || "var(--paper-2)" }}>
-                    {p.colour && (
-                      <Image
-                        src={imgFabric(p.slug, p.colour, "front")}
-                        alt={`${p.name} — ${p.colour} texture`}
-                        fill
-                        sizes="(max-width: 720px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        loading="lazy"
-                      />
-                    )}
+                    {(() => {
+                      const uploaded = p.thumbnail || p.images?.[0];
+                      const src = uploaded || (p.colour ? imgFabric(p.slug, p.colour, "front") : null);
+                      return src ? (
+                        <Image
+                          src={src}
+                          alt={`${p.name}${p.colour ? ` — ${p.colour} texture` : " texture"}`}
+                          fill
+                          sizes="(max-width: 720px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                          loading="lazy"
+                        />
+                      ) : null;
+                    })()}
                     <WishlistButton slug={p.slug} name={p.name} />
                     <QuickAddButton product={p} />
                   </div>
@@ -201,7 +219,7 @@ export default function CollectionClient({
                     <span className="col-dot" style={{ backgroundColor: p.colourHex || "transparent" }} aria-hidden="true" />
                     <span>Colour · {p.colour}</span>
                   </div>
-                  <p className="desc">{p.description}</p>
+                  <p className="desc">{p.description || p.shortDescription}</p>
                 </Link>
               </Reveal>
             ))
@@ -210,13 +228,16 @@ export default function CollectionClient({
               <Reveal as="div" key={p.slug} className="pcard qa-host" delay={(i % 4) as 0 | 1 | 2 | 3}>
                 <div className="plate">
                   <Link href={`/products/${p.slug}`} aria-label={p.name}>
-                    <Image className="primary" src={`/generated/${p.slug}/01-front.webp`} alt={`${p.name} front`} fill sizes="(max-width: 720px) 50vw, 33vw" priority={i === 0} loading={i === 0 ? "eager" : "lazy"} />
-                    <Image className="alt" src={`/generated/${p.slug}/02-overview.webp`} alt={`${p.name} overview`} fill sizes="(max-width: 720px) 50vw, 33vw" loading="lazy" />
+                    <Image className="primary" src={p.thumbnail || p.images?.[0] || `/generated/${p.slug}/01-front.webp`} alt={`${p.name} front`} fill sizes="(max-width: 720px) 50vw, 33vw" priority={i === 0} loading={i === 0 ? "eager" : "lazy"} />
+                    <Image className="alt" src={p.images?.[1] || `/generated/${p.slug}/02-overview.webp`} alt={`${p.name} overview`} fill sizes="(max-width: 720px) 50vw, 33vw" loading="lazy" />
                   </Link>
-                  {(p.badge || p.salePrice) && (
+                  {(p.badge || p.salePrice || p.isNewArrival || p.isFeatured || p.isTrending) && (
                     <div className="badge-stack">
                       {p.salePrice && <span className="badge badge-sale t-mono-xs">Sale</span>}
                       {p.badge && p.badge !== "Sale" && <span className="badge badge-new t-mono-xs">{p.badge}</span>}
+                      {!p.badge && p.isNewArrival && <span className="badge badge-new t-mono-xs">New</span>}
+                      {!p.badge && !p.isNewArrival && p.isFeatured && <span className="badge badge-new t-mono-xs">Featured</span>}
+                      {!p.badge && !p.isNewArrival && !p.isFeatured && p.isTrending && <span className="badge badge-new t-mono-xs">Trending</span>}
                     </div>
                   )}
                   <WishlistButton slug={p.slug} name={p.name} />

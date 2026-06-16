@@ -5,10 +5,28 @@
 //   announce_bar block(s) → <Header/> → promo_modal block(s) →
 //   remaining blocks in sort order → <Footer/>
 
+import { unstable_cache } from "next/cache";
 import { listBlocks, type HomepageBlockResolved } from "../../../lib/admin/repos/homepage";
 import { listFlashSales } from "../../../lib/admin/repos/flash-sales";
 import { listBanners } from "../../../lib/admin/repos/banners";
 import { getSiteSettings } from "../../../lib/storefront/site-settings";
+
+// Cache the four homepage reads for 60s, keyed by the "homepage" tag.
+// Studio mutations call revalidateTag("homepage") (see app/studio/actions/homepage.ts)
+// so editor changes still appear on the next navigation.
+const getHomepageData = unstable_cache(
+  async () => {
+    const [blocks, liveSales, banners, settings] = await Promise.all([
+      listBlocks({ onlyEnabled: true }),
+      listFlashSales({ onlyLive: true }),
+      listBanners({ onlyPublished: true }),
+      getSiteSettings(),
+    ]);
+    return { blocks, liveSale: liveSales[0], banners, settings };
+  },
+  ["homepage-data"],
+  { revalidate: 60, tags: ["homepage"] },
+);
 import Header from "../Header";
 import Footer from "../Footer";
 import HeroGridDynamic from "./blocks/HeroGridDynamic";
@@ -30,10 +48,8 @@ import PromoModalBlock from "./blocks/PromoModalBlock";
 type RC = Record<string, unknown>;
 
 export default async function HomepageRenderer() {
-  const blocks = await listBlocks({ onlyEnabled: true });
-  const liveSale = (await listFlashSales({ onlyLive: true }))[0];
-  const banners = await listBanners({ onlyPublished: true });
-  const { brandName } = await getSiteSettings();
+  const { blocks, liveSale, banners, settings } = await getHomepageData();
+  const { brandName } = settings;
 
   const announce = blocks.filter((b) => b.type === "announce_bar");
   const promos = blocks.filter((b) => b.type === "promo_modal");
@@ -51,7 +67,7 @@ export default async function HomepageRenderer() {
       {promos.map((b) => (
         <Block key={b.id} block={b} banners={banners} />
       ))}
-      <main>
+      <main id="main-content">
         <h1
           style={{
             position: "absolute",

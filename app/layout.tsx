@@ -86,7 +86,7 @@ export const metadata: Metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#ffffff",
+  themeColor: "#FAF7F2", // mirrors --paper (globals.css :root)
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -109,6 +109,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       }
     >
       <body>
+        <a href="#main-content" className="skip-link">Skip to content</a>
         <LoadingCurtain />
         <HeaderScrollHook />
         {/*

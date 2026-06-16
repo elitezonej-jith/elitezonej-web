@@ -1,6 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "../../../lib/admin/session";
 import { createFlashSale, deleteFlashSale, updateFlashSale } from "../../../lib/admin/repos/flash-sales";
@@ -40,6 +40,7 @@ export async function saveFlashSaleAction(_prev: FlashState, fd: FormData): Prom
   }
   revalidatePath("/studio/flash-sales");
   revalidatePath("/");
+  updateTag("homepage");
   redirect(`/studio/flash-sales/${savedId}?saved=1`);
 }
 
@@ -50,5 +51,7 @@ export async function deleteFlashSaleAction(fd: FormData): Promise<void> {
   await deleteFlashSale(id);
   await logAudit({ user_id: me.id, action: "delete_flash_sale", entity: "flash_sale", entity_id: String(id) });
   revalidatePath("/studio/flash-sales");
+  revalidatePath("/");
+  updateTag("homepage");
   redirect("/studio/flash-sales?flash=Flash%20sale%20removed");
 }

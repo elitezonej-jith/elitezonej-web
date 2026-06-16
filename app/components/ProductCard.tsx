@@ -7,17 +7,31 @@ import { fmtINR } from "@/lib/format";
 import WishlistButton from "./WishlistButton";
 import QuickAddButton from "./QuickAddButton";
 
-const VARIANTS = [
-  { suffix: "01-front",    cls: "primary", label: "front view" },
-  { suffix: "02-overview", cls: "alt",     label: "overview" },
-  { suffix: "05-detail",   cls: "alt-2",   label: "detail" },
-] as const;
+const FALLBACK_VARIANTS = ["01-front", "02-overview", "05-detail"] as const;
+const CLS = ["primary", "alt", "alt-2"] as const;
 
 const SLIDE_MS = 3500;
 
 export default function ProductCard({ p, priority = false }: { p: Product; priority?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+  // Defer the secondary/tertiary images so the initial render (and the
+  // highest-traffic collection grid) only fetches one image per card. The
+  // alts download on first hover (desktop swap) or when the card scrolls
+  // into view (touch autoplay) — preserving both behaviours, ~⅔ less image
+  // transfer on first paint.
+  const [showAlts, setShowAlts] = useState(false);
+
+  // Prefer uploaded images (product_images via Studio); fall back to the
+  // legacy /generated/<slug>/<angle>.webp filesystem layout when none exist.
+  const uploaded = p.images ?? [];
+  const cardSrcs: string[] = uploaded.length > 0
+    ? uploaded.slice(0, 3)
+    : FALLBACK_VARIANTS.map((s) => `/generated/${p.slug}/${s}.webp`);
+  const VARIANTS = cardSrcs.map((src, i) => ({
+    src,
+    cls: CLS[i] ?? "alt-2",
+  }));
 
   useEffect(() => {
     const el = ref.current;
@@ -40,6 +54,8 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
     const io = new IntersectionObserver(
       ([e]) => {
         inViewRef.current = e.isIntersecting && e.intersectionRatio > 0.25;
+        // Touch autoplay needs the alt frames — load them once visible.
+        if (e.isIntersecting) setShowAlts(true);
       },
       { threshold: [0, 0.25, 0.5, 1] }
     );
@@ -83,26 +99,38 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
   }, [p.slug]);
 
   return (
-    <div className="pcard qa-host" ref={ref} data-active={active}>
+    <div
+      className="pcard qa-host"
+      ref={ref}
+      data-active={active}
+      onMouseEnter={() => setShowAlts(true)}
+    >
       <div className="plate">
         <Link href={`/products/${p.slug}`} aria-label={p.name}>
-          {VARIANTS.map((v, i) => (
-            <Image
-              key={v.suffix}
-              className={v.cls}
-              src={`/generated/${p.slug}/${v.suffix}.webp`}
-              alt={i === 0 ? p.name : ""}
-              fill
-              sizes="(max-width: 720px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              priority={priority && i === 0}
-              loading={priority && i === 0 ? "eager" : "lazy"}
-            />
-          ))}
+          {VARIANTS.map((v, i) => {
+            // Only the primary loads up front; alts render on hover/in-view.
+            if (i > 0 && !showAlts) return null;
+            return (
+              <Image
+                key={`${v.src}-${i}`}
+                className={v.cls}
+                src={v.src}
+                alt={i === 0 ? p.name : ""}
+                fill
+                sizes="(max-width: 720px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                priority={priority && i === 0}
+                loading={priority && i === 0 ? "eager" : "lazy"}
+              />
+            );
+          })}
         </Link>
-        {(p.badge || p.salePrice) && (
+        {(p.badge || p.salePrice || p.isNewArrival || p.isFeatured || p.isTrending) && (
           <div className="badge-stack">
             {p.salePrice && <span className="badge badge-sale t-mono-xs">Sale</span>}
             {p.badge && p.badge !== "Sale" && <span className="badge badge-new t-mono-xs">{p.badge}</span>}
+            {!p.badge && p.isNewArrival && <span className="badge badge-new t-mono-xs">New</span>}
+            {!p.badge && !p.isNewArrival && p.isFeatured && <span className="badge badge-new t-mono-xs">Featured</span>}
+            {!p.badge && !p.isNewArrival && !p.isFeatured && p.isTrending && <span className="badge badge-new t-mono-xs">Trending</span>}
           </div>
         )}
         <WishlistButton slug={p.slug} name={p.name} />

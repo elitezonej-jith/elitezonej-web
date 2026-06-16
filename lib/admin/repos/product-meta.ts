@@ -13,24 +13,44 @@ export type ProductMeta = {
   og_image_path: string;
 };
 
+// Shared fallback for a product with no `product_meta` row. Used by both the
+// single-slug and batched reads so they behave identically when a row is absent.
+export function emptyMeta(slug: string): ProductMeta {
+  return {
+    product_slug: slug,
+    is_featured: 0,
+    is_trending: 0,
+    is_new_arrival: 0,
+    short_description: "",
+    long_description: "",
+    meta_title: "",
+    meta_description: "",
+    og_image_path: "",
+  };
+}
+
 export async function getMeta(slug: string): Promise<ProductMeta> {
   const r = await sql.get<ProductMeta>(
     "SELECT * FROM product_meta WHERE product_slug = ?",
     [slug],
   );
-  return (
-    r ?? {
-      product_slug: slug,
-      is_featured: 0,
-      is_trending: 0,
-      is_new_arrival: 0,
-      short_description: "",
-      long_description: "",
-      meta_title: "",
-      meta_description: "",
-      og_image_path: "",
-    }
+  return r ?? emptyMeta(slug);
+}
+
+// Batched read for the storefront list path — one query for many slugs instead
+// of one query per product (kills the N+1). Returns a slug→meta Map containing
+// ONLY slugs that have a row; callers must fall back to `emptyMeta(slug)` for
+// misses (matching `getMeta`'s single-slug fallback exactly).
+export async function getMetaForSlugs(slugs: string[]): Promise<Map<string, ProductMeta>> {
+  const map = new Map<string, ProductMeta>();
+  if (slugs.length === 0) return map; // never emit `IN ()`
+  const placeholders = slugs.map(() => "?").join(",");
+  const rows = await sql.all<ProductMeta>(
+    `SELECT * FROM product_meta WHERE product_slug IN (${placeholders})`,
+    slugs,
   );
+  for (const r of rows) map.set(r.product_slug, r);
+  return map;
 }
 
 export async function upsertMeta(meta: ProductMeta): Promise<void> {
