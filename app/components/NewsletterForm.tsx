@@ -29,7 +29,7 @@ export default function NewsletterForm() {
         {pending ? "Subscribing…" : "Subscribe"}
       </button>
       {state.error && (
-        <span className="news-err t-mono-xs" role="alert" style={{ color: "#b00" }}>
+        <span className="news-err t-mono-xs" role="alert" style={{ color: "var(--error)" }}>
           {state.error}
         </span>
       )}

@@ -115,6 +115,25 @@ img { display: block; max-width: 100%; }
 ::selection { background: var(--accent); color: var(--paper); }
 
 /* =============================================================
+   Skip link — visually hidden until keyboard focus
+   ============================================================= */
+.skip-link {
+  position: absolute;
+  top: -100px; left: var(--s-2);
+  z-index: 1000;
+  padding: var(--s-2) var(--s-4);
+  background: var(--accent);
+  color: var(--paper);
+  font-family: var(--font-body); font-weight: 500;
+  clip: rect(0 0 0 0);
+  transition: top var(--d-fast) var(--ease);
+}
+.skip-link:focus {
+  top: var(--s-2);
+  clip: auto;
+}
+
+/* =============================================================
    Typography utilities
    ============================================================= */
 .t-display-xl { font-family: var(--font-display); font-weight: 500;

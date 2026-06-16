@@ -67,7 +67,7 @@ export default async function HomepageRenderer() {
       {promos.map((b) => (
         <Block key={b.id} block={b} banners={banners} />
       ))}
-      <main>
+      <main id="main-content">
         <h1
           style={{
             position: "absolute",

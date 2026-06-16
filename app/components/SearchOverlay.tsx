@@ -3,13 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import type { Product } from "@/lib/products";
+import type { SearchIndexItem } from "@/lib/storefront/products";
 import { fmtINR } from "@/lib/format";
 import { imgFabric } from "@/lib/images";
 import WishlistButton from "./WishlistButton";
 import { useModalA11y } from "./useModalA11y";
 
-type Props = { open: boolean; onClose: () => void; products: Product[] };
+type Props = { open: boolean; onClose: () => void; products: SearchIndexItem[] };
 
 type CatChip = "all" | "men" | "women" | "accessories" | "fabrics" | "festive";
 type FabricChip = "Wool" | "Linen" | "Cotton" | "Silk" | "Velvet";
@@ -25,7 +25,7 @@ const CAT_CHIPS: { value: CatChip; label: string }[] = [
 const FABRIC_CHIPS: FabricChip[] = ["Wool", "Linen", "Cotton", "Silk", "Velvet"];
 
 // Build a flat haystack per product, lowercased, for substring matching.
-function haystack(p: Product) {
+function haystack(p: SearchIndexItem) {
   return [
     p.name, p.cat, p.fabric, p.fit, p.occasion, p.colour ?? "",
     p.description ?? "", p.line, p.gender, p.category,
@@ -33,13 +33,13 @@ function haystack(p: Product) {
   ].join(" ").toLowerCase();
 }
 
-function matchesQuery(p: Product, tokens: string[]) {
+function matchesQuery(p: SearchIndexItem, tokens: string[]) {
   if (tokens.length === 0) return true;
   const hs = haystack(p);
   return tokens.every(t => hs.includes(t));
 }
 
-function matchesCat(p: Product, cat: CatChip) {
+function matchesCat(p: SearchIndexItem, cat: CatChip) {
   switch (cat) {
     case "all":     return true;
     case "men":         return p.gender === "men" && p.category !== "accessories";

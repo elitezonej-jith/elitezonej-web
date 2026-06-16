@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
@@ -67,7 +68,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(ld) }}
+        // Escape against </script> breakout (and HTML-comment / ampersand
+        // injection) before inlining the serialized JSON-LD.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(ld)
+            .replace(/</g, "\\u003c")
+            .replace(/>/g, "\\u003e")
+            .replace(/&/g, "\\u0026"),
+        }}
       />
       <Header />
       <main>
@@ -86,9 +94,28 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   );
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
   const { slug } = await params;
   const p = await getProductForPage(slug);
-  if (!p) return { title: "Not found — Elite Zone J" };
-  return { title: `${p.name} — Elite Zone J`, description: p.line };
+  if (!p) return { title: { absolute: "Not found · Elite Zone J" } };
+  // Same image path the JSON-LD uses (see ProductPage): fabrics fall back to
+  // the cloth library image; everything else uses the per-slug photography.
+  const ldImage =
+    p.kind === "fabric"
+      ? ["/generated/_sections/process-cloth.webp"]
+      : [`/generated/${slug}/01-front.webp`, `/generated/${slug}/02-overview.webp`];
+  return {
+    title: p.name,
+    description: p.line,
+    alternates: { canonical: `/products/${slug}` },
+    openGraph: {
+      title: p.name,
+      description: p.line,
+      images: ldImage,
+    },
+  };
 }

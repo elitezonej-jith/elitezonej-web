@@ -6,8 +6,8 @@ import { useEffect, useRef, useState } from "react";
 //
 //   targetSelector — querySelector for the container the lens reacts to
 //   imageSrc       — the high-res image to magnify
-//   zoom           — magnification factor (default 2)
-//   size           — lens diameter in px (default 220)
+//   zoom           — magnification factor (default 1.5)
+//   size           — lens diameter in px (default 120)
 type Props = {
   targetSelector: string;
   imageSrc: string;
@@ -15,7 +15,7 @@ type Props = {
   size?: number;
 };
 
-export default function ZoomLens({ targetSelector, imageSrc, zoom = 2, size = 220 }: Props) {
+export default function ZoomLens({ targetSelector, imageSrc, zoom = 1.5, size = 120 }: Props) {
   const [pos, setPos] = useState<{ x: number; y: number; bgX: number; bgY: number; w: number; h: number } | null>(null);
   const targetRef = useRef<HTMLElement | null>(null);
 
@@ -32,15 +32,14 @@ export default function ZoomLens({ targetSelector, imageSrc, zoom = 2, size = 22
       const rect = target.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      // If outside, hide
       if (x < 0 || y < 0 || x > rect.width || y > rect.height) {
         setPos(null);
         return;
       }
-      // Background offset = how much of the zoomed image to show. We
-      // shift it so the cursor's spot in the source maps to the lens centre.
-      const bgX = (x / rect.width) * 100;
-      const bgY = (y / rect.height) * 100;
+      // Pixel-based: place the zoomed image so the cursor point maps to
+      // the lens centre. bgX/bgY are the px offsets for backgroundPosition.
+      const bgX = -(x * zoom - size / 2);
+      const bgY = -(y * zoom - size / 2);
       setPos({ x: e.clientX, y: e.clientY, bgX, bgY, w: rect.width, h: rect.height });
     };
     const onLeave = () => setPos(null);
@@ -65,7 +64,7 @@ export default function ZoomLens({ targetSelector, imageSrc, zoom = 2, size = 22
         height: size,
         backgroundImage: `url(${imageSrc})`,
         backgroundSize: `${pos.w * zoom}px ${pos.h * zoom}px`,
-        backgroundPosition: `${pos.bgX}% ${pos.bgY}%`,
+        backgroundPosition: `${pos.bgX}px ${pos.bgY}px`,
       }}
       aria-hidden="true"
     />

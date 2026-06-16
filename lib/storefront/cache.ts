@@ -16,6 +16,7 @@ export const CACHE_TAGS = {
   products: "products",
   categories: "categories",
   inventory: "inventory",
+  settings: "settings",
 } as const;
 
 /** Invalidate every cached storefront product list + single-product read. */
@@ -31,4 +32,9 @@ export function bustCategories(): void {
 /** Invalidate the cached browse-time stock map. */
 export function bustInventory(): void {
   updateTag(CACHE_TAGS.inventory);
+}
+
+/** Invalidate the cached site-settings read (Header/Footer/PDP/homepage/bespoke). */
+export function bustSettings(): void {
+  updateTag(CACHE_TAGS.settings);
 }

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import TrustStrip from "../components/TrustStrip";
@@ -8,6 +9,26 @@ import { CAT_DATA, SUBCATS } from "@/lib/subcats";
 
 // Temporarily force-dynamic: Vercel build can't reach Neon to prerender ISR.
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ c?: string; sub?: string }>;
+}): Promise<Metadata> {
+  // Mirror CollectionPage's param parsing exactly.
+  const params = await searchParams;
+  const cat = (params.c || "men").toLowerCase();
+  const sub = (params.sub || "").toLowerCase();
+  const meta = await getCategoryMeta(cat, sub);
+  const canonical = sub
+    ? `/collection?c=${cat}&sub=${sub}`
+    : `/collection?c=${cat}`;
+  return {
+    title: meta.title,
+    description: meta.stand,
+    alternates: { canonical },
+  };
+}
 
 export default async function CollectionPage({
   searchParams,

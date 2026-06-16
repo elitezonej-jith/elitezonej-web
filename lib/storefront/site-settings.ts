@@ -1,5 +1,7 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { getSettings } from "../admin/repos/settings";
+import { CACHE_TAGS } from "./cache";
 
 // Storefront-safe settings subset. Scoped to values that are *visibly
 // hardcoded the same way today* (brand name, currency) so surfacing them
@@ -21,7 +23,17 @@ const FALLBACK: SiteSettings = {
   leadTimeDays: 14,
 };
 
-export async function getSiteSettings(): Promise<SiteSettings> {
+// Cross-request cache: the settings read (one `SELECT key,value FROM settings`)
+// is shared across Header/Footer/PDP/homepage/bespoke instead of hitting the DB
+// once per surface per request. Served from cache until an Admin settings save
+// calls `bustSettings()` (or the 1h TTL lapses).
+export const getSiteSettings = unstable_cache(
+  _getSiteSettings,
+  ["storefront-site-settings"],
+  { revalidate: 3600, tags: [CACHE_TAGS.settings] },
+);
+
+async function _getSiteSettings(): Promise<SiteSettings> {
   let s: Record<string, string> = {};
   try {
     s = await getSettings();

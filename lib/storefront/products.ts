@@ -9,6 +9,10 @@ import { getMetaForSlugs, emptyMeta, type ProductMeta } from "../admin/repos/pro
 import { listImagesForSlugs, fallbackImages, thumbnailFromImages } from "../admin/repos/product-images";
 import { CACHE_TAGS } from "./cache";
 import type { Product } from "../admin/types";
+import {
+  PRODUCTS as STATIC_PRODUCTS,
+  type FabricColour,
+} from "../products";
 
 export type StorefrontProduct = Product & {
   meta: ProductMeta;
@@ -106,4 +110,70 @@ async function _listProducts(filter?: ListFilter): Promise<StorefrontProduct[]> 
   if (filter?.trending) result = result.filter((p) => p.meta.is_trending === 1);
   if (filter?.newArrival) result = result.filter((p) => p.meta.is_new_arrival === 1);
   return result;
+}
+
+// ── Slim search index ────────────────────────────────────────────────────
+// The client search overlay (`SearchOverlay`) only needs a handful of fields
+// to match + render results. Shipping the full `LegacyProduct[]` (with
+// `sizes`/`features`/`spec`/`note`/images/meta blobs) into the RSC payload +
+// client bundle on every storefront route is wasteful. `getSearchIndex()`
+// returns ONLY the fields the overlay reads — keeping search behaviour
+// identical while cutting the serialised size dramatically. Reuses the same
+// cached read path as `listProducts()` (same product cache tag) so it shares
+// invalidation with the rest of the storefront catalogue.
+export type SearchIndexItem = {
+  slug: string;
+  name: string;
+  cat: string;
+  line: string;
+  price: number;
+  salePrice?: number;
+  fit: string;
+  fabric: string;
+  occasion: string;
+  gender: "men" | "women" | "unisex";
+  category: string;
+  kind?: "fabric";
+  description?: string;
+  // Fabric-only fields the overlay uses for swatch image src + colour chips.
+  colour?: string;
+  colourHex?: string;
+  colourVariants?: FabricColour[];
+};
+
+// Fabric extras still live on the static catalogue record (mirrors the
+// `adaptDbProduct` lookup), keyed by slug for an O(1) join.
+const STATIC_BY_SLUG = new Map(STATIC_PRODUCTS.map((p) => [p.slug, p] as const));
+
+const _getSearchIndexCached = unstable_cache(
+  async (): Promise<SearchIndexItem[]> => {
+    const products = await listProducts();
+    return products.map((p): SearchIndexItem => {
+      const staticMatch = STATIC_BY_SLUG.get(p.slug);
+      return {
+        slug: p.slug,
+        name: p.name,
+        cat: p.cat,
+        line: p.line,
+        price: p.price,
+        salePrice: p.sale_price ?? undefined,
+        fit: p.fit,
+        fabric: p.fabric,
+        occasion: p.occasion,
+        gender: p.gender,
+        category: p.category,
+        kind: p.kind === "fabric" ? "fabric" : undefined,
+        description: p.description ?? staticMatch?.description,
+        colour: staticMatch?.colour,
+        colourHex: staticMatch?.colourHex,
+        colourVariants: staticMatch?.colourVariants,
+      };
+    });
+  },
+  ["storefront-search-index"],
+  { revalidate: 3600, tags: [CACHE_TAGS.products] },
+);
+
+export function getSearchIndex(): Promise<SearchIndexItem[]> {
+  return _getSearchIndexCached();
 }

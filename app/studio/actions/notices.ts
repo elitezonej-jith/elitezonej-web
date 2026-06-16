@@ -1,6 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "../../../lib/admin/session";
 import { createNotice, updateNotice, deleteNotice } from "../../../lib/admin/repos/notices";
@@ -49,6 +49,7 @@ export async function saveNoticeAction(_prev: NoticeSaveState, fd: FormData): Pr
   }
   revalidatePath("/studio/notices");
   revalidatePath("/");
+  updateTag("homepage");
   redirect(`/studio/notices/${savedId}?saved=1`);
 }
 
@@ -60,6 +61,7 @@ export async function deleteNoticeAction(fd: FormData): Promise<void> {
   await logAudit({ user_id: me.id, action: "delete_notice", entity: "notice", entity_id: String(id) });
   revalidatePath("/studio/notices");
   revalidatePath("/");
+  updateTag("homepage");
   redirect("/studio/notices?flash=Notice%20removed");
 }
 
@@ -72,4 +74,5 @@ export async function toggleNoticeAction(fd: FormData): Promise<void> {
   await logAudit({ user_id: me.id, action: "toggle_notice", entity: "notice", entity_id: String(id), payload: { enabled } });
   revalidatePath("/studio/notices");
   revalidatePath("/");
+  updateTag("homepage");
 }

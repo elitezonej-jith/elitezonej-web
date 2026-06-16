@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import type { Notice } from "../../lib/admin/repos/notices";
+import { useModalA11y } from "./useModalA11y";
 
 export default function PopupNoticeClient({ notice }: { notice: Notice }) {
   const [open, setOpen] = useState(false);
@@ -20,6 +21,14 @@ export default function PopupNoticeClient({ notice }: { notice: Notice }) {
     try { window.localStorage.setItem(storageKey, "1"); } catch { /* */ }
   };
 
+  // Focus trap + Escape + return-focus + scroll lock (shared modal a11y).
+  // Escape only closes when the notice is dismissable, matching the backdrop /
+  // close-button behavior below.
+  const dialogRef = useModalA11y<HTMLDivElement>(
+    open,
+    notice.dismissable ? close : () => {},
+  );
+
   if (!open) return null;
   return (
     <div role="dialog" aria-modal="true"
@@ -29,7 +38,8 @@ export default function PopupNoticeClient({ notice }: { notice: Notice }) {
            display: "grid", placeItems: "center", padding: 24,
          }}
          onClick={notice.dismissable ? close : undefined}>
-      <div onClick={(e) => e.stopPropagation()}
+      <div ref={dialogRef}
+           onClick={(e) => e.stopPropagation()}
            style={{
              background: notice.color_bg || "#FAF7F2",
              color: notice.color_fg || "#1A1613",

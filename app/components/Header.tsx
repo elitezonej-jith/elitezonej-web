@@ -4,7 +4,7 @@ import MobileNav from "./MobileNav";
 import CartDrawer from "./CartDrawer";
 import SearchToggle from "./SearchToggle";
 import WishlistHeaderLink from "./WishlistHeaderLink";
-import { listProductsForPage } from "../../lib/storefront/catalogue";
+import { getSearchIndex } from "../../lib/storefront/products";
 import { getStorefrontNav } from "../../lib/storefront/nav";
 import { getSiteSettings } from "../../lib/storefront/site-settings";
 
@@ -60,7 +60,7 @@ export function BagIcon() {
 
 export default async function Header() {
   const nav = await getStorefrontNav();
-  const products = await listProductsForPage();
+  const products = await getSearchIndex();
   const s = await getSiteSettings();
   return (
     <header className="site">
@@ -71,9 +71,12 @@ export default async function Header() {
           <Link className="util-link util-account" href="/account">
             <PersonIcon /> <span className="util-text">My Account</span>
           </Link>
-          <button className="util-link util-currency" aria-label="Choose currency">
+          {/* Currency display. Rendered as a non-interactive <span> (not a
+              <button>) because real currency switching isn't wired up yet —
+              a button here would announce a broken control to screen readers. */}
+          <span className="util-link util-currency">
             {s.currency}/{s.currencySymbol} <ChevronDown />
-          </button>
+          </span>
         </div>
 
         <div className="brand">

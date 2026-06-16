@@ -1,6 +1,6 @@
 "use server";
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { requireUser } from "../../../lib/admin/session";
 import {
@@ -50,6 +50,7 @@ export async function saveBannerAction(_prev: BannerSaveState, fd: FormData): Pr
   }
   revalidatePath("/studio/banners");
   revalidatePath("/");
+  updateTag("homepage");
   redirect(`/studio/banners/${savedId}?saved=1`);
 }
 
@@ -61,6 +62,7 @@ export async function deleteBannerAction(fd: FormData): Promise<void> {
   await logAudit({ user_id: me.id, action: "delete_banner", entity: "banner", entity_id: String(id) });
   revalidatePath("/studio/banners");
   revalidatePath("/");
+  updateTag("homepage");
   redirect("/studio/banners?flash=Banner%20removed");
 }
 
@@ -71,6 +73,7 @@ export async function reorderBannersAction(fd: FormData): Promise<void> {
   await reorderBanners(ordered);
   revalidatePath("/studio/banners");
   revalidatePath("/");
+  updateTag("homepage");
 }
 
 export async function setBannerEnabledAction(fd: FormData): Promise<void> {
@@ -82,4 +85,5 @@ export async function setBannerEnabledAction(fd: FormData): Promise<void> {
   await logAudit({ user_id: me.id, action: "set_banner_enabled", entity: "banner", entity_id: String(id), payload: { enabled } });
   revalidatePath("/studio/banners");
   revalidatePath("/");
+  updateTag("homepage");
 }

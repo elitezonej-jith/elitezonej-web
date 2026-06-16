@@ -47,7 +47,7 @@
 .auth-err {
   font-family: var(--font-mono);
   font-size: 12px;
-  color: #b00020;
+  color: var(--error);
   margin: 4px 0 0;
 }
 .auth-alt {
