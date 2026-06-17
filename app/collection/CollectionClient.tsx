@@ -10,6 +10,7 @@ import { imgFabric } from "@/lib/images";
 import WishlistButton from "../components/WishlistButton";
 import QuickAddButton from "../components/QuickAddButton";
 import Reveal from "../components/Reveal";
+import Pagination from "../components/Pagination";
 import "../styles/collection.css";
 
 
@@ -114,6 +115,20 @@ export default function CollectionClient({
     return list;
   }, [products, cat, sub, active, price, sortKey, isFabricMode]);
 
+  const PAGE_SIZE = 12;
+  const pageParam = Number(searchParams.get("page")) || 1;
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const page = Math.min(pageParam, totalPages || 1);
+  const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const setPage = (p: number) => {
+    const next = new URLSearchParams(searchParams.toString());
+    if (p <= 1) next.delete("page");
+    else next.set("page", String(p));
+    router.replace(`${pathname}?${next.toString()}`, { scroll: false });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <>
       <section className="cat-header">
@@ -193,7 +208,7 @@ export default function CollectionClient({
               </div>
             </div>
           ) : isFabricMode ? (
-            filtered.map((p, i) => (
+            paged.map((p, i) => (
               <Reveal as="div" key={p.slug} className="fabric-card qa-host" delay={(i % 4) as 0 | 1 | 2 | 3} aria-label={`${p.name} — ${p.colour}`}>
                 <Link href={`/products/${p.slug}`} aria-label={p.name}>
                   <div className="swatch" style={{ backgroundColor: p.colourHex || "var(--paper-2)" }}>
@@ -220,7 +235,7 @@ export default function CollectionClient({
               </Reveal>
             ))
           ) : (
-            filtered.map((p, i) => (
+            paged.map((p, i) => (
               <Reveal as="div" key={p.slug} className="pcard qa-host" delay={(i % 4) as 0 | 1 | 2 | 3}>
                 <div className="plate">
                   <Link href={`/products/${p.slug}`} aria-label={p.name}>
@@ -259,6 +274,12 @@ export default function CollectionClient({
             ))
           )}
         </div>
+        {filtered.length > PAGE_SIZE && (
+          <>
+            <p className="pg-info">{`Showing ${(page - 1) * PAGE_SIZE + 1}–${Math.min(page * PAGE_SIZE, filtered.length)} of ${filtered.length}`}</p>
+            <Pagination current={page} total={totalPages} onChange={setPage} />
+          </>
+        )}
       </section>
     </>
   );
