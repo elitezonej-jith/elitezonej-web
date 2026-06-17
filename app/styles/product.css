@@ -89,6 +89,13 @@
   pointer-events: none;
 }
 
+.thumb-colour-dot {
+  position: absolute; bottom: 4px; right: 4px;
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.8);
+  pointer-events: none;
+}
+
 .main {
   aspect-ratio: 2/3;
   background: var(--paper-2);
@@ -669,6 +676,14 @@
 .swatch-chip:hover { transform: scale(1.08); }
 .swatch-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .swatch-chip.on { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink); }
+.colour-swatches { display: flex; flex-wrap: wrap; gap: 10px; }
+.colour-swatch {
+  width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--ink-4);
+  cursor: pointer; padding: 0; transition: transform 200ms var(--ease), box-shadow 200ms var(--ease);
+}
+.colour-swatch:hover { transform: scale(1.08); }
+.colour-swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.colour-swatch.on { box-shadow: 0 0 0 2px var(--paper), 0 0 0 3px var(--ink); }
 
 /* Stepper */
 .stepper { display: flex; align-items: stretch; border: 1px solid var(--paper-3); height: 48px; }

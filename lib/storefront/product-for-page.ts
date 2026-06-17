@@ -9,6 +9,8 @@ import {
   getProduct as staticGetProduct,
   type Product as LegacyProduct,
 } from "../products";
+import { listColours } from "../admin/repos/product-colours";
+import { listImages } from "../admin/repos/product-images";
 
 export function adaptDbProduct(p: StorefrontProduct): LegacyProduct {
   // Reconstruct a legacy-shape Product from the DB row + static metadata
@@ -61,6 +63,28 @@ export function adaptDbProduct(p: StorefrontProduct): LegacyProduct {
 
 export async function getProductForPage(slug: string): Promise<LegacyProduct | null> {
   const fromDb = await dbGetProduct(slug);
-  if (fromDb) return adaptDbProduct(fromDb);
+  if (fromDb) {
+    const product = adaptDbProduct(fromDb);
+    // Load tailored colour variants (fabric variants use fabric_colours instead)
+    if (product.kind !== "fabric") {
+      const colours = await listColours(slug);
+      if (colours.length > 0) {
+        product.productColours = colours.map((c) => ({
+          id: c.id,
+          name: c.name,
+          hex: c.hex,
+          is_default: c.is_default,
+        }));
+        // Build image→colour map so PDP can filter gallery by selected colour
+        const imgRows = await listImages(slug);
+        if (imgRows.length > 0) {
+          const map: Record<string, number | null> = {};
+          for (const r of imgRows) map[r.image_path] = r.colour_id;
+          product.imageColourMap = map;
+        }
+      }
+    }
+    return product;
+  }
   return staticGetProduct(slug) ?? null;
 }

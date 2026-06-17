@@ -9,7 +9,7 @@ import {
   type ProductInput,
 } from "../../../lib/admin/repos/products";
 import {
-  addImage, deleteImage as deleteProductImage, reorderImages, setThumbnail, setHover, updateAlt,
+  addImage, deleteImage as deleteProductImage, reorderImages, setThumbnail, setHover, updateAlt, assignImageColour,
 } from "../../../lib/admin/repos/product-images";
 import { upsertMeta, getMeta } from "../../../lib/admin/repos/product-meta";
 import { logAudit } from "../../../lib/admin/repos/audit";
@@ -236,3 +236,68 @@ export async function updateAltAction(fd: FormData): Promise<void> {
   await updateAlt(id, alt, slug);
   await logAudit({ user_id: me.id, action: "update_image_alt", entity: "product", entity_id: slug, payload: { id } });
 }
+
+// — Product colour actions —
+
+import {
+  createColour, updateColour, deleteColour, reorderColours,
+} from "../../../lib/admin/repos/product-colours";
+
+const ColourSchema = z.object({
+  product_slug: z.string().min(1),
+  colour_id: z.string().optional(),
+  name: z.string().min(1).max(60),
+  hex: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  is_default: z.string().optional(),
+});
+
+export async function saveProductColourAction(fd: FormData): Promise<void> {
+  const me = await requireUser("/studio/login");
+  const raw = Object.fromEntries(fd.entries()) as Record<string, string>;
+  const v = ColourSchema.parse(raw);
+  const isDefault = v.is_default === "on" ? 1 : 0;
+
+  if (v.colour_id) {
+    await updateColour(Number(v.colour_id), { name: v.name, hex: v.hex, is_default: isDefault });
+    await logAudit({ user_id: me.id, action: "update_colour", entity: "product", entity_id: v.product_slug, payload: { colour_id: v.colour_id } });
+  } else {
+    const id = await createColour({ product_slug: v.product_slug, name: v.name, hex: v.hex, is_default: isDefault });
+    await logAudit({ user_id: me.id, action: "create_colour", entity: "product", entity_id: v.product_slug, payload: { id } });
+  }
+  revalidatePath(`/studio/products/${v.product_slug}`);
+  bustProducts();
+}
+
+export async function deleteProductColourAction(fd: FormData): Promise<void> {
+  const me = await requireUser("/studio/login");
+  const slug = String(fd.get("product_slug") ?? "");
+  const colourId = Number(fd.get("colour_id") ?? 0);
+  if (!slug || !colourId) return;
+  await deleteColour(colourId);
+  await logAudit({ user_id: me.id, action: "delete_colour", entity: "product", entity_id: slug, payload: { colourId } });
+  revalidatePath(`/studio/products/${slug}`);
+  bustProducts();
+}
+
+export async function reorderProductColoursAction(fd: FormData): Promise<void> {
+  await requireUser("/studio/login");
+  const slug = String(fd.get("product_slug") ?? "");
+  const ordered: number[] = JSON.parse(String(fd.get("ordered_ids") ?? "[]"));
+  if (!slug || !ordered.length) return;
+  await reorderColours(slug, ordered);
+  revalidatePath(`/studio/products/${slug}`);
+  bustProducts();
+}
+
+export async function assignImageColourAction(fd: FormData): Promise<void> {
+  const me = await requireUser("/studio/login");
+  const slug = String(fd.get("product_slug") ?? "");
+  const imageId = Number(fd.get("image_id") ?? 0);
+  const colourId = String(fd.get("colour_id") ?? "");
+  if (!slug || !imageId) return;
+  await assignImageColour(imageId, slug, colourId ? Number(colourId) : null);
+  await logAudit({ user_id: me.id, action: "assign_image_colour", entity: "product", entity_id: slug, payload: { imageId, colourId: colourId || null } });
+  revalidatePath(`/studio/products/${slug}`);
+  bustProducts();
+}
+

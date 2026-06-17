@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import { getProduct } from "../../../../lib/admin/repos/products";
 import { listImages, fallbackImages } from "../../../../lib/admin/repos/product-images";
 import { getMeta } from "../../../../lib/admin/repos/product-meta";
+import { listColours } from "../../../../lib/admin/repos/product-colours";
 import PageHead from "../../components/PageHead";
 import StatusTag from "../../components/StatusTag";
 import { FlashToast } from "../../components/Toast";
 import { archiveProductAction, duplicateProductAction } from "../../actions/products";
 import ProductForm from "./ProductForm";
 import ProductImageManager from "./ProductImageManager";
+import ColourManager from "./ColourManager";
 import ProductDangerZone from "./ProductDangerZone";
 import { requireUser } from "../../../../lib/admin/session";
 
@@ -24,6 +26,7 @@ export default async function ProductEditorPage({ params, searchParams }: Params
   const { saved, flash } = await searchParams;
   const meta = await getMeta(slug);
   const images = await listImages(slug);
+  const colours = await listColours(slug);
   const fallback = images.length === 0 ? fallbackImages(slug) : [];
 
   return (
@@ -52,6 +55,10 @@ export default async function ProductEditorPage({ params, searchParams }: Params
       </PageHead>
 
       <ProductImageManager slug={slug} images={images} fallback={fallback} />
+
+      <div style={{ height: 32 }} />
+
+      <ColourManager slug={slug} colours={colours} images={images} />
 
       <div style={{ height: 32 }} />
 
