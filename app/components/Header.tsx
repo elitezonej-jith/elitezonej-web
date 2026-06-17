@@ -92,7 +92,7 @@ export default async function Header() {
               // the brief window between HTML paint and stylesheet load —
               // without this, the image briefly displays at its native
               // 892×116 and reads as "logo clipped above the viewport".
-              style={{ height: "clamp(20px, 3vw, 25px)", width: "auto" }}
+              style={{ height: "clamp(16px, 2.2vw, 20px)", width: "auto" }}
             />
           </Link>
         </div>
