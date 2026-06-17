@@ -53,7 +53,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
             )}
             <button className="search-close" type="button" onClick={onClose} aria-label="Close search">Close <span aria-hidden="true">⌫</span></button>
           </form>
-          <p className="search-hint t-mono-xs">Press Enter to search</p>
+          <button type="submit" className="search-submit t-mono-xs">Search</button>
         </div>
       </div>
 
@@ -70,7 +70,8 @@ export default function SearchOverlay({ open, onClose }: Props) {
         .search-x:hover { color:var(--ink); }
         .search-close { background:transparent; border:1px solid var(--paper-3); color:var(--ink-2); font-family:var(--font-mono); font-weight:500; font-size:11px; letter-spacing:.16em; text-transform:uppercase; padding:8px 14px; cursor:pointer; transition:all var(--d-fast) var(--ease); }
         .search-close:hover { border-color:var(--ink); color:var(--ink); }
-        .search-hint { color:var(--ink-4); text-align:center; margin-top:var(--s-4); letter-spacing:0.06em; }
+        .search-submit { display:block; width:100%; margin-top:var(--s-4); padding:14px 0; background:var(--ink); color:var(--paper); border:none; font-family:var(--font-mono); font-size:12px; font-weight:500; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; transition:opacity 180ms; }
+        .search-submit:hover { opacity:0.85; }
         @media (max-width:720px) { .search-inner { padding:0 var(--pad-x-m); } .search-overlay { padding-top:12vh; } }
       `}} />
     </>
