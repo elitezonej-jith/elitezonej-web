@@ -345,7 +345,7 @@
   position: relative;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
+  gap: 0;
   z-index: 1;
 }
 
@@ -660,7 +660,7 @@
 
 /* Responsive — tablet keeps a stacked editorial column */
 @media (max-width: 1024px) {
-  .hg-rail { grid-template-columns: 1fr; gap: 2px; }
+  .hg-rail { grid-template-columns: 1fr; gap: 0; }
   .hg-tile { aspect-ratio: 16/10; min-height: 420px; max-height: 560px; }
   .hg-title { font-size: clamp(24px, 5vw, 36px); }
   /* Don't dim the other tiles on touch — feels broken on phones */

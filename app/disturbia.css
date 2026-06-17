@@ -375,7 +375,10 @@ header.site {
 }
 .promo-sticker-dismiss:hover { opacity: 1; }
 
-@media (max-width: 720px) { .promo-sticker-wrap { display: none; } }
+@media (max-width: 720px) {
+  .promo-sticker { font-size: 10px; padding: 8px 18px; min-height: 70px; }
+  .promo-sticker-dismiss { margin-right: 4px; }
+}
 
 /* Modal overlay (clickable backdrop) */
 .promo-overlay {

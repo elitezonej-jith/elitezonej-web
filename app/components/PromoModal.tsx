@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { useModalA11y } from "./useModalA11y";
 
 const DEFAULT_COUNTRIES = [
@@ -74,29 +75,31 @@ export default function PromoModal({
     }, 1800);
   };
 
+  const sticker = !dismissed && (
+    <div className="promo-sticker-wrap">
+      <button
+        className="promo-sticker"
+        onClick={() => setOpen(true)}
+        aria-label="Open 15% off offer"
+      >
+        {stickerLabel}
+      </button>
+      <button
+        className="promo-sticker-dismiss"
+        onClick={dismissSticker}
+        aria-label="Dismiss offer"
+      >
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M9 9l6 6M15 9l-6 6" />
+        </svg>
+      </button>
+    </div>
+  );
+
   return (
     <>
-      {!dismissed && (
-        <div className="promo-sticker-wrap">
-          <button
-            className="promo-sticker"
-            onClick={() => setOpen(true)}
-            aria-label="Open 15% off offer"
-          >
-            {stickerLabel}
-          </button>
-          <button
-            className="promo-sticker-dismiss"
-            onClick={dismissSticker}
-            aria-label="Dismiss offer"
-          >
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M9 9l6 6M15 9l-6 6" />
-            </svg>
-          </button>
-        </div>
-      )}
+      {typeof document !== "undefined" && sticker && createPortal(sticker, document.body)}
 
       <div
         className="promo-overlay"
