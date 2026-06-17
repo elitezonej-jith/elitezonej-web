@@ -38,9 +38,9 @@ export default async function SearchPage({
   }
 
   const count = products.length;
-  const heading = q ? `Search Results` : "Search";
+  const heading = q ? `Search Results for "${q.trim()}"` : "Search";
   const stand = q
-    ? `${count} result${count !== 1 ? "s" : ""} for "${q.trim().slice(0, 60)}"`
+    ? `${count} result${count !== 1 ? "s" : ""} found`
     : "Browse the full Elite Zone J catalogue.";
 
   return (

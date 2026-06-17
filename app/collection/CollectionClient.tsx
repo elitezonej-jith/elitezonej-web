@@ -129,6 +129,9 @@ export default function CollectionClient({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const activeFilterCount = active.fit.size + active.fabric.size + active.occasion.size + active.size.size + (price.min ? 1 : 0) + (price.max ? 1 : 0);
+  const [filterOpen, setFilterOpen] = useState(false);
+
   return (
     <>
       <section className="cat-header">
@@ -152,19 +155,26 @@ export default function CollectionClient({
 
       <div className="toolbar">
         <span className="count t-mono-xs">{filtered.length} piece{filtered.length === 1 ? "" : "s"}</span>
-        <div className="sort">
-          <label htmlFor="collection-sort" className="t-mono-xs" style={{ color: "var(--ink-3)" }}>Sort by</label>
-          <select id="collection-sort" value={sortKey} onChange={e => setSortKey(e.target.value)}>
-            <option value="newest">Newest</option>
-            <option value="price-asc">Price · low to high</option>
-            <option value="price-desc">Price · high to low</option>
-          </select>
+        <div className="toolbar-actions">
+          {!isFabricMode && (
+            <button type="button" className="filter-toggle t-mono-xs" onClick={() => setFilterOpen(v => !v)}>
+              Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            </button>
+          )}
+          <div className="sort">
+            <label htmlFor="collection-sort" className="t-mono-xs" style={{ color: "var(--ink-3)" }}>Sort by</label>
+            <select id="collection-sort" value={sortKey} onChange={e => setSortKey(e.target.value)}>
+              <option value="newest">Newest</option>
+              <option value="price-asc">Price · low to high</option>
+              <option value="price-desc">Price · high to low</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <section className={`plp${isFabricMode ? " plp-fabric" : ""}`}>
         {!isFabricMode && (
-          <aside className="filters">
+          <aside className="filters" data-open={filterOpen}>
             <FilterGroup name="Fit" values={["Slim","Tailored","Regular","Relaxed"]} active={active.fit} onToggle={v => toggle("fit", v)} />
             <FilterGroup name="Fabric" values={["Wool","Linen","Cotton","Silk","Velvet"]} active={active.fabric} onToggle={v => toggle("fabric", v)} />
             <FilterGroup name="Occasion" values={["Wedding","Boardroom","Black Tie","Festive","Casual"]} active={active.occasion} onToggle={v => toggle("occasion", v)} />
