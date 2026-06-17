@@ -602,6 +602,52 @@
   50%      { width: 88px; opacity: 0.75; }
 }
 
+/* Text readability — subtle drop shadow on all hero copy */
+.hg-eyebrow,
+.hg-title,
+.hg-sub,
+.hg-cta {
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Rail wrapper — positions arrows relative to the carousel */
+.hg-rail-wrap { position: relative; }
+
+/* Side arrows — visible on mobile carousel */
+.hg-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  appearance: none;
+  border: none;
+  background: rgba(0, 0, 0, 0.35);
+  color: #ffffff;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  backdrop-filter: blur(4px);
+  transition: background 200ms, opacity 200ms;
+  opacity: 0.7;
+}
+.hg-arrow:hover { background: rgba(0, 0, 0, 0.6); opacity: 1; }
+.hg-arrow-left { left: 12px; }
+.hg-arrow-right { right: 12px; }
+/* Desktop — hide arrows (tiles are side-by-side, not a carousel) */
+@media (min-width: 721px) and (max-width: 1024px) {
+  .hg-arrow { display: none; }
+}
+@media (min-width: 1025px) {
+  .hg-arrow { display: none; }
+}
+
 /* Dot pagination — desktop hidden, mobile visible below the rail */
 .hg-dots { display: none; }
 .hg-dot {
@@ -641,9 +687,9 @@
 
   .hg-tile {
     flex: 0 0 100vw;
-    aspect-ratio: 4/5;
+    aspect-ratio: var(--ratio-product);
     min-height: 0;
-    max-height: 80vh;
+    max-height: none;
     scroll-snap-align: center;
     scroll-snap-stop: always;
   }
@@ -657,9 +703,8 @@
     justify-content: center;
     align-items: center;
     gap: 10px;
-    padding: 4px 0 5px;
-    background: var(--ink);
-    border-top: 1px solid rgba(250, 247, 242, 0.08);
+    padding: 12px 0;
+    background: var(--paper);
   }
   .hg-dot {
     width: 16px;
@@ -675,7 +720,7 @@
     width: 7px;
     height: 7px;
     border-radius: 999px;
-    background: rgba(250, 247, 242, 0.28);
+    background: rgba(10, 8, 6, 0.2);
     overflow: hidden;
     transition:
       transform 220ms cubic-bezier(.22, 1, .36, 1),
@@ -683,7 +728,7 @@
   }
   .hg-dot[data-active="true"] .hg-dot-track {
     transform: scale(1.28);
-    background: rgba(250, 247, 242, 0.42);
+    background: rgba(10, 8, 6, 0.4);
   }
   .hg-dot-fill {
     display: block;
@@ -691,7 +736,7 @@
     inset: 0 auto 0 0;
     width: 0;
     border-radius: inherit;
-    background: var(--paper);
+    background: var(--ink);
     transition: background 200ms;
   }
   /* Active slide uses a filled dot instead of the previous progress dash. */

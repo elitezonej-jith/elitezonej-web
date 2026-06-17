@@ -108,10 +108,12 @@ export default function HeroGrid({ tiles = DEFAULT_TILES }: { tiles?: HeroTile[]
   const goTo = useCallback((i: number, smooth = true) => {
     const rail = railRef.current;
     if (!rail) return;
-    const tile = rail.querySelectorAll<HTMLAnchorElement>(".hg-tile")[i];
-    if (!tile) return;
+    const tiles = rail.querySelectorAll<HTMLElement>(".hg-tile");
+    if (!tiles[i]) return;
     programmaticScrollRef.current = true;
-    tile.scrollIntoView({ behavior: smooth ? "smooth" : "auto", inline: "center", block: "nearest" });
+    // Each tile is 100vw in mobile carousel mode; scroll directly to its position
+    rail.scrollTo({ left: tiles[i].offsetLeft, behavior: smooth ? "smooth" : "auto" });
+    setActive(i);
     // Release the programmatic-flag after scroll settles
     window.setTimeout(() => { programmaticScrollRef.current = false; }, 700);
   }, []);
@@ -224,37 +226,55 @@ export default function HeroGrid({ tiles = DEFAULT_TILES }: { tiles?: HeroTile[]
   return (
     <section className="hg" aria-label="Featured collections">
       <div className="hg-grain" aria-hidden="true" />
-      <div className="hg-rail" ref={railRef}>
-        {TILES.map((t, i) => (
-          <Link
-            key={t.title}
-            href={t.href}
-            className={`hg-tile hg-tile-${i + 1}`}
-            aria-label={`${t.title.replace("\n", " ")} — ${t.sub}`}
-            style={{ ["--idx" as string]: i }}
-          >
-            <div
-              className="hg-img"
-              role="img"
-              aria-hidden="true"
-              style={{ backgroundImage: `url(${t.img})`, backgroundPosition: t.pos }}
-            />
-            <div className={`hg-veil hg-veil-${t.veil}`} aria-hidden="true" />
-            <div className="hg-shade" aria-hidden="true" />
-            <div className="hg-copy">
-              <span className="hg-eyebrow">{t.eyebrow}</span>
-              <h2 className="hg-title">{t.title}</h2>
-              <span className="hg-rule" aria-hidden="true" />
-              <p className="hg-sub">{t.sub}</p>
-              <span className="hg-cta">
-                <span className="hg-cta-label">{t.cta}</span>
-                <span className="hg-cta-arrow" aria-hidden="true">→</span>
-                <span className="hg-cta-line" aria-hidden="true" />
-              </span>
-            </div>
-            <span className="hg-foot-rule" aria-hidden="true" />
-          </Link>
-        ))}
+      <div className="hg-rail-wrap">
+        <div className="hg-rail" ref={railRef}>
+          {TILES.map((t, i) => (
+            <Link
+              key={t.title}
+              href={t.href}
+              className={`hg-tile hg-tile-${i + 1}`}
+              aria-label={`${t.title.replace("\n", " ")} — ${t.sub}`}
+              style={{ ["--idx" as string]: i }}
+            >
+              <div
+                className="hg-img"
+                role="img"
+                aria-hidden="true"
+                style={{ backgroundImage: `url(${t.img})`, backgroundPosition: t.pos }}
+              />
+              <div className={`hg-veil hg-veil-${t.veil}`} aria-hidden="true" />
+              <div className="hg-shade" aria-hidden="true" />
+              <div className="hg-copy">
+                <span className="hg-eyebrow">{t.eyebrow}</span>
+                <h2 className="hg-title">{t.title}</h2>
+                <span className="hg-rule" aria-hidden="true" />
+                <p className="hg-sub">{t.sub}</p>
+                <span className="hg-cta">
+                  <span className="hg-cta-label">{t.cta}</span>
+                  <span className="hg-cta-arrow" aria-hidden="true">→</span>
+                  <span className="hg-cta-line" aria-hidden="true" />
+                </span>
+              </div>
+              <span className="hg-foot-rule" aria-hidden="true" />
+            </Link>
+          ))}
+        </div>
+        <button
+          type="button"
+          className="hg-arrow hg-arrow-left"
+          aria-label="Previous slide"
+          onClick={(e) => { e.stopPropagation(); userInteract(); goTo((active - 1 + TILES.length) % TILES.length); }}
+        >
+          ‹
+        </button>
+        <button
+          type="button"
+          className="hg-arrow hg-arrow-right"
+          aria-label="Next slide"
+          onClick={(e) => { e.stopPropagation(); userInteract(); goTo((active + 1) % TILES.length); }}
+        >
+          ›
+        </button>
       </div>
       <div className="hg-dots" role="tablist" aria-label="Slide navigation">
         {TILES.map((t, i) => (
