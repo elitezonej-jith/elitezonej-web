@@ -7,7 +7,7 @@ import type Database from "better-sqlite3";
 // content-identical the moment it reads from the DB. Bump SEED_VERSION whenever
 // this parity set changes — lib/admin/db.ts refreshes existing dev DBs on a
 // version bump (see reseedStudioIfStale).
-export const SEED_VERSION = 3;
+export const SEED_VERSION = 4;
 
 export function seedStudioDefaults(db: Database.Database): void {
   const insertBlock = db.prepare(`
@@ -82,6 +82,15 @@ export function seedStudioDefaults(db: Database.Database): void {
       imageSide: "right",
       filter: { gender: "women", limit: 6 },
     }, 50],
+    ["editorial_split", "Festive Edit", "Editorial", {
+      title: "Festive Edit",
+      ctaLabel: "Shop Festive",
+      ctaHref: "/collection?c=festive",
+      image: "/generated/_sections/editorial-wedding.webp",
+      imageAlt: "Festive collection",
+      imageSide: "left",
+      filter: { occasion: "Festive", limit: 6 },
+    }, 55],
     ["full_banner", "Women's collection", "Cinematic", {
       href: "/collection?c=women",
       image: "/generated/_sections/swim-banner.webp",
