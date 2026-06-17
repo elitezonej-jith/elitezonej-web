@@ -135,8 +135,8 @@ export default function CartDrawer() {
       <style dangerouslySetInnerHTML={{ __html: `
         .cart-drawer-body { flex:1 1 auto; min-height:0; padding:0; overflow-y:auto; }
         .cart-line { display:grid; grid-template-columns:80px 1fr; gap:14px; padding:14px 16px; border-bottom:var(--rule); align-items:start; }
-        .cart-line-img { display:block; width:80px; aspect-ratio:3/4; position:relative; background:var(--paper-2); overflow:hidden; }
-        .cart-line-img img { object-fit:cover; }
+        .cart-line-img { display:block; width:80px; aspect-ratio:var(--ratio-product); position:relative; background:var(--paper-2); overflow:hidden; }
+        .cart-line-img img { object-fit:cover; object-position:center top; }
         .cart-line-info { min-width:0; display:flex; flex-direction:column; gap:6px; }
         .cart-line-top { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; }
         .cart-line-name { font-family:var(--font-display); font-weight:500; font-size:15px; line-height:1.25; color:var(--ink); text-decoration:none; }

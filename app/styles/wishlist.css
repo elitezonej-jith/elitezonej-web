@@ -65,12 +65,12 @@
 
 .wl-card { display: flex; flex-direction: column; }
 .wl-card .plate {
-  aspect-ratio: 3/4;
+  aspect-ratio: var(--ratio-product);
   position: relative;
   overflow: hidden;
   background: var(--paper-2);
 }
-.wl-card .plate img { object-fit: cover; transition: transform var(--d-slow) var(--ease); }
+.wl-card .plate img { object-fit: cover; object-position: center top; transition: transform var(--d-slow) var(--ease); }
 .wl-card:hover .plate img { transform: scale(1.04); }
 .wl-card .meta { padding: var(--s-3) 0 0; display: flex; flex-direction: column; gap: var(--s-2); }
 .wl-card .name {
@@ -133,7 +133,7 @@
 
 /* Wishlist-specific skeleton sizing (shimmer base lives in page-chrome.css) */
 .wl-skel { pointer-events: none; }
-.wl-skel .plate { aspect-ratio: 3/4; }
+.wl-skel .plate { aspect-ratio: var(--ratio-product); }
 .wl-skel .meta { padding: var(--s-3) 0 0; display: flex; flex-direction: column; gap: 8px; }
 
 @media (prefers-reduced-motion: reduce) {

@@ -227,8 +227,8 @@ export default function SearchOverlay({ open, onClose, products }: Props) {
         @media (max-width:380px)  { .search-grid { grid-template-columns:1fr; } }
 
         .search-card { display:flex; flex-direction:column; gap:8px; cursor:pointer; color:inherit; text-decoration:none; }
-        .search-card-img { aspect-ratio:3/4; position:relative; overflow:hidden; background:var(--paper-2); transition:box-shadow 500ms var(--ease); }
-        .search-card-img img { object-fit:cover; transition:transform 500ms var(--ease); }
+        .search-card-img { aspect-ratio:var(--ratio-product); position:relative; overflow:hidden; background:var(--paper-2); transition:box-shadow 500ms var(--ease); }
+        .search-card-img img { object-fit:cover; object-position:center top; transition:transform 500ms var(--ease); }
         .search-card:hover .search-card-img { box-shadow:0 14px 32px -22px rgba(26,22,19,.4); }
         .search-card:hover .search-card-img img { transform:scale(1.04); }
         .search-card-meta { padding:0; display:flex; flex-direction:column; gap:4px; }
