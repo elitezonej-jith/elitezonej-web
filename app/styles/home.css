@@ -641,9 +641,6 @@
 .hg-arrow-left { left: 12px; }
 .hg-arrow-right { right: 12px; }
 /* Desktop — hide arrows (tiles are side-by-side, not a carousel) */
-@media (min-width: 721px) and (max-width: 1024px) {
-  .hg-arrow { display: none; }
-}
 @media (min-width: 1025px) {
   .hg-arrow { display: none; }
 }
@@ -658,18 +655,10 @@
   cursor: pointer;
 }
 
-/* Responsive — tablet keeps a stacked editorial column */
-@media (max-width: 1024px) {
-  .hg-rail { grid-template-columns: 1fr; gap: 0; }
-  .hg-tile { aspect-ratio: 16/10; min-height: 420px; max-height: 560px; }
-  .hg-title { font-size: clamp(24px, 5vw, 36px); }
-  /* Don't dim the other tiles on touch — feels broken on phones */
-  .hg:hover .hg-tile { filter: none; }
-}
-
-/* Phone — convert to a horizontal swipe carousel.
+/* Responsive — tablet + phone use horizontal swipe carousel.
    One banner at a time with scroll-snap, dot pagination underneath. */
-@media (max-width: 720px) {
+@media (max-width: 1024px) {
+  .hg:hover .hg-tile { filter: none; }
   .hg-rail {
     display: flex;
     grid-template-columns: none;

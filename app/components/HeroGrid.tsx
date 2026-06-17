@@ -125,7 +125,7 @@ export default function HeroGrid({ tiles = DEFAULT_TILES }: { tiles?: HeroTile[]
   // Autoplay engine — runs only when carousel is mobile, in-view, tab visible,
   // user hasn't interacted recently, and reduced-motion is not set.
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 720px)");
+    const mq = window.matchMedia("(max-width: 1024px)");
     const rm = window.matchMedia("(prefers-reduced-motion: reduce)");
     isMobileRef.current = mq.matches;
     reducedMotionRef.current = rm.matches;
