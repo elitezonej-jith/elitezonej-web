@@ -291,8 +291,11 @@
 .filter-toggle { display: none; }
 
 @media (max-width: 900px) {
-  .cat-header .standfirst,
-  .cat-header .signed { display: none; }
+  .toolbar { flex-wrap: wrap; gap: var(--s-3); padding: var(--s-4) var(--pad-x-m); }
+  .toolbar .count { width: 100%; }
+  .toolbar-actions { width: 100%; justify-content: space-between; }
+  .toolbar .sort label { display: none; }
+  .toolbar select { min-width: 0; flex: 1; }
 
   .filter-toggle {
     display: inline-flex;
@@ -312,6 +315,9 @@
     transition: background 180ms, border-color 180ms;
   }
   .filter-toggle:hover { background: var(--paper-2); border-color: var(--ink-4); }
+
+  .cat-header .standfirst,
+  .cat-header .signed { display: none; }
 }
 
 /* ── Pagination ── */
