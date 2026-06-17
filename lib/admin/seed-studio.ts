@@ -7,7 +7,7 @@ import type Database from "better-sqlite3";
 // content-identical the moment it reads from the DB. Bump SEED_VERSION whenever
 // this parity set changes — lib/admin/db.ts refreshes existing dev DBs on a
 // version bump (see reseedStudioIfStale).
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
 
 export function seedStudioDefaults(db: Database.Database): void {
   const insertBlock = db.prepare(`
@@ -82,12 +82,6 @@ export function seedStudioDefaults(db: Database.Database): void {
       imageSide: "right",
       filter: { gender: "women", limit: 6 },
     }, 50],
-    ["product_carousel", "Festive Edit", "Carousel", {
-      ctaLabel: "View All Products",
-      ctaHref: "/collection?c=festive",
-      headingSide: "right",
-      filter: { gender: "women", limit: 6 },
-    }, 60],
     ["full_banner", "Women's collection", "Cinematic", {
       href: "/collection?c=women",
       image: "/generated/_sections/swim-banner.webp",
@@ -133,7 +127,7 @@ export function seedStudioDefaults(db: Database.Database): void {
       ],
     }, 90],
     ["wedding_editorial", "The Wedding Wardrobe", "Festive", {
-      ix: "Seasons · The Wedding Wardrobe",
+      ix: "In Trend · The Wedding Wardrobe",
       headlinePre: "A six-piece capsule for the season's weddings — from ",
       headlineEm: "haldi",
       headlinePost: " to reception.",
