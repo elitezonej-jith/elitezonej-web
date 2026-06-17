@@ -1171,3 +1171,20 @@ button:focus-visible,
   outline: 2px solid var(--stu-accent, #1A1613);
   outline-offset: 2px;
 }
+
+/* ── Colour Manager ─────────────────────────────────────────────────── */
+.stu-colour-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.stu-colour-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--stu-border); }
+.stu-colour-swatch { width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--stu-border-strong); flex-shrink: 0; }
+.stu-colour-name { font-size: 14px; font-weight: 500; }
+.stu-colour-badge { font-size: 11px; background: var(--stu-border); border-radius: 3px; padding: 1px 5px; margin-left: 6px; color: var(--stu-text-3); }
+.stu-colour-hex { font-size: 12px; font-family: ui-monospace, monospace; color: var(--stu-text-3); margin-left: auto; }
+.stu-colour-form { display: flex; align-items: center; gap: 8px; padding: 10px 0; flex-wrap: wrap; }
+.stu-colour-form__default { display: flex; align-items: center; gap: 4px; font-size: 13px; color: var(--stu-text-2); }
+.stu-colour-picker { width: 34px; height: 34px; padding: 2px; border: 1px solid var(--stu-border-strong); border-radius: 4px; cursor: pointer; }
+.stu-colour-assign { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--stu-border); }
+.stu-colour-assign__title { font-size: 13px; font-weight: 600; margin-bottom: 10px; color: var(--stu-text-2); }
+.stu-colour-assign__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+.stu-colour-assign__item { display: flex; flex-direction: column; gap: 6px; }
+.stu-colour-assign__thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 4px; border: 1px solid var(--stu-border); }
+.stu-select--sm { font-size: 12px; padding: 4px 6px; }

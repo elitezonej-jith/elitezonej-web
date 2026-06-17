@@ -30,12 +30,23 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
   const [sizePrompt, setSizePrompt] = useState(false);
   const sizeBlockRef = useRef<HTMLDivElement>(null);
 
+  // Colour swatch state
+  const colours = product.productColours ?? [];
+  const [selectedColour, setSelectedColour] = useState<{ id: number; name: string; hex: string } | null>(
+    () => {
+      const def = colours.find((c) => c.is_default === 1) ?? colours[0];
+      return def ? { id: def.id, name: def.name, hex: def.hex } : null;
+    }
+  );
+
   // Reset gallery + size when the product changes
   useEffect(() => {
     setAngleIdx(0);
     setSizeOn("");
     setSizePrompt(false);
-  }, [product.slug]);
+    const def = (product.productColours ?? []).find((c) => c.is_default === 1) ?? (product.productColours ?? [])[0];
+    setSelectedColour(def ? { id: def.id, name: def.name, hex: def.hex } : null);
+  }, [product.slug, product.productColours]);
 
   const handleAddToBag = () => {
     if (!sizeOn) {
@@ -44,13 +55,14 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
       return;
     }
     addItem({
-      id: lineId(product.slug, { size: sizeOn }),
+      id: lineId(product.slug, { size: sizeOn, colour: selectedColour?.name }),
       slug: product.slug,
       name: product.name,
       unitPrice: product.salePrice ?? product.price,
       qty: 1,
       size: sizeOn,
-      imageSrc: gallerySrcs[0] ?? imgSrc(product.slug, "01-front"),
+      colour: selectedColour?.name,
+      imageSrc: finalGallerySrcs[0] ?? imgSrc(product.slug, "01-front"),
     });
   };
 
@@ -58,12 +70,24 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
   // Prefer uploaded images (product_images table, set in Studio) when present;
   // fall back to the legacy /generated/<slug>/<angle>.webp filesystem layout
   // so seeded products keep rendering.
-  const gallerySrcs: string[] = product.images && product.images.length > 0
+  const allImages: string[] = product.images && product.images.length > 0
     ? product.images
     : ANGLES.map((a) => imgSrc(product.slug, a));
-  const galleryAlts: string[] = gallerySrcs.map((_, i) => ANGLE_LABELS[i] ?? `View ${i + 1}`);
-  const safeAngleIdx = Math.min(angleIdx, Math.max(0, gallerySrcs.length - 1));
-  const lightboxImages = gallerySrcs.map((src, i) => ({
+  // Filter by selected colour when imageColourMap exists
+  const gallerySrcs: string[] = (selectedColour && product.imageColourMap)
+    ? allImages.filter((src) => {
+        const cid = product.imageColourMap![src];
+        return cid === selectedColour.id || cid === null || cid === undefined;
+      })
+    : allImages;
+  // If filtering removed all images, try shared (unassigned) images first, then all
+  const sharedImages = product.imageColourMap
+    ? allImages.filter((src) => { const cid = product.imageColourMap![src]; return cid === null || cid === undefined; })
+    : allImages;
+  const finalGallerySrcs = gallerySrcs.length > 0 ? gallerySrcs : (sharedImages.length > 0 ? sharedImages : allImages);
+  const galleryAlts: string[] = finalGallerySrcs.map((_, i) => ANGLE_LABELS[i] ?? `View ${i + 1}`);
+  const safeAngleIdx = Math.min(angleIdx, Math.max(0, finalGallerySrcs.length - 1));
+  const lightboxImages = finalGallerySrcs.map((src, i) => ({
     src,
     alt: `${product.name} ${galleryAlts[i]}`,
   }));
@@ -72,7 +96,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
     <>
       <section className="pd">
         <div className="thumbs">
-          {gallerySrcs.map((src, i) => (
+          {finalGallerySrcs.map((src, i) => (
             <div
               key={`${src}-${i}`}
               className={`thumb ${i === safeAngleIdx ? "on" : ""}`}
@@ -91,6 +115,9 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
                 loading="lazy"
               />
               <span className="num">{String(i + 1).padStart(2, "0")}</span>
+              {product.imageColourMap && product.imageColourMap[src] != null && product.productColours && (
+                <span className="thumb-colour-dot" style={{ backgroundColor: product.productColours.find(c => c.id === product.imageColourMap![src])?.hex }} />
+              )}
             </div>
           ))}
         </div>
@@ -104,7 +131,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
           onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setLbOpen(true); } }}
           data-zoom-host="tailored"
         >
-          {gallerySrcs.map((src, i) => (
+          {finalGallerySrcs.map((src, i) => (
             <div key={`${src}-${i}`} className={`photo ${i === safeAngleIdx ? "show" : ""}`}>
               <Image
                 src={src}
@@ -119,7 +146,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
         </div>
         <ZoomLens
           targetSelector="[data-zoom-host='tailored']"
-          imageSrc={gallerySrcs[safeAngleIdx]}
+          imageSrc={finalGallerySrcs[safeAngleIdx]}
         />
 
         <div className="info">
@@ -141,6 +168,25 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
             )}
             <span className="tax-line">Inclusive of all taxes</span>
           </div>
+
+          {colours.length > 1 && product.imageColourMap && Object.values(product.imageColourMap).some((cid) => cid != null) && (
+            <div className="field-block">
+              <div className="head"><label>Colour{selectedColour ? ` — ${selectedColour.name}` : ""}</label></div>
+              <div className="colour-swatches">
+                {colours.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    className={`colour-swatch${selectedColour?.id === c.id ? " on" : ""}`}
+                    style={{ backgroundColor: c.hex }}
+                    aria-label={c.name}
+                    aria-pressed={selectedColour?.id === c.id}
+                    onClick={() => { setSelectedColour({ id: c.id, name: c.name, hex: c.hex }); setAngleIdx(0); }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="field-block" ref={sizeBlockRef}>
             <div className="head">

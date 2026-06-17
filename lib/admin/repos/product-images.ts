@@ -9,6 +9,7 @@ export type ProductImage = {
   sort_order: number;
   is_thumbnail: number;
   is_hover: number;
+  colour_id: number | null;
 };
 
 export async function listImages(slug: string): Promise<ProductImage[]> {
@@ -120,6 +121,24 @@ export async function updateAlt(id: number, alt: string, slug: string): Promise<
   await sql.run(
     "UPDATE product_images SET alt = ? WHERE id = ? AND product_slug = ?",
     [alt, id, slug],
+  );
+}
+
+/** Assign an image to a colour (or null to make it shared/generic). */
+export async function assignImageColour(id: number, slug: string, colourId: number | null): Promise<void> {
+  await sql.run(
+    "UPDATE product_images SET colour_id = ? WHERE id = ? AND product_slug = ?",
+    [colourId, id, slug],
+  );
+}
+
+/** List images for a specific colour + shared (colour_id IS NULL) images. */
+export async function listImagesForColour(slug: string, colourId: number): Promise<ProductImage[]> {
+  return sql.all<ProductImage>(
+    `SELECT * FROM product_images
+     WHERE product_slug = ? AND (colour_id = ? OR colour_id IS NULL)
+     ORDER BY sort_order ASC, id ASC`,
+    [slug, colourId],
   );
 }
 

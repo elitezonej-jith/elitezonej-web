@@ -7,6 +7,8 @@ import { requireUser } from "../../../lib/admin/session";
 import {
   upsertProduct, deleteProduct, setStatus, getProduct, setInventory, type ProductInput,
 } from "../../../lib/admin/repos/products";
+import { createColour, updateColour, deleteColour, reorderColours } from "../../../lib/admin/repos/product-colours";
+import { assignImageColour } from "../../../lib/admin/repos/product-images";
 import { logAudit } from "../../../lib/admin/repos/audit";
 
 const ProductSchema = z.object({
@@ -154,4 +156,53 @@ export async function saveInventoryAction(fd: FormData): Promise<void> {
   revalidatePath(`/admin/products/${slug}`);
   revalidatePath("/admin/inventory");
   bustInventory();
+}
+
+export async function saveProductColourAction(fd: FormData): Promise<void> {
+  const me = await requireUser();
+  const slug = String(fd.get("product_slug") ?? "");
+  const colourId = Number(fd.get("colour_id") || 0);
+  const name = String(fd.get("name") ?? "").trim();
+  const hex = String(fd.get("hex") ?? "#000000").trim();
+  const is_default = fd.get("is_default") === "on" ? 1 : 0;
+  if (!slug || !name) return;
+
+  if (colourId) {
+    await updateColour(colourId, { name, hex, is_default });
+    await logAudit({ user_id: me.id, action: "update_colour", entity: "product", entity_id: slug, payload: { colourId } });
+  } else {
+    await createColour({ product_slug: slug, name, hex, is_default });
+    await logAudit({ user_id: me.id, action: "create_colour", entity: "product", entity_id: slug, payload: { name, hex } });
+  }
+  revalidatePath(`/admin/products/${slug}`);
+}
+
+export async function deleteProductColourAction(fd: FormData): Promise<void> {
+  const me = await requireUser();
+  const slug = String(fd.get("product_slug") ?? "");
+  const colourId = Number(fd.get("colour_id") || 0);
+  if (!slug || !colourId) return;
+  await deleteColour(colourId);
+  await logAudit({ user_id: me.id, action: "delete_colour", entity: "product", entity_id: slug, payload: { colourId } });
+  revalidatePath(`/admin/products/${slug}`);
+}
+
+export async function reorderProductColoursAction(fd: FormData): Promise<void> {
+  await requireUser();
+  const slug = String(fd.get("product_slug") ?? "");
+  const ordered: number[] = JSON.parse(String(fd.get("ordered_ids") ?? "[]"));
+  if (!slug || !ordered.length) return;
+  await reorderColours(slug, ordered);
+  revalidatePath(`/admin/products/${slug}`);
+}
+
+export async function assignImageColourAction(fd: FormData): Promise<void> {
+  const me = await requireUser();
+  const slug = String(fd.get("product_slug") ?? "");
+  const imageId = Number(fd.get("image_id") ?? 0);
+  const colourId = String(fd.get("colour_id") ?? "");
+  if (!slug || !imageId) return;
+  await assignImageColour(imageId, slug, colourId ? Number(colourId) : null);
+  await logAudit({ user_id: me.id, action: "assign_image_colour", entity: "product", entity_id: slug, payload: { imageId, colourId: colourId || null } });
+  revalidatePath(`/admin/products/${slug}`);
 }

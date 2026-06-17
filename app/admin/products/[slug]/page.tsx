@@ -10,6 +10,8 @@ import SectionRule from "../../components/SectionRule";
 import ProductEditor from "./ProductEditor";
 import InventoryEditor from "./InventoryEditor";
 import DangerZone from "./DangerZone";
+import ColourTable from "./ColourTable";
+import { listColours } from "../../../../lib/admin/repos/product-colours";
 import { dateShort, rupees } from "../../../../lib/admin/format";
 import { requireUser } from "../../../../lib/admin/session";
 
@@ -24,6 +26,7 @@ export default async function ProductEditorPage({ params, searchParams }: Params
   const product = await getProduct(slug);
   if (!product) notFound();
   const inventory = await getInventory(slug);
+  const colours = product.kind !== "fabric" ? await listColours(slug) : [];
   const dbImages = await listImages(slug);
   const photos = dbImages.length
     ? dbImages.map((i) => ({ src: i.image_path, alt: i.alt }))
@@ -87,6 +90,13 @@ export default async function ProductEditorPage({ params, searchParams }: Params
             <Link href="/admin/inventory" className="adm-btn adm-btn--sm adm-btn--ghost">Stock matrix →</Link>
           </SectionRule>
           <InventoryEditor slug={slug} rows={inventory} />
+        </>
+      )}
+
+      {product.kind !== "fabric" && (
+        <>
+          <SectionRule kicker="Palette" title="Colourways" />
+          <ColourTable slug={slug} colours={colours} />
         </>
       )}
 

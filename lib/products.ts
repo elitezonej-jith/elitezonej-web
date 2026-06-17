@@ -55,6 +55,10 @@ export type Product = {
   isNewArrival?: boolean;
   isFeatured?: boolean;
   isTrending?: boolean;
+  // Tailored-product colour variants (from product_colours table).
+  productColours?: { id: number; name: string; hex: string; is_default: number }[];
+  // Maps image_path → colour_id (null = shared/generic image).
+  imageColourMap?: Record<string, number | null>;
 };
 
 export const PRODUCTS: Product[] = [
