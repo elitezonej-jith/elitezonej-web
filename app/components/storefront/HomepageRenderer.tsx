@@ -141,6 +141,7 @@ function Block({
           imageAlt={String(cfg.imageAlt ?? "")}
           imageSide={(cfg.imageSide as "left" | "right" | undefined) ?? "left"}
           gender={f.gender ? String(f.gender) : undefined}
+          occasion={f.occasion ? String(f.occasion) : undefined}
           limit={Number(f.limit ?? 6)}
         />
       );

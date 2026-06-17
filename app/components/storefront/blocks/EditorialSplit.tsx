@@ -12,6 +12,7 @@ export default async function EditorialSplit({
   imageAlt,
   imageSide,
   gender,
+  occasion,
   limit,
 }: {
   title: string;
@@ -21,10 +22,12 @@ export default async function EditorialSplit({
   imageAlt: string;
   imageSide?: "left" | "right";
   gender?: string;
+  occasion?: string;
   limit?: number;
 }) {
   let products = await listProductsForPage();
   if (gender) products = products.filter((p) => p.gender === gender);
+  if (occasion) products = products.filter((p) => p.occasion === occasion);
   const sliced = products.slice(0, limit ?? 6);
   return (
     <EditorialSplitView
