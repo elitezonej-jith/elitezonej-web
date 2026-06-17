@@ -109,7 +109,7 @@ async function _listProducts(filter?: ListFilter): Promise<StorefrontProduct[]> 
     kind: filter?.kind,
     gender: filter?.gender,
     category: filter?.category,
-    limit: filter?.limit ?? 100,
+    limit: filter?.limit ?? 500,
   };
   let products = await listAdminProducts(opts);
   if (filter?.sub) products = products.filter((p) => p.sub === filter.sub);
