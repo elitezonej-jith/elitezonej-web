@@ -25,23 +25,35 @@ export default function ImageUploader({
   const okCount = useRef(0);
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [current, setCurrent] = useState<{ file: File; url: string } | null>(null);
   const { show } = useToast();
 
-  // POST a single file to the upload route. Returns true on success.
+  // POST a single file to the upload route with progress tracking.
   const uploadOne = async (file: File) => {
     const fd = new FormData();
     fd.append("file", file);
     fd.append("folder", folder);
-    const res = await fetch("/api/studio/upload", { method: "POST", body: fd });
-    if (!res.ok) {
-      const err = await res.text();
-      show(`Upload failed — ${err.slice(0, 80)}`, "error");
-      return false;
-    }
-    onUploaded((await res.json()) as Uploaded);
-    okCount.current += 1;
-    return true;
+    return new Promise<boolean>((resolve) => {
+      const xhr = new XMLHttpRequest();
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onload = async () => {
+        setProgress(0);
+        if (xhr.status >= 200 && xhr.status < 300) {
+          onUploaded(JSON.parse(xhr.responseText) as Uploaded);
+          okCount.current += 1;
+          resolve(true);
+        } else {
+          show(`Upload failed — ${xhr.responseText.slice(0, 80)}`, "error");
+          resolve(false);
+        }
+      };
+      xhr.onerror = () => { setProgress(0); show("Upload failed — network error", "error"); resolve(false); };
+      xhr.open("POST", "/api/studio/upload");
+      xhr.send(fd);
+    });
   };
 
   // Open the adjust modal for the next queued file, or finish the batch.
@@ -109,6 +121,12 @@ export default function ImageUploader({
         <div className="stu-uploader__sub">
           {hint ?? "PNG, JPG, WEBP — zoom & crop before upload."}
         </div>
+        {progress > 0 && (
+          <div className="stu-uploader__progress">
+            <div className="stu-uploader__progress-bar" style={{ width: `${progress}%` }} />
+            <span className="stu-uploader__progress-text">{progress}%</span>
+          </div>
+        )}
         <input
           ref={ref}
           type="file"
