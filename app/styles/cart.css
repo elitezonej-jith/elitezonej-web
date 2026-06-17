@@ -46,7 +46,8 @@
   border-bottom: var(--rule);
   align-items: start;
 }
-.item .ph { width: 120px; aspect-ratio: 3/4; overflow: hidden; background: var(--paper-2); position: relative; }
+.item .ph { width: 120px; aspect-ratio: var(--ratio-product); overflow: hidden; background: var(--paper-2); position: relative; }
+.item .ph img { object-fit: cover; object-position: center top; }
 .item .ph a { display: block; width: 100%; height: 100%; position: relative; }
 .item .info .top { display: flex; justify-content: space-between; gap: var(--s-3); align-items: flex-start; }
 .item .name {

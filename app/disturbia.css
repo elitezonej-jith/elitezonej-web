@@ -1021,7 +1021,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--ink); }
   min-width: 0;
 }
 .carousel-cell { min-width: 0; }
-.carousel-cell .pcard .plate { aspect-ratio: 7/10; }
 
 @media (max-width: 1100px) {
   .carousel-track { grid-template-columns: repeat(4, minmax(180px, 1fr)); }
@@ -1044,7 +1043,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--ink); }
 .pcard { transition: none !important; }
 .pcard:hover { transform: none !important; }
 .pcard .plate {
-  aspect-ratio: 7/10;            /* Disturbia's real product card ratio (0.70) */
   background: var(--paper-2);
   box-shadow: none !important;
   transition: none !important;
@@ -1316,7 +1314,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--ink); }
   background: var(--paper);
 }
 .ed-split-grid .pcard { border: 1px solid transparent; }
-.ed-split-grid .pcard .plate { aspect-ratio: 7/10; }
 .ed-split-grid .pcard .meta { padding: 12px 12px 24px; }
 
 @media (max-width: 1100px) {
@@ -1739,9 +1736,6 @@ footer.site .foot-grid {
 .pd .thumb,
 .worn .plate { background: var(--paper-2) !important; }
 
-/* PDP card aspect alignment with homepage product cards (7:10) */
-.pd .main, .pd .thumb { aspect-ratio: 7/10 !important; }
-.worn .plate { aspect-ratio: 7/10 !important; }
 
 /* Switcher chips at top of PDP — soften to match new palette */
 .switcher { background: var(--paper-2) !important; border-bottom: 1px solid var(--paper-3) !important; }

@@ -80,6 +80,7 @@
   --rule-soft:   1px solid var(--ink-4);
 
   /* ---------- Layout ---------- */
+  --ratio-product: 3/4;
   --container:  1440px;
   --pad-x-d:    var(--s-7);
   --pad-x-m:    var(--s-4);
