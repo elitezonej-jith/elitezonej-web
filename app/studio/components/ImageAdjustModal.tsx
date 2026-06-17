@@ -68,7 +68,7 @@ async function renderCrop(
 export default function ImageAdjustModal({
   src,
   fileName,
-  aspect,
+  aspect: lockedAspect,
   onApply,
   onSkip,
   onCancel,
@@ -90,6 +90,17 @@ export default function ImageAdjustModal({
   const [scale, setScale] = useState(1);
   const [rotate, setRotate] = useState(0);
   const [working, setWorking] = useState(false);
+  const [aspect, setAspect] = useState<number | undefined>(lockedAspect);
+
+  const PRESETS: { label: string; value: number | undefined }[] = lockedAspect
+    ? [] // No presets when aspect is locked by the caller
+    : [
+        { label: "Free", value: undefined },
+        { label: "3:4", value: 3 / 4 },
+        { label: "4:3", value: 4 / 3 },
+        { label: "16:9", value: 16 / 9 },
+        { label: "1:1", value: 1 },
+      ];
 
   // Lock background scroll while the modal is open.
   useEffect(() => {
@@ -171,6 +182,23 @@ export default function ImageAdjustModal({
         </div>
 
         <div className="stu-crop__controls">
+          {PRESETS.length > 0 && (
+            <div className="stu-crop__ctrl">
+              <span>Ratio</span>
+              <div className="stu-crop__presets">
+                {PRESETS.map(p => (
+                  <button
+                    key={p.label}
+                    type="button"
+                    className={`stu-btn stu-btn--sm${aspect === p.value ? " stu-btn--primary" : ""}`}
+                    onClick={() => setAspect(p.value)}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <label className="stu-crop__ctrl">
             <span>Zoom</span>
             <input
