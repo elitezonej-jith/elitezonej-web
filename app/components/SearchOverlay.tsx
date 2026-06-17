@@ -22,8 +22,8 @@ export default function SearchOverlay({ open, onClose }: Props) {
     if (!open) setQ("");
   }, [open]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (e?: React.FormEvent | React.MouseEvent) => {
+    e?.preventDefault();
     const trimmed = q.trim();
     if (trimmed) {
       onClose();
@@ -53,7 +53,7 @@ export default function SearchOverlay({ open, onClose }: Props) {
             )}
             <button className="search-close" type="button" onClick={onClose} aria-label="Close search">Close <span aria-hidden="true">⌫</span></button>
           </form>
-          <button type="submit" className="search-submit t-mono-xs">Search</button>
+          <button type="button" className="search-submit t-mono-xs" onClick={handleSubmit}>Search</button>
         </div>
       </div>
 
