@@ -12,6 +12,7 @@ export default function HeroGridDynamic({ tiles }: { tiles: RC[] }) {
     cta: String(t.cta ?? ""),
     href: String(t.href ?? ""),
     img: String(t.img ?? t.image ?? ""),
+    imgMobile: t.imgMobile ? String(t.imgMobile) : undefined,
     pos: String(t.pos ?? "center center"),
     veil: String(t.veil ?? "left"),
   }));

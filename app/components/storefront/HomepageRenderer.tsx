@@ -142,6 +142,7 @@ function Block({
           ctaLabel={String(cfg.ctaLabel ?? cta.label ?? "")}
           ctaHref={sectionCtaHref(cfg, cta, f)}
           image={String(cfg.image ?? "")}
+          imageMobile={cfg.imageMobile ? String(cfg.imageMobile) : undefined}
           imageAlt={String(cfg.imageAlt ?? "")}
           imageSide={(cfg.imageSide as "left" | "right" | undefined) ?? "left"}
           gender={f.gender ? String(f.gender) : undefined}

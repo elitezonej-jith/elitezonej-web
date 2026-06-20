@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { saveBlockConfigAction } from "../../actions/homepage";
 import ImageUploader from "../../components/ImageUploader";
 import { IconPlus, IconTrash } from "../../components/Icons";
@@ -11,11 +11,27 @@ export default function BlockEditor({ block }: { block: HomepageBlockResolved })
   const [title, setTitle] = useState(block.title);
   const [kicker, setKicker] = useState(block.kicker);
   const [config, setConfig] = useState<RC>(block.config as RC);
+  const formRef = useRef<HTMLFormElement>(null);
+  const pendingSaveRef = useRef(false);
 
   const update = (next: RC) => setConfig(next);
 
+  // Auto-save when an image upload changes config (pendingSaveRef flag)
+  useEffect(() => {
+    if (pendingSaveRef.current) {
+      pendingSaveRef.current = false;
+      // Defer to next tick so hidden input value reflects latest state
+      setTimeout(() => formRef.current?.requestSubmit(), 0);
+    }
+  }, [config]);
+
+  const updateWithSave = (next: RC) => {
+    pendingSaveRef.current = true;
+    setConfig(next);
+  };
+
   return (
-    <form action={saveBlockConfigAction} className="stu-form">
+    <form ref={formRef} action={saveBlockConfigAction} className="stu-form">
       <input type="hidden" name="id" value={block.id} />
       <input type="hidden" name="config_json" value={JSON.stringify(config)} />
 
@@ -38,7 +54,7 @@ export default function BlockEditor({ block }: { block: HomepageBlockResolved })
         </div>
       </section>
 
-      <Editor type={block.type} config={config} update={update} />
+      <Editor type={block.type} config={config} update={update} updateWithSave={updateWithSave} />
 
       <div className="stu-btn-row" style={{ justifyContent: "flex-end" }}>
         <button type="submit" className="stu-btn stu-btn--primary stu-btn--lg">Save section</button>
@@ -47,14 +63,14 @@ export default function BlockEditor({ block }: { block: HomepageBlockResolved })
   );
 }
 
-function Editor({ type, config, update }: { type: string; config: RC; update: (n: RC) => void }) {
+function Editor({ type, config, update, updateWithSave }: { type: string; config: RC; update: (n: RC) => void; updateWithSave: (n: RC) => void }) {
   switch (type) {
     case "announce_bar":
       return <AnnounceBarEditor config={config} update={update} />;
     case "promo_modal":
       return <PromoModalEditor config={config} update={update} />;
     case "hero_grid":
-      return <TilesEditor name="tiles" config={config} update={update} fields={["eyebrow","title","sub","cta","href","img","pos","veil"]} imageKeys={["img"]} title="Hero tiles" min={1} max={4} />;
+      return <TilesEditor name="tiles" config={config} update={update} onImageChange={updateWithSave} fields={["eyebrow","title","sub","cta","href","img","imgMobile","pos","veil"]} imageKeys={["img","imgMobile"]} imageHints={{ img: "1440×810 px · 16:9 landscape · WebP or JPG", imgMobile: "1080×1440 px · 3:4 portrait · WebP or JPG" }} title="Hero tiles" min={1} max={4} />;
     case "service_cards":
       return (
         <section className="stu-card">
@@ -67,7 +83,7 @@ function Editor({ type, config, update }: { type: string; config: RC; update: (n
         </section>
       );
     case "process_strip":
-      return <ProcessStripEditor config={config} update={update} />;
+      return <ProcessStripEditor config={config} update={update} onImageChange={updateWithSave} />;
     case "trust_strip":
       return (
         <section className="stu-card">
@@ -83,15 +99,15 @@ function Editor({ type, config, update }: { type: string; config: RC; update: (n
       );
     case "hero_banner":
     case "full_banner":
-      return <CollectionBannerEditor config={config} update={update} />;
+      return <CollectionBannerEditor config={config} update={update} onImageChange={updateWithSave} />;
     case "wedding_editorial":
       return <WeddingEditorialEditor config={config} update={update} />;
     case "editorial_split":
-      return <EditorialSplitEditor config={config} update={update} />;
+      return <EditorialSplitEditor config={config} update={update} onImageChange={updateWithSave} />;
     case "product_carousel":
       return <ProductCarouselEditor config={config} update={update} />;
     case "bespoke_teaser":
-      return <BespokeTeaserEditor config={config} update={update} />;
+      return <BespokeTeaserEditor config={config} update={update} onImageChange={updateWithSave} />;
     case "category_grid":
       return <CategoryGridEditor config={config} update={update} />;
     case "custom_html":
@@ -134,13 +150,15 @@ function Text({ label, value, onChange, area = false, hint }: { label: string; v
 }
 
 function TilesEditor({
-  name, config, update, fields, title, min = 1, max = 4, simple = false, imageKeys = ["image"],
+  name, config, update, fields, title, min = 1, max = 4, simple = false, imageKeys = ["image"], onImageChange, imageHints = {},
 }: {
   name: string; config: RC; update: (n: RC) => void;
   fields: string[]; title: string; min?: number; max?: number; simple?: boolean; imageKeys?: string[];
+  onImageChange?: (n: RC) => void; imageHints?: Record<string, string>;
 }) {
   const tiles = (config[name] as Array<RC>) ?? [];
   const set = (next: Array<RC>) => update({ ...config, [name]: next });
+  const setImg = (next: Array<RC>) => (onImageChange ?? update)({ ...config, [name]: next });
   const add = () => { if (tiles.length < max) set([...tiles, {}]); };
   const remove = (i: number) => { if (tiles.length > min) set(tiles.filter((_, k) => k !== i)); };
 
@@ -167,8 +185,8 @@ function TilesEditor({
               <div key={f} style={{ marginBottom: simple ? 8 : 12 }}>
                 {imageKeys.includes(f) ? (
                   <ImageField label={f.charAt(0).toUpperCase() + f.slice(1)} value={String(t[f] ?? "")} onChange={(v) => {
-                    const n = [...tiles]; n[i] = { ...t, [f]: v }; set(n);
-                  }} folder="homepage" />
+                    const n = [...tiles]; n[i] = { ...t, [f]: v }; setImg(n);
+                  }} folder="homepage" hint={imageHints[f]} />
                 ) : (
                   <label className="stu-field">
                     <span className="stu-field__label">{f.charAt(0).toUpperCase() + f.slice(1)}</span>
@@ -229,7 +247,7 @@ function PromoModalEditor({ config, update }: { config: RC; update: (n: RC) => v
   );
 }
 
-function ProcessStripEditor({ config, update }: { config: RC; update: (n: RC) => void }) {
+function ProcessStripEditor({ config, update, onImageChange }: { config: RC; update: (n: RC) => void; onImageChange?: (n: RC) => void }) {
   return (
     <>
       <section className="stu-card">
@@ -254,21 +272,23 @@ function ProcessStripEditor({ config, update }: { config: RC; update: (n: RC) =>
           <Text label="Accessible label" value={String(config.ariaLabel ?? "")} onChange={(v) => update({ ...config, ariaLabel: v })} />
         </div>
       </section>
-      <TilesEditor name="panes" config={config} update={update}
-                   fields={["photoClass","photoAria","step","title","body"]}
+      <TilesEditor name="panes" config={config} update={update} onImageChange={onImageChange}
+                   fields={["image","imageMobile","photoClass","photoAria","step","title","body"]}
+                   imageKeys={["image","imageMobile"]}
+                   imageHints={{ image: "1200×860 px · 7:5 landscape · WebP or JPG", imageMobile: "1080×810 px · 4:3 · WebP or JPG" }}
                    title="Steps" min={1} max={4} />
     </>
   );
 }
 
-function CollectionBannerEditor({ config, update }: { config: RC; update: (n: RC) => void }) {
+function CollectionBannerEditor({ config, update, onImageChange }: { config: RC; update: (n: RC) => void; onImageChange?: (n: RC) => void }) {
   return (
     <section className="stu-card">
       <header className="stu-card__head"><h3>Full-width banner</h3>
         <span className="stu-card__head__sub">Title renders as Title + emphasised suffix (e.g. &quot;Women&apos;s Collection&quot; / &quot;.&quot;).</span>
       </header>
       <div className="stu-card__body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <ImageField label="Background image" value={String(config.image ?? "")} onChange={(v) => update({ ...config, image: v })} folder="homepage" />
+        <ImageField label="Background image" value={String(config.image ?? "")} onChange={(v) => (onImageChange ?? update)({ ...config, image: v })} folder="homepage" hint="2400×1000 px · 21:9 cinematic · WebP or JPG" />
         <div className="stu-row">
           <Text label="Eyebrow" value={String(config.eyebrow ?? "")} onChange={(v) => update({ ...config, eyebrow: v })} />
           <Text label="Image alt text" value={String(config.imgAria ?? "")} onChange={(v) => update({ ...config, imgAria: v })} />
@@ -316,13 +336,14 @@ function WeddingEditorialEditor({ config, update }: { config: RC; update: (n: RC
   );
 }
 
-function EditorialSplitEditor({ config, update }: { config: RC; update: (n: RC) => void }) {
+function EditorialSplitEditor({ config, update, onImageChange }: { config: RC; update: (n: RC) => void; onImageChange?: (n: RC) => void }) {
   const filter = (config.filter as RC) ?? {};
   return (
     <section className="stu-card">
       <header className="stu-card__head"><h3>Editorial split</h3></header>
       <div className="stu-card__body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-        <ImageField label="Image" value={String(config.image ?? "")} onChange={(v) => update({ ...config, image: v })} folder="homepage" />
+        <ImageField label="Image (desktop)" value={String(config.image ?? "")} onChange={(v) => (onImageChange ?? update)({ ...config, image: v })} folder="homepage" hint="1200×1400 px · 6:7 portrait · WebP or JPG" />
+        <ImageField label="Image (mobile, optional)" value={String(config.imageMobile ?? "")} onChange={(v) => (onImageChange ?? update)({ ...config, imageMobile: v })} folder="homepage" hint="1200×680 px · 16:9 landscape · WebP or JPG" />
         <div className="stu-row">
           <Text label="Overlay title" value={String(config.title ?? "")} onChange={(v) => update({ ...config, title: v })} />
           <label className="stu-field">
@@ -394,13 +415,15 @@ function ProductCarouselEditor({ config, update }: { config: RC; update: (n: RC)
   );
 }
 
-function BespokeTeaserEditor({ config, update }: { config: RC; update: (n: RC) => void }) {
+function BespokeTeaserEditor({ config, update, onImageChange }: { config: RC; update: (n: RC) => void; onImageChange?: (n: RC) => void }) {
   return (
     <section className="stu-card">
       <header className="stu-card__head"><h3>Bespoke teaser</h3>
         <span className="stu-card__head__sub">Headline renders as Pre + emphasised.</span>
       </header>
       <div className="stu-card__body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <ImageField label="Background image (desktop)" value={String(config.image ?? "")} onChange={(v) => (onImageChange ?? update)({ ...config, image: v })} folder="homepage" hint="2400×800 px · 3:1 ultra-wide · WebP or JPG" />
+        <ImageField label="Background image (mobile, optional)" value={String(config.imageMobile ?? "")} onChange={(v) => (onImageChange ?? update)({ ...config, imageMobile: v })} folder="homepage" hint="1080×800 px · 4:3 · WebP or JPG" />
         <Text label="Index label" value={String(config.ix ?? "")} onChange={(v) => update({ ...config, ix: v })} />
         <div className="stu-row">
           <Text label="Headline (pre)" value={String(config.headlinePre ?? "")} onChange={(v) => update({ ...config, headlinePre: v })} />
@@ -465,10 +488,11 @@ function CustomHtmlEditor({ config, update }: { config: RC; update: (n: RC) => v
   );
 }
 
-function ImageField({ label, value, onChange, folder }: { label: string; value: string; onChange: (v: string) => void; folder: string }) {
+function ImageField({ label, value, onChange, folder, hint }: { label: string; value: string; onChange: (v: string) => void; folder: string; hint?: string }) {
   return (
     <div>
       <span className="stu-field__label" style={{ display: "block", marginBottom: 6 }}>{label}</span>
+      {hint && <span style={{ display: "block", fontSize: 12, color: "var(--stu-text-3)", marginBottom: 8 }}>{hint}</span>}
       {value ? (
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}

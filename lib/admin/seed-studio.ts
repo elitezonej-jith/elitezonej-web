@@ -117,6 +117,7 @@ export function seedStudioDefaults(db: Database.Database): void {
       panes: [
         {
           photoClass: "pr-1",
+          image: "/generated/_sections/process-cloth.webp",
           photoAria: "Cloth library — wool swatches",
           step: "Cloth",
           title: "Choose your cloth.",
@@ -124,6 +125,7 @@ export function seedStudioDefaults(db: Database.Database): void {
         },
         {
           photoClass: "pr-2",
+          image: "/generated/_sections/process-measure.webp",
           photoAria: "Master tailor at the cutting table",
           step: "Fitting",
           title: "Get measured.",
@@ -131,6 +133,7 @@ export function seedStudioDefaults(db: Database.Database): void {
         },
         {
           photoClass: "pr-3",
+          image: "/generated/_sections/process-finish.webp",
           photoAria: "Finished suit, pressed and ready",
           step: "Delivery",
           title: "Receive in seven days.",
@@ -159,6 +162,7 @@ export function seedStudioDefaults(db: Database.Database): void {
       body: "Twelve designers and twenty-six tailors. Book a home fitting at your address.",
       ctaLabel: "Book a fitting",
       ctaHref: "/bespoke",
+      image: "/generated/_sections/atelier.webp",
     }, 85],
     ["trust_strip", "Trust strip", "Promise", {}, 120],
     ["promo_modal", "Promo modal", "15% offer", {

@@ -12,6 +12,7 @@ type Props = {
   ctaLabel: string;
   ctaHref: string;
   image: string;
+  imageMobile?: string;
   imageAlt: string;
   imageSide?: "left" | "right";
   products: Product[];
@@ -22,6 +23,7 @@ export default function EditorialSplit({
   ctaLabel,
   ctaHref,
   image,
+  imageMobile,
   imageAlt,
   imageSide = "left",
   products,
@@ -68,10 +70,10 @@ export default function EditorialSplit({
     <section className={`ed-split ed-split--${imageSide}`}>
       <div
         ref={imgRef}
-        className={`ed-split-img${revealed ? " in-view" : ""}`}
+        className={`ed-split-img${revealed ? " in-view" : ""}${imageMobile ? " ed-split-img--has-mobile" : ""}`}
         role="img"
         aria-label={imageAlt}
-        style={{ backgroundImage: `url(${image})` }}
+        style={{ backgroundImage: `url(${image})`, ["--ed-img-m" as string]: imageMobile ? `url(${imageMobile})` : undefined }}
       >
         <div className="ed-split-overlay">
           <h2>{title}</h2>

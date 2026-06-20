@@ -9,6 +9,7 @@ export default async function EditorialSplit({
   ctaLabel,
   ctaHref,
   image,
+  imageMobile,
   imageAlt,
   imageSide,
   gender,
@@ -20,6 +21,7 @@ export default async function EditorialSplit({
   ctaLabel: string;
   ctaHref: string;
   image: string;
+  imageMobile?: string;
   imageAlt: string;
   imageSide?: "left" | "right";
   gender?: string;
@@ -38,6 +40,7 @@ export default async function EditorialSplit({
       ctaLabel={ctaLabel}
       ctaHref={ctaHref}
       image={image}
+      imageMobile={imageMobile}
       imageAlt={imageAlt}
       imageSide={imageSide}
       products={sliced}

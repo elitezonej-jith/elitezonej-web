@@ -10,6 +10,7 @@ export type HeroTile = {
   cta: string;
   href: string;
   img: string;
+  imgMobile?: string;
   pos: string;
   veil: string;
 };
@@ -237,11 +238,18 @@ export default function HeroGrid({ tiles = DEFAULT_TILES }: { tiles?: HeroTile[]
               style={{ ["--idx" as string]: i }}
             >
               <div
-                className="hg-img"
+                className={`hg-img${t.imgMobile ? " hg-img--has-mobile" : ""}`}
                 role="img"
                 aria-hidden="true"
                 style={{ backgroundImage: `url(${t.img})`, backgroundPosition: t.pos }}
               />
+              {t.imgMobile && (
+                <div
+                  className="hg-img hg-img--mobile"
+                  aria-hidden="true"
+                  style={{ backgroundImage: `url(${t.imgMobile})`, backgroundPosition: t.pos }}
+                />
+              )}
               <div className={`hg-veil hg-veil-${t.veil}`} aria-hidden="true" />
               <div className="hg-shade" aria-hidden="true" />
               <div className="hg-copy">

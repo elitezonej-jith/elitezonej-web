@@ -1328,6 +1328,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--ink); }
 @media (max-width: 720px) {
   .ed-split-grid { grid-template-columns: repeat(2, 1fr); }
   .ed-split-img { min-height: 320px; }
+  .ed-split-img--has-mobile { background-image: var(--ed-img-m) !important; }
 }
 
 /* =============================================================

@@ -35,20 +35,33 @@ export default function ProcessStrip({ cfg }: { cfg: RC }) {
       </div>
 
       <ProcessStripAutoScroll>
-        {panes.map((p, i) => (
-          <article className="process-pane" key={i}>
-            <div
-              className={`process-pane__photo ${String(p.photoClass ?? "")}`}
-              role="img"
-              aria-label={String(p.photoAria ?? "")}
-            />
-            <div className="process-pane__body">
-              <span className="process-pane__step t-mono-xs">{String(p.step ?? "")}</span>
-              <h3>{String(p.title ?? "")}</h3>
-              <p>{String(p.body ?? "")}</p>
-            </div>
-          </article>
-        ))}
+        {panes.map((p, i) => {
+          const image = p.image ? String(p.image) : "";
+          const imageMobile = p.imageMobile ? String(p.imageMobile) : "";
+          const photoClass = String(p.photoClass ?? "");
+          return (
+            <article className="process-pane" key={i}>
+              <div
+                className={`process-pane__photo ${!image ? photoClass : ""}${imageMobile ? " process-pane__photo--has-mobile" : ""}`}
+                role="img"
+                aria-label={String(p.photoAria ?? "")}
+                style={image ? { backgroundImage: `url(${image})` } : undefined}
+              />
+              {imageMobile && (
+                <div
+                  className="process-pane__photo process-pane__photo--mobile"
+                  aria-hidden="true"
+                  style={{ backgroundImage: `url(${imageMobile})` }}
+                />
+              )}
+              <div className="process-pane__body">
+                <span className="process-pane__step t-mono-xs">{String(p.step ?? "")}</span>
+                <h3>{String(p.title ?? "")}</h3>
+                <p>{String(p.body ?? "")}</p>
+              </div>
+            </article>
+          );
+        })}
       </ProcessStripAutoScroll>
 
       <div className="process-strip__foot">

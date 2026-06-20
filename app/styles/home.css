@@ -222,10 +222,17 @@
   margin-top: var(--s-9);
   background:
     linear-gradient(90deg, rgba(10, 8, 6, 0.92) 0%, rgba(10, 8, 6, 0.65) 55%, rgba(10, 8, 6, 0.35) 100%),
-    url("/generated/_sections/atelier.webp") center/cover no-repeat;
+    var(--bt-img, url("/generated/_sections/atelier.webp")) center/cover no-repeat;
   color: var(--paper);
   padding: var(--s-9) 0;
   position: relative;
+}
+@media (max-width: 768px) {
+  .bespoke-teaser--has-mobile {
+    background:
+      linear-gradient(90deg, rgba(10, 8, 6, 0.92) 0%, rgba(10, 8, 6, 0.65) 55%, rgba(10, 8, 6, 0.35) 100%),
+      var(--bt-img-m) center/cover no-repeat;
+  }
 }
 .bespoke-teaser .row {
   max-width: var(--container);
@@ -404,6 +411,12 @@
     hg-burns   22s    ease-in-out                  3200ms                            infinite alternate;
   will-change: transform, filter;
   z-index: 1;
+}
+/* Mobile-specific hero image (hidden on desktop) */
+.hg-img--mobile { display: none; }
+@media (max-width: 1024px) {
+  .hg-img--has-mobile { display: none; }
+  .hg-img--mobile { display: block; }
 }
 
 /* Tonal shade for legibility under the copy */
@@ -931,6 +944,12 @@
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.32) 100%);
+}
+/* Mobile-specific process pane image */
+.process-pane__photo--mobile { display: none; }
+@media (max-width: 720px) {
+  .process-pane__photo--has-mobile { display: none; }
+  .process-pane__photo--mobile { display: block; }
 }
 .process-pane__body {
   padding: clamp(28px, 4vw, 48px);
