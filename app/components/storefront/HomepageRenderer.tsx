@@ -58,7 +58,6 @@ export default async function HomepageRenderer() {
       b.type !== "promo_modal" &&
       b.type !== "service_cards" &&
       b.type !== "wedding_editorial" &&
-      b.type !== "process_strip" &&
       !(b.type === "full_banner" && b.title === "Women's collection") &&
       !(b.type === "editorial_split" && b.title === "Festive Edit"),
   );
@@ -146,6 +145,7 @@ function Block({
           imageSide={(cfg.imageSide as "left" | "right" | undefined) ?? "left"}
           gender={f.gender ? String(f.gender) : undefined}
           occasion={f.occasion ? String(f.occasion) : undefined}
+          category={f.category ? String(f.category) : undefined}
           limit={Number(f.limit ?? 6)}
         />
       );

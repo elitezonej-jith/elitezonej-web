@@ -62,3 +62,8 @@ There is no test/lint/typecheck script. The real typecheck is:
 Run it before and after your change. Report the error count before and after.
 Never claim work is complete, fixed, or passing without showing this output.
 TypeScript strict mode is on; `@/*` aliases the project root.
+
+## Git workflow
+When merging changes: always create a feature branch, commit there, switch back
+to `master`, merge the branch, and push to origin. Never commit directly on
+`master`.

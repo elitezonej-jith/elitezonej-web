@@ -348,8 +348,8 @@ function EditorialSplitEditor({ config, update }: { config: RC; update: (n: RC) 
               <option value="unisex">Unisex</option>
             </select>
           </label>
+          <Text label="Category (optional)" value={String(filter.category ?? "")} onChange={(v) => update({ ...config, filter: { ...filter, category: v } })} />
           <Text label="Products: limit" value={String(filter.limit ?? 6)} onChange={(v) => update({ ...config, filter: { ...filter, limit: Number(v) || 6 } })} />
-          <span />
         </div>
       </div>
     </section>
