@@ -10,6 +10,8 @@ import { getSiteSettings } from "@/lib/storefront/site-settings";
 import {
   getAggregateForProduct,
   listForProduct,
+  hasCustomerPurchased,
+  hasExistingReview,
 } from "@/lib/admin/repos/product-reviews";
 import { getCurrentCustomer } from "@/lib/storefront/session";
 
@@ -29,6 +31,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const aggregate = await getAggregateForProduct(slug);
   const reviews = await listForProduct(slug, "approved");
   const me = await getCurrentCustomer();
+
+  // Determine review eligibility
+  let canWrite = false;
+  let reviewState: "anon" | "not_purchased" | "already_reviewed" | "can_write" = "anon";
+  if (me) {
+    const [purchased, alreadyReviewed] = await Promise.all([
+      hasCustomerPurchased(me.id, slug),
+      hasExistingReview(me.id, slug),
+    ]);
+    if (alreadyReviewed) reviewState = "already_reviewed";
+    else if (!purchased) reviewState = "not_purchased";
+    else { reviewState = "can_write"; canWrite = true; }
+  }
 
   // Schema.org Product structured data — eligible for rich results in
   // Google search (price, availability, ratings). Fabrics don't have
@@ -85,7 +100,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           leadTimeDays={leadTimeDays}
           reviews={reviews}
           reviewAggregate={aggregate}
-          canWrite={!!me}
+          canWrite={canWrite}
+          reviewState={reviewState}
         />
       </main>
       <TrustStrip />

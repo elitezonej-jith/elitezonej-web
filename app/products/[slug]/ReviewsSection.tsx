@@ -41,13 +41,13 @@ export default function ReviewsSection({
   aggregate,
   reviews,
   canWrite,
+  reviewState,
 }: {
   slug: string;
   aggregate: ReviewAggregate;
   reviews: ProductReview[];
-  /** True when there's a signed-in customer; controls whether the write-form
-   *  renders or the sign-in CTA. */
   canWrite: boolean;
+  reviewState: "anon" | "not_purchased" | "already_reviewed" | "can_write";
 }) {
   const [state, formAction, pending] = useActionState<SubmitReviewState, FormData>(
     submitReviewAction,
@@ -142,6 +142,10 @@ export default function ReviewsSection({
             </button>
           </form>
         )
+      ) : reviewState === "already_reviewed" ? (
+        <p className="rv-signin">You&apos;ve already reviewed this product.</p>
+      ) : reviewState === "not_purchased" ? (
+        <p className="rv-signin">Purchase this product to leave a review.</p>
       ) : (
         <p className="rv-signin">
           <Link href={`/login?next=/products/${slug}`}>Sign in</Link> to write a review.

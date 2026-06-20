@@ -107,3 +107,26 @@ export async function countPending(): Promise<number> {
   );
   return Number(row?.n ?? 0);
 }
+
+/** True when the customer has a shipped/fulfilled order containing this product. */
+export async function hasCustomerPurchased(customerId: number, productSlug: string): Promise<boolean> {
+  const row = await sql.get<{ n: number | string }>(
+    `SELECT 1 as n FROM orders o
+     JOIN order_items oi ON oi.order_id = o.id
+     WHERE o.customer_id = ? AND oi.product_slug = ?
+     AND o.status IN ('shipped', 'fulfilled')
+     LIMIT 1`,
+    [customerId, productSlug],
+  );
+  return !!row;
+}
+
+/** True when the customer already has a review (any status) for this product. */
+export async function hasExistingReview(customerId: number, productSlug: string): Promise<boolean> {
+  const row = await sql.get<{ n: number | string }>(
+    `SELECT 1 as n FROM product_reviews
+     WHERE customer_id = ? AND product_slug = ? LIMIT 1`,
+    [customerId, productSlug],
+  );
+  return !!row;
+}

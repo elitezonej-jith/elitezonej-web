@@ -15,6 +15,7 @@ export default function ProductPageClient({
   reviews,
   reviewAggregate,
   canWrite,
+  reviewState,
 }: {
   product: Product;
   related: Product[];
@@ -22,6 +23,7 @@ export default function ProductPageClient({
   reviews: ProductReview[];
   reviewAggregate: ReviewAggregate;
   canWrite: boolean;
+  reviewState: "anon" | "not_purchased" | "already_reviewed" | "can_write";
 }) {
   const router = useRouter();
   const isFabric = product.kind === "fabric";
@@ -50,6 +52,7 @@ export default function ProductPageClient({
           aggregate={reviewAggregate}
           reviews={reviews}
           canWrite={canWrite}
+          reviewState={reviewState}
         />
       </div>
     </>

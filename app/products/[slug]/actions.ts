@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getCurrentCustomer } from "../../../lib/storefront/session";
-import { createReview } from "../../../lib/admin/repos/product-reviews";
+import { createReview, hasCustomerPurchased, hasExistingReview } from "../../../lib/admin/repos/product-reviews";
 import { getProductForPage } from "../../../lib/storefront/product-for-page";
 
 const SubmitReviewSchema = z.object({
@@ -38,6 +38,14 @@ export async function submitReviewAction(
   // also catch this, but the FK error message is opaque).
   const product = await getProductForPage(parsed.data.slug);
   if (!product) return { error: "Product not found." };
+
+  // Only customers who have received the product can review it.
+  const purchased = await hasCustomerPurchased(me.id, parsed.data.slug);
+  if (!purchased) return { error: "You can only review products you've purchased." };
+
+  // One review per product per customer.
+  const alreadyReviewed = await hasExistingReview(me.id, parsed.data.slug);
+  if (alreadyReviewed) return { error: "You've already reviewed this product." };
 
   const name = `${me.first_name ?? ""} ${me.last_name ?? ""}`.trim() || "Anonymous";
 
