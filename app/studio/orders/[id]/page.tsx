@@ -21,6 +21,7 @@ export default async function OrderDetailPage({ params }: Params) {
       <PageHead title={`Order #${order.id}`} sub={`${order.customer} · ${dateTime(order.created_at)}`}
                 back={{ href: "/studio/orders", label: "Back to orders" }}>
         <StatusTag status={order.status} />
+        <Link href={`/studio/orders/${order.id}/invoice`} className="stu-btn stu-btn--ghost">Invoice</Link>
       </PageHead>
       <div className="stu-cols">
         <div className="stu-stack">

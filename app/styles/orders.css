@@ -1,0 +1,68 @@
+.orders-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 28px;
+}
+.orders-head h1 {
+  font-family: var(--font-display); font-weight: 500;
+  font-size: clamp(28px,4vw,40px); margin: 0;
+}
+.orders-back {
+  font-family: var(--font-mono); font-size: 11px;
+  letter-spacing: 0.1em; color: var(--ink-2); text-decoration: none;
+}
+.orders-back:hover { color: var(--ink); }
+.orders-empty { color: var(--ink-2); font-size: 14px; }
+.orders-empty a { color: var(--ink); text-underline-offset: 3px; }
+
+.orders-list { display: grid; gap: 12px; }
+.orders-card {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 4px 16px; padding: 16px 20px;
+  border: 1px solid var(--paper-3); border-radius: 3px;
+  text-decoration: none; color: var(--ink); transition: border-color 0.15s;
+}
+.orders-card:hover { border-color: var(--ink); }
+.orders-card-id { font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.06em; }
+.orders-card-total { font-family: var(--font-mono); font-size: 13px; text-align: right; }
+.orders-card-date { font-size: 12px; color: var(--ink-2); }
+.orders-card-status {
+  font-family: var(--font-mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--ink-2); text-align: right;
+}
+
+/* Order detail */
+.od-meta {
+  display: flex; gap: 16px; align-items: baseline;
+  font-size: 13px; color: var(--ink-2); margin-bottom: 24px;
+}
+.od-status {
+  font-family: var(--font-mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.12em;
+}
+.od-items { margin-bottom: 24px; }
+.od-item {
+  display: grid; grid-template-columns: 1fr auto;
+  gap: 2px 16px; padding: 14px 0;
+  border-bottom: 1px solid var(--paper-3);
+}
+.od-item:last-child { border-bottom: 0; }
+.od-item-name { font-size: 14px; }
+.od-item-specs {
+  grid-column: 1; font-family: var(--font-mono);
+  font-size: 11px; color: var(--ink-2); display: flex; gap: 12px;
+}
+.od-item-price {
+  grid-row: 1/3; align-self: center;
+  font-family: var(--font-mono); font-size: 13px;
+}
+.od-summary {
+  border-top: 1px solid var(--paper-3); padding-top: 16px; margin-bottom: 24px;
+  max-width: 320px;
+}
+.od-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+.od-total { border-top: 1px solid var(--paper-3); margin-top: 8px; padding-top: 10px; font-size: 15px; }
+.od-shipping h3 {
+  font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0 0 8px;
+}
+.od-shipping p { font-size: 14px; line-height: 1.6; color: var(--ink-2); margin: 0; }

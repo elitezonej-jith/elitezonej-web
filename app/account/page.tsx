@@ -69,7 +69,7 @@ export default async function AccountPage() {
               </p>
             ) : (
               <div>
-                {orders.map((o) => (
+                {orders.slice(0, 3).map((o) => (
                   <div key={o.id} className="order-row">
                     <span className="o-id">{o.id}</span>
                     <span className="o-status">{statusLabel(o.status)}</span>
@@ -77,6 +77,9 @@ export default async function AccountPage() {
                     <span>{fmtINR(o.total)}</span>
                   </div>
                 ))}
+                <Link href="/account/orders" style={{ display: "block", marginTop: 12, fontSize: 13, color: "var(--ink)", textUnderlineOffset: 3 }}>
+                  View all orders →
+                </Link>
               </div>
             )}
           </section>
