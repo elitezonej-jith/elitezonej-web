@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useModalA11y } from "./useModalA11y";
 
-type Props = { open: boolean; onClose: () => void; products?: unknown[] };
+type Props = { open: boolean; onClose: () => void };
 
 export default function SearchOverlay({ open, onClose }: Props) {
   const [q, setQ] = useState("");

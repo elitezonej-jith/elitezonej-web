@@ -4,7 +4,6 @@ import MobileNav from "./MobileNav";
 import CartDrawer from "./CartDrawer";
 import SearchToggle from "./SearchToggle";
 import WishlistHeaderLink from "./WishlistHeaderLink";
-import { getSearchIndex } from "../../lib/storefront/products";
 import { getStorefrontNav } from "../../lib/storefront/nav";
 import { getSiteSettings } from "../../lib/storefront/site-settings";
 
@@ -60,7 +59,6 @@ export function BagIcon() {
 
 export default async function Header() {
   const nav = await getStorefrontNav();
-  const products = await getSearchIndex();
   const s = await getSiteSettings();
   return (
     <header className="site">
@@ -98,7 +96,7 @@ export default async function Header() {
         </div>
 
         <div className="header-right">
-          <SearchToggle products={products} />
+          <SearchToggle />
           <WishlistHeaderLink />
           <CartDrawer />
         </div>
