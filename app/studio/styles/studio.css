@@ -1402,3 +1402,7 @@ button:focus-visible,
 
 .inv-item__store-link { color: var(--stu-primary, #2d6a4f); text-decoration: none; font-size: 11px; }
 .inv-item__store-link:hover { text-decoration: underline; }
+
+/* Homepage block disabled state */
+.stu-sort-item--disabled { opacity: 0.5; background: var(--stu-bg-hover, #f8f8f8); border-style: dashed; }
+.stu-sort-item--disabled .stu-sort-item__title { text-decoration: line-through; }

@@ -65,23 +65,32 @@ export default function HomepageList({ blocks }: { blocks: HomepageBlockResolved
 
 function Row({ b }: { b: HomepageBlockResolved }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: b.id });
+  const [enabled, setEnabled] = useState(b.enabled);
+  const { show } = useToast();
   const style = { transform: CSS.Transform.toString(transform), transition };
+
+  async function handleToggle() {
+    const next = enabled ? 0 : 1;
+    setEnabled(next); // optimistic
+    const fd = new FormData();
+    fd.append("id", String(b.id));
+    fd.append("enabled", String(next));
+    await toggleBlockAction(fd);
+    show(next ? "Section visible" : "Section hidden", "success");
+  }
+
   return (
-    <div ref={setNodeRef} style={style} className={`stu-sort-item${isDragging ? " is-dragging" : ""}`}>
+    <div ref={setNodeRef} style={style} className={`stu-sort-item${isDragging ? " is-dragging" : ""}${!enabled ? " stu-sort-item--disabled" : ""}`}>
       <span className="stu-sort-item__handle" {...attributes} {...listeners} aria-label="Drag to reorder"><IconDrag /></span>
       <div className="stu-sort-item__main">
         <div className="stu-sort-item__title">{b.title || TYPE_LABELS[b.type] || b.type}</div>
         <div className="stu-sort-item__sub">{TYPE_LABELS[b.type] ?? b.type}{b.kicker ? ` · ${b.kicker}` : ""}</div>
       </div>
       <div className="stu-sort-item__actions">
-        <StatusTag status={b.enabled ? "published" : "disabled"} />
-        <form action={toggleBlockAction}>
-          <input type="hidden" name="id" value={b.id} />
-          <input type="hidden" name="enabled" value={b.enabled ? "0" : "1"} />
-          <button type="submit" className="stu-btn stu-btn--ghost stu-btn--icon" title={b.enabled ? "Hide" : "Show"}>
-            {b.enabled ? <IconEye width={16} height={16}/> : <IconEyeOff width={16} height={16}/>}
-          </button>
-        </form>
+        <StatusTag status={enabled ? "published" : "disabled"} />
+        <button type="button" onClick={handleToggle} className="stu-btn stu-btn--ghost stu-btn--icon" title={enabled ? "Hide" : "Show"}>
+          {enabled ? <IconEye width={16} height={16}/> : <IconEyeOff width={16} height={16}/>}
+        </button>
         <Link href={`/studio/homepage/${b.id}`} className="stu-btn stu-btn--ghost stu-btn--sm">
           <IconEdit width={14} height={14}/> Edit
         </Link>
