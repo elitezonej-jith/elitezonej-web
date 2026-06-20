@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Reveal from "../../Reveal";
+import ProcessStripAutoScroll from "./ProcessStripAutoScroll";
 
 type RC = Record<string, unknown>;
 
@@ -33,7 +34,7 @@ export default function ProcessStrip({ cfg }: { cfg: RC }) {
         </span>
       </div>
 
-      <div className="process-strip__rail" tabIndex={0} aria-roledescription="carousel">
+      <ProcessStripAutoScroll>
         {panes.map((p, i) => (
           <article className="process-pane" key={i}>
             <div
@@ -48,11 +49,11 @@ export default function ProcessStrip({ cfg }: { cfg: RC }) {
             </div>
           </article>
         ))}
-      </div>
+      </ProcessStripAutoScroll>
 
       <div className="process-strip__foot">
-        <span className="t-mono-xs">{footText}</span>
-        <Link className="btn btn-secondary" href={ctaHref}>{ctaLabel}</Link>
+        {footText && <span className="t-mono-xs">{footText}</span>}
+        {ctaLabel && <Link className="btn btn-secondary" href={ctaHref}>{ctaLabel}</Link>}
       </div>
     </section>
   );

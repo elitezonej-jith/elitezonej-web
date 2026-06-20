@@ -610,7 +610,7 @@ header.site {
 }
 .header-nav .nav-primary > li > a:hover,
 .header-nav .nav-primary > li > a.active { color: var(--ink) !important; border: 0 !important; }
-.header-nav .nav-primary > li > a.nav-sale { color: var(--ink) !important; }
+.header-nav .nav-primary > li > a.nav-sale { color: var(--sale) !important; }
 .header-nav .nav-primary > li > a.nav-sale:hover { color: var(--sale) !important; }
 .header-nav .nav-primary > li > a.nav-sale:hover::after { background: var(--sale); }
 

@@ -108,9 +108,6 @@ export function seedStudioDefaults(db: Database.Database): void {
       titlePost: ".",
       kicker: "By hand.",
       hint: "Drag to explore",
-      footText: "Standard delivery · Free across India",
-      ctaLabel: "Book a fitting",
-      ctaHref: "/bespoke#book",
       panes: [
         {
           photoClass: "pr-1",
