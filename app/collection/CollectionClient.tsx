@@ -112,10 +112,13 @@ export default function CollectionClient({
           if (f.field_key === "sizes_json") {
             list = list.filter(p => p.sizes?.some(s => selected.has(s.replace("-oos", ""))));
           } else {
+            const selectedLower = new Set(Array.from(selected).map(s => s.toLowerCase()));
             list = list.filter(p => {
               const val = (p as Record<string, unknown>)[f.field_key];
-              if (typeof val === "string") return selected.has(val);
-              return false;
+              if (typeof val !== "string" || !val) return false;
+              const valLower = val.toLowerCase();
+              // Match if value equals option OR option starts with value OR value starts with option
+              return selectedLower.has(valLower) || Array.from(selectedLower).some(s => valLower.includes(s) || s.includes(valLower));
             });
           }
         }

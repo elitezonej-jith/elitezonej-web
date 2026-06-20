@@ -2,6 +2,7 @@
 import { useActionState, useState } from "react";
 import { saveProductAction, type ProductSaveState } from "../../actions/products";
 import Switch from "../../components/Switch";
+import ImageUploader from "../../components/ImageUploader";
 import CategoryPicker from "./CategoryPicker";
 import FilterAttributes from "./FilterAttributes";
 import type { Product } from "../../../../lib/admin/types";
@@ -24,6 +25,7 @@ export default function ProductForm({
   const [state, action, pending] = useActionState(saveProductAction, initial);
   const [name, setName] = useState(product?.name ?? "");
   const [seoOpen, setSeoOpen] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
   const slugDerived = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const sizes = product?.sizes?.join("\n") ?? "";
   const features = product?.features?.join("\n") ?? "";
@@ -33,6 +35,8 @@ export default function ProductForm({
     <form action={action} className="stu-form">
       {/* Hidden slug - auto-generated or preserved */}
       <input type="hidden" name="slug" value={product?.slug ?? slugDerived} />
+      {/* Hidden image paths for new product */}
+      {images.map((img, i) => <input key={i} type="hidden" name="images" value={img} />)}
 
       <div className="stu-cols">
         {/* MAIN COLUMN */}
@@ -72,6 +76,33 @@ export default function ProductForm({
               </label>
             </div>
           </section>
+
+          {/* Images (new product only - edit uses ProductImageManager) */}
+          {mode === "new" && (
+            <section className="stu-card">
+              <header className="stu-card__head"><h3>Product images</h3></header>
+              <div className="stu-card__body">
+                {images.length > 0 && (
+                  <div className="pf-images">
+                    {images.map((img, i) => (
+                      <div key={i} className="pf-images__item">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={img} alt="" className="pf-images__thumb" />
+                        <button type="button" className="pf-images__remove" onClick={() => setImages(prev => prev.filter((_, j) => j !== i))}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <ImageUploader
+                  folder="products"
+                  multiple={true}
+                  aspect={900 / 1200}
+                  onUploaded={({ path }) => setImages(prev => [...prev, path])}
+                  hint="Portrait 3:4 ratio, 900×1200px ideal. First image becomes the thumbnail."
+                />
+              </div>
+            </section>
+          )}
 
           {/* Pricing */}
           <section className="stu-card">

@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
   //   shell for 3 min (default is 5 min — we shorten it, conservative).
   experimental: {
     staleTimes: {
-      dynamic: 30,
+      dynamic: 0,
       static: 180,
     },
   },

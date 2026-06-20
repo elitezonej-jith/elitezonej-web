@@ -2,6 +2,7 @@ import Link from "next/link";
 import { listProducts, countProducts } from "../../../lib/admin/repos/products";
 import { getThumbnail, fallbackImages } from "../../../lib/admin/repos/product-images";
 import { getMeta } from "../../../lib/admin/repos/product-meta";
+import { sql } from "../../../lib/admin/db";
 import PageHead from "../components/PageHead";
 import StatusTag from "../components/StatusTag";
 import EmptyState from "../components/EmptyState";
@@ -34,11 +35,20 @@ export default async function ProductsListPage({ searchParams }: SP) {
   const items = await listProducts({ q, status, kind, limit: PAGE, offset: (page - 1) * PAGE });
   const total = await countProducts({ q, status, kind });
   const rows = await Promise.all(
-    items.map(async (p) => ({
-      p,
-      thumb: (await getThumbnail(p.slug)) ?? fallbackImages(p.slug)[0] ?? "",
-      meta: await getMeta(p.slug),
-    })),
+    items.map(async (p) => {
+      const stockRows = await sql.all<{ stock: number }>(
+        "SELECT stock FROM inventory WHERE product_slug = ?", [p.slug]
+      );
+      const totalStock = stockRows.reduce((a, s) => a + Number(s.stock), 0);
+      const hasOos = stockRows.some(s => Number(s.stock) === 0);
+      return {
+        p,
+        thumb: (await getThumbnail(p.slug)) ?? fallbackImages(p.slug)[0] ?? "",
+        meta: await getMeta(p.slug),
+        totalStock,
+        hasOos,
+      };
+    }),
   );
   const pages = Math.max(1, Math.ceil(total / PAGE));
 
@@ -81,11 +91,12 @@ export default async function ProductsListPage({ searchParams }: SP) {
                     <th>Category</th>
                     <th className="stu-tbl__num">Price</th>
                     <th>Flags</th>
+                    <th>Stock</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map(({ p, thumb, meta }) => {
+                  {rows.map(({ p, thumb, meta, totalStock, hasOos }) => {
                     return (
                       <tr key={p.slug}>
                         <td style={{ width: 60 }}>
@@ -115,6 +126,15 @@ export default async function ProductsListPage({ searchParams }: SP) {
                             {meta.is_trending ? <span className="stu-tag stu-tag--info">Trending</span> : null}
                             {meta.is_new_arrival ? <span className="stu-tag stu-tag--success">New</span> : null}
                           </div>
+                        </td>
+                        <td>
+                          {totalStock === 0 ? (
+                            <span className="stu-tag stu-tag--danger">Out of stock</span>
+                          ) : hasOos ? (
+                            <span className="stu-tag stu-tag--warn">Low</span>
+                          ) : (
+                            <span className="stu-tag stu-tag--success">{totalStock}</span>
+                          )}
                         </td>
                         <td><StatusTag status={p.status} /></td>
                       </tr>

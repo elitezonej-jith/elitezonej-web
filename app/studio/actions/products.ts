@@ -105,6 +105,11 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
 
   if (!exists) {
     await setInventory(v.slug, splitLines(v.sizes).map((s) => ({ size: s, stock: 6, oos_flag: 0 })));
+    // Attach uploaded images (from the new product form)
+    const imagePaths = fd.getAll("images").map(String).filter(Boolean);
+    for (const imgPath of imagePaths) {
+      await addImage(v.slug, imgPath, "");
+    }
   }
 
   await logAudit({

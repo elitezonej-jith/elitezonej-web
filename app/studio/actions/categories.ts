@@ -112,6 +112,7 @@ export async function saveFilterAction(_prev: FilterSaveState, fd: FormData): Pr
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid filter data." };
   const v = parsed.data;
   await upsertFilter(v.category_id, v.name, v.field_key, v.filter_type, v.sort_order);
+  revalidatePath(`/studio/categories/${v.category_id}`);
   revalidatePath(`/studio/categories`);
   return { success: true };
 }
@@ -120,7 +121,7 @@ export async function removeFilterAction(fd: FormData): Promise<void> {
   await requireUser("/studio/login");
   const filterId = Number(fd.get("filter_id") ?? 0);
   if (filterId) await deleteFilter(filterId);
-  revalidatePath("/studio/categories");
+  revalidatePath("/studio/categories", "layout");
 }
 
 const OptionSchema = z.object({
@@ -139,7 +140,7 @@ export async function saveOptionAction(_prev: OptionSaveState, fd: FormData): Pr
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid option data." };
   const v = parsed.data;
   await upsertOption(v.filter_id, v.value, v.label || null, v.color_hex || null, v.sort_order);
-  revalidatePath("/studio/categories");
+  revalidatePath("/studio/categories", "layout");
   return { success: true };
 }
 
@@ -147,10 +148,69 @@ export async function removeOptionAction(fd: FormData): Promise<void> {
   await requireUser("/studio/login");
   const optionId = Number(fd.get("option_id") ?? 0);
   if (optionId) await deleteOption(optionId);
-  revalidatePath("/studio/categories");
+  revalidatePath("/studio/categories", "layout");
 }
 
 export async function deleteCategoryAction(fd: FormData): Promise<void> {
   // Kept but disabled — no delete allowed
   void fd;
+}
+
+export async function assignProductsToCategoryAction(fd: FormData): Promise<void> {
+  await requireUser("/studio/login");
+  const categoryId = Number(fd.get("category_id") ?? 0);
+  const slugs = String(fd.get("slugs") ?? "").split(",").filter(Boolean);
+  if (!categoryId || !slugs.length) return;
+
+  // Build the path to derive category, sub, cat_link, cat
+  const cat = await sql.get<{ id: number; name: string; slug: string; parent_id: number | null; gender: string | null }>(
+    "SELECT id, name, slug, parent_id, gender FROM categories WHERE id = ?", [categoryId]
+  );
+  if (!cat) return;
+
+  // Walk up to build path
+  const path: Array<{ name: string; slug: string }> = [];
+  let cur: { name: string; slug: string; parent_id: number | null } | null = cat;
+  while (cur) {
+    path.unshift({ name: cur.name, slug: cur.slug });
+    if (cur.parent_id) {
+      cur = await sql.get<{ name: string; slug: string; parent_id: number | null }>(
+        "SELECT name, slug, parent_id FROM categories WHERE id = ?", [cur.parent_id]
+      );
+    } else { cur = null; }
+  }
+
+  const catLink = path[0]?.name || "";
+  const gender = cat.gender || (catLink === "Women" ? "women" : catLink === "Men" ? "men" : "unisex");
+  const catDisplay = path.slice(1).map(p => p.name).join(" · ") || path[0]?.name || "";
+
+  // Determine category and sub values
+  let category = "";
+  let sub = "";
+  if (path.length === 1) {
+    category = path[0].slug;
+  } else if (path.length === 2) {
+    category = path[1].slug;
+  } else if (path.length >= 3) {
+    category = path[1].slug;
+    sub = path[path.length - 1].slug;
+  }
+
+  // Bulk update
+  await sql.tx(async (t) => {
+    for (const slug of slugs) {
+      await t.run(
+        `UPDATE products SET category = ?, sub = ?, cat_link = ?, cat = ?, gender = ?,
+         fit = CASE WHEN fit = '-' OR fit = '—' THEN '' ELSE fit END,
+         fabric = CASE WHEN fabric = '-' OR fabric = '—' THEN '' ELSE fabric END,
+         occasion = CASE WHEN occasion = '-' OR occasion = '—' THEN '' ELSE occasion END
+         WHERE slug = ?`,
+        [category, sub, catLink, catDisplay, gender, slug],
+      );
+    }
+  });
+
+  revalidatePath("/studio/categories");
+  revalidatePath("/studio/products");
+  redirect(`/studio/categories/${categoryId}?saved=1`);
 }

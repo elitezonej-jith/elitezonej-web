@@ -6,6 +6,7 @@ import StatusTag from "../../components/StatusTag";
 import { FlashToast } from "../../components/Toast";
 import CategoryForm from "./CategoryForm";
 import FilterEditor from "./FilterEditor";
+import ProductMapper from "./ProductMapper";
 import { requireUser } from "../../../../lib/admin/session";
 import { listFiltersForCategory } from "../../../../lib/admin/repos/category-filters";
 import { getDescendantIds } from "../../../../lib/admin/repos/categories";
@@ -20,6 +21,8 @@ type Cat = {
   image_path: string; enabled: number;
 };
 
+type Prod = { slug: string; name: string; category: string | null; sub: string | null };
+
 export default async function EditCategoryPage({ params, searchParams }: Params) {
   await requireUser("/studio/login");
   const { id } = await params;
@@ -27,7 +30,6 @@ export default async function EditCategoryPage({ params, searchParams }: Params)
   const cat = await sql.get<Cat>("SELECT * FROM categories WHERE id = ?", [Number(id)]);
   if (!cat) notFound();
 
-  // Get all categories for parent dropdown, excluding self and descendants
   const descendantIds = await getDescendantIds(cat.id);
   const excludeIds = [cat.id, ...descendantIds];
   const allCats = await sql.all<{ id: number; name: string; parent_id: number | null }>(
@@ -36,6 +38,19 @@ export default async function EditCategoryPage({ params, searchParams }: Params)
   const availableParents = allCats.filter((c) => !excludeIds.includes(c.id));
 
   const filters = await listFiltersForCategory(cat.id);
+
+  // Products mapped to this category (match on slug or sub)
+  const mapped = await sql.all<Prod>(
+    "SELECT slug, name, category, sub FROM products WHERE LOWER(TRIM(sub)) = LOWER(?) OR (LOWER(TRIM(category)) = LOWER(?) AND (sub IS NULL OR TRIM(sub) = '' OR sub = '_'))",
+    [cat.slug, cat.slug],
+  );
+
+  // Products NOT in this category (available to assign)
+  const mappedSlugs = mapped.map(p => p.slug);
+  const available = await sql.all<Prod>(
+    "SELECT slug, name, category, sub FROM products WHERE status != 'archived' ORDER BY name ASC",
+  );
+  const assignable = available.filter(p => !mappedSlugs.includes(p.slug));
 
   return (
     <div className="stu-page stu-page--narrow">
@@ -47,6 +62,7 @@ export default async function EditCategoryPage({ params, searchParams }: Params)
       <CategoryForm tops={availableParents} category={cat} />
       <div style={{ height: 24 }} />
       <FilterEditor categoryId={cat.id} filters={filters} />
+      <ProductMapper categoryId={cat.id} categoryName={cat.name} mapped={mapped} available={assignable} />
     </div>
   );
 }

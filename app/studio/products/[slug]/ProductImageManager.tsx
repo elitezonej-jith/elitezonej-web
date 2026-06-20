@@ -80,6 +80,8 @@ export default function ProductImageManager({
         <ImageUploader
           folder={`products/${slug}`}
           multiple
+          aspect={900 / 1200}
+          hint="Portrait 3:4 ratio, 900×1200px ideal. First image is the thumbnail."
           onUploaded={async ({ path }) => {
             await addPath(path);
             // optimistic update — server revalidates page on next nav

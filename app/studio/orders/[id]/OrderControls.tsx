@@ -1,5 +1,6 @@
 "use client";
-import { setOrderStatusAction, saveOrderNotesAction } from "../../../admin/actions/orders";
+import { setOrderStatusStudioAction } from "../../actions/orders";
+import { saveOrderNotesAction } from "../../../admin/actions/orders";
 
 const FLOW = [
   { key: "new", label: "New" },
@@ -18,7 +19,7 @@ export default function OrderControls({ id, status, notes }: { id: string; statu
         <div className="stu-card__body">
           <div className="stu-btn-row">
             {FLOW.map((s) => (
-              <form key={s.key} action={setOrderStatusAction}>
+              <form key={s.key} action={setOrderStatusStudioAction}>
                 <input type="hidden" name="id" value={id} />
                 <input type="hidden" name="status" value={s.key} />
                 <button type="submit" className={`stu-btn stu-btn--sm ${status === s.key ? (s.key === "cancelled" ? "stu-btn--danger" : "stu-btn--primary") : "stu-btn--ghost"}`}>{s.label}</button>
