@@ -21,6 +21,11 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
     ],
+    // Bypass the Image Optimization API for blob-hosted images (already
+    // WebP + compressed at upload time). This avoids consuming the Hobby
+    // plan's 5K/month transformation quota on pre-optimized files.
+    loader: "custom",
+    loaderFile: "./lib/image-loader.ts",
   },
   serverExternalPackages: ["better-sqlite3"],
   // Client router cache (in-browser, per-session, keyed by route segment —
