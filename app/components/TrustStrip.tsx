@@ -27,13 +27,13 @@ function TruckIcon() {
   );
 }
 
-function ExpressIcon() {
+function CraftedIcon() {
   return (
     <svg viewBox="0 0 48 48" {...stroke}>
-      <path d="M26 8L18 24h8l-4 16 14-20h-9z" />
-      <path d="M8 18h6" />
-      <path d="M6 24h8" />
-      <path d="M8 30h6" />
+      <circle cx="14" cy="38" r="5" />
+      <circle cx="34" cy="38" r="5" />
+      <path d="M17.5 34L30 10" />
+      <path d="M30.5 34L18 10" />
     </svg>
   );
 }
@@ -86,10 +86,10 @@ export default function TrustStrip() {
           <div className="trust-sub">On orders over ₹15,000</div>
         </div>
         <div className="trust-item">
-          <ExpressIcon />
+          <CraftedIcon />
           <div className="trust-title">
-            <span className="trust-label--full">Express Delivery</span>
-            <span className="trust-label--short">Express</span>
+            <span className="trust-label--full">Custom Crafted</span>
+            <span className="trust-label--short">Custom&nbsp;crafted</span>
           </div>
         </div>
       </div>
