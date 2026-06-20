@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import NewsletterForm from "./NewsletterForm";
 import FooterAccordion from "./FooterAccordion";
 import { getSiteSettings } from "../../lib/storefront/site-settings";
 
@@ -84,10 +83,11 @@ export default async function Footer({ minimal = false }: { minimal?: boolean })
 
   return (
     <>
-      {/* Newsletter band — full-width centred above the trust strip */}
+      {/* First-order promo banner — full-width CTA above footer */}
       <section className="newsletter-band">
-        <h3>Save 15% on your first order</h3>
-        <NewsletterForm />
+        <h3>15% off your first order</h3>
+        <p style={{ color: "var(--ink-3)", margin: "0 0 20px", fontSize: "14px" }}>Automatically applied at checkout</p>
+        <Link href="/collection?c=all" className="btn btn-primary">Shop Now →</Link>
       </section>
 
       <footer className="site site--disturbia">

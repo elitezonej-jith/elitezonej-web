@@ -2,56 +2,28 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import { useModalA11y } from "./useModalA11y";
-
-const DEFAULT_COUNTRIES = [
-  "India", "United Kingdom", "United States", "United Arab Emirates",
-  "Canada", "Australia", "Singapore", "Germany", "France", "Other",
-];
 
 export type PromoModalProps = {
   stickerLabel?: string;
   heading?: string;
-  deck?: string;
-  submitLabel?: string;
-  finePrint?: string;
-  successHeading?: string;
-  successBody?: string;
-  countries?: string[];
+  ctaLabel?: string;
+  ctaHref?: string;
 };
-
-// Split a multi-line string into React nodes joined by <br/>, preserving the
-// original markup (the static homepage used literal <br/> between lines).
-function withBreaks(text: string): React.ReactNode {
-  const parts = text.split("\n");
-  return parts.map((p, i) => (
-    <span key={i}>
-      {p}
-      {i < parts.length - 1 ? <br /> : null}
-    </span>
-  ));
-}
 
 export default function PromoModal({
   stickerLabel = "15% OFF",
-  heading = "Take 15% off\nyour first order",
-  deck = "Join the Elite Zone J mailing list\nfor exclusive VIP offers and more.",
-  submitLabel = "Subscribe and save 15%",
-  finePrint = "*15% off your first order is valid on full-priced items only and cannot be used in conjunction with sale items or any other promotional codes.",
-  successHeading = "Welcome.",
-  successBody = "Thanks for joining — we'll email your 15% code to {email} shortly.",
-  countries = DEFAULT_COUNTRIES,
+  heading = "15% off your first order",
+  ctaLabel = "Shop the Collection",
+  ctaHref = "/collection?c=men",
 }: PromoModalProps = {}) {
-  const COUNTRIES = countries.length ? countries : DEFAULT_COUNTRIES;
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [email, setEmail] = useState("");
-  const [country, setCountry] = useState("");
-  const [name, setName] = useState("");
-  const [birthday, setBirthday] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  // Restore dismissal across page loads
+  useEffect(() => { setMounted(true); }, []);
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       setDismissed(localStorage.getItem("promo-dismissed") === "1");
@@ -64,15 +36,6 @@ export default function PromoModal({
   const dismissSticker = () => {
     setDismissed(true);
     if (typeof window !== "undefined") localStorage.setItem("promo-dismissed", "1");
-  };
-
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      setOpen(false);
-      setSubmitted(false);
-    }, 1800);
   };
 
   const sticker = !dismissed && (
@@ -99,73 +62,47 @@ export default function PromoModal({
 
   return (
     <>
-      {typeof document !== "undefined" && sticker && createPortal(sticker, document.body)}
+      {mounted && sticker && createPortal(sticker, document.body)}
 
-      <div
-        className="promo-overlay"
-        data-open={open}
-        aria-hidden={!open}
-        onClick={() => setOpen(false)}
-      />
+      {mounted && createPortal(
+        <>
+          <div
+            className="promo-overlay"
+            data-open={open}
+            aria-hidden={!open}
+            onClick={() => setOpen(false)}
+          />
 
-      <div ref={modalRef} className="promo-modal" data-open={open} inert={!open} role="dialog" aria-modal="true" aria-label="15% off first order" tabIndex={-1}>
-        <button
-          className="promo-modal-close"
-          onClick={() => setOpen(false)}
-          aria-label="Close offer"
-        >
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <path d="M6 6l12 12M18 6L6 18" />
-          </svg>
-        </button>
+          <div ref={modalRef} className="promo-modal" data-open={open} aria-hidden={!open} role="dialog" aria-modal="true" aria-label="15% off first order" tabIndex={-1}>
+            <button
+              className="promo-modal-close"
+              onClick={() => setOpen(false)}
+              aria-label="Close offer"
+            >
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6">
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
 
-        {submitted ? (
-          <div className="promo-thanks">
-            <h2>{successHeading}</h2>
-            <p>
-              {successBody.split("{email}").map((seg, i, arr) => (
-                <span key={i}>
-                  {seg}
-                  {i < arr.length - 1 ? email : null}
-                </span>
-              ))}
-            </p>
-          </div>
-        ) : (
-          <form className="promo-form" onSubmit={onSubmit}>
-            <h2>{withBreaks(heading)}</h2>
-            <p className="promo-deck">
-              {withBreaks(deck)}
-            </p>
-            <input
-              type="email" required placeholder="Email"
-              value={email} onChange={e => setEmail(e.target.value)}
-              autoComplete="email"
-            />
-            <select required value={country} onChange={e => setCountry(e.target.value)}>
-              <option value="" disabled>Country</option>
-              {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <div className="promo-row">
-              <input
-                type="text" placeholder="Name"
-                value={name} onChange={e => setName(e.target.value)}
-                autoComplete="given-name"
-              />
-              <input
-                type="text" placeholder="Birthday"
-                value={birthday} onChange={e => setBirthday(e.target.value)}
-                onFocus={e => (e.target.type = "date")}
-                onBlur={e => { if (!e.target.value) e.target.type = "text"; }}
-              />
+            <div className="promo-body">
+              <h2>{heading}</h2>
+              <p className="promo-deck">Automatically applied at checkout on your first order.</p>
+              <Link href={ctaHref} className="promo-cta" onClick={() => setOpen(false)}>
+                {ctaLabel} →
+              </Link>
             </div>
-            <button type="submit" className="promo-submit">{submitLabel}</button>
-            <p className="promo-fineprint">
-              {finePrint}
-            </p>
-          </form>
-        )}
-      </div>
+          </div>
+        </>,
+        document.body
+      )}
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        .promo-body { text-align: center; padding: 32px 24px; }
+        .promo-body h2 { font-family: var(--font-display); font-size: clamp(22px, 4vw, 28px); font-weight: 500; margin: 0 0 12px; }
+        .promo-deck { color: var(--ink-3); margin: 0 0 24px; font-size: 14px; }
+        .promo-cta { display: inline-block; padding: 14px 36px; background: var(--ink); color: var(--paper); font-family: var(--font-mono); font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; transition: opacity 180ms; }
+        .promo-cta:hover { opacity: 0.85; }
+      `}} />
     </>
   );
 }
