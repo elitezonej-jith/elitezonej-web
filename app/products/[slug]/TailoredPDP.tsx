@@ -274,30 +274,6 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
         </div>
       </section>
 
-      <section className="note">
-        <div className="note-grain" aria-hidden="true" />
-        <div className="ix t-mono-xs">Designer&apos;s note · 03</div>
-        <div className="body">
-          <div className="portrait" aria-hidden="true"></div>
-          <div>
-            <p>{product.note}</p>
-            <div className="note-signature" aria-hidden="true">
-              <svg viewBox="0 0 220 60" width="180" height="50">
-                <path
-                  d="M8 38 C 18 18, 34 14, 44 32 C 50 44, 38 50, 30 44 M 52 28 L 60 22 L 64 36 L 70 22 L 78 36 L 86 22 M 96 18 C 92 28, 100 38, 110 32 C 120 26, 116 14, 106 18 C 100 20, 96 28, 100 36 L 116 36 M 128 22 L 132 38 L 142 22 M 138 22 L 144 38 M 156 14 C 156 14, 156 38, 158 40 C 162 44, 170 38, 172 30 C 174 22, 168 16, 162 22 M 184 18 L 184 40 M 184 28 C 184 22, 192 18, 200 22 C 206 26, 204 36, 198 40"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <div className="signed t-mono-xs">— <b>Aman Gupta</b>, Lead Designer · Twelve years on the bench</div>
-          </div>
-        </div>
-      </section>
-
       <section className="info-acc">
         <details>
           <summary>Delivery</summary>

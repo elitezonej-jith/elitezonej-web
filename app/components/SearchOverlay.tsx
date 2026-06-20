@@ -1,39 +1,68 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
+import { useRouter, usePathname } from "next/navigation";
 import { useModalA11y } from "./useModalA11y";
+
+const STORAGE_KEY = "ezj-search-q";
 
 type Props = { open: boolean; onClose: () => void };
 
 export default function SearchOverlay({ open, onClose }: Props) {
   const [q, setQ] = useState("");
+  const [mounted, setMounted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useModalA11y(open, onClose);
   const router = useRouter();
+  const pathname = usePathname();
 
+  useEffect(() => { setMounted(true); }, []);
+
+  // Task 6: Restore persisted query on open
   useEffect(() => {
     if (!open) return;
-    const t = setTimeout(() => inputRef.current?.focus(), 50);
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (saved) setQ(saved);
+    } catch {}
+  }, [open]);
+
+  // Task 2: Focus input with delay to avoid inert/React timing race
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 100);
     return () => clearTimeout(t);
   }, [open]);
 
+  // Task 6: Persist query on change
   useEffect(() => {
-    if (!open) setQ("");
-  }, [open]);
+    try { sessionStorage.setItem(STORAGE_KEY, q); } catch {}
+  }, [q]);
 
   const handleSubmit = (e?: React.FormEvent | React.MouseEvent) => {
     e?.preventDefault();
     const trimmed = q.trim();
     if (trimmed) {
+      // Task 5: Save scroll position before navigating
+      try { sessionStorage.setItem(`ezj-scroll-${pathname}`, String(window.scrollY)); } catch {}
+      // Task 6: Clear persisted query on successful submit
+      try { sessionStorage.removeItem(STORAGE_KEY); } catch {}
       onClose();
       router.push(`/search?q=${encodeURIComponent(trimmed)}`);
     }
   };
 
-  return (
+  const handleClose = () => {
+    onClose();
+  };
+
+  if (!mounted) return null;
+
+  return createPortal(
     <>
-      <div ref={overlayRef} className="search-overlay" data-open={open} inert={!open} role="dialog" aria-modal="true" aria-label="Search" tabIndex={-1}>
+      {/* Task 2: removed inert — CSS pointer-events:none is sufficient when closed */}
+      <div ref={overlayRef} className="search-overlay" data-open={open} aria-hidden={!open} role="dialog" aria-modal="true" aria-label="Search" tabIndex={-1}>
         <div className="search-inner">
           <form className="search-bar" onSubmit={handleSubmit}>
             <svg viewBox="0 0 512 512" width="22" height="22" fill="currentColor" aria-hidden="true">
@@ -51,14 +80,16 @@ export default function SearchOverlay({ open, onClose }: Props) {
             {q && (
               <button className="search-x" type="button" onClick={() => setQ("")} aria-label="Clear query">×</button>
             )}
-            <button className="search-close" type="button" onClick={onClose} aria-label="Close search">Close <span aria-hidden="true">⌫</span></button>
+            <button className="search-close" type="button" onClick={handleClose} aria-label="Close search">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
           </form>
           <button type="button" className="search-submit t-mono-xs" onClick={handleSubmit}>Search</button>
         </div>
       </div>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        .search-overlay { position:fixed; inset:0; z-index:200; background:var(--paper); opacity:0; pointer-events:none; transition:opacity 250ms var(--ease); display:flex; align-items:flex-start; justify-content:center; padding-top:20vh; }
+        .search-overlay { position:fixed; inset:0; z-index:10001; isolation:isolate; background:var(--paper); opacity:0; pointer-events:none; transition:opacity 250ms var(--ease); display:flex; align-items:center; justify-content:center; padding-bottom:10vh; }
         .search-overlay[data-open="true"] { opacity:1; pointer-events:auto; }
         .search-inner { width:100%; max-width:600px; padding:0 var(--pad-x-d); }
         .search-bar { display:flex; align-items:center; gap:var(--s-3); padding:var(--s-3) 0; border-bottom:2px solid var(--ink); }
@@ -68,12 +99,13 @@ export default function SearchOverlay({ open, onClose }: Props) {
         .search-bar input::-webkit-search-cancel-button { display:none; }
         .search-x { background:transparent; border:0; color:var(--ink-3); font-size:24px; cursor:pointer; padding:0 6px; line-height:1; }
         .search-x:hover { color:var(--ink); }
-        .search-close { background:transparent; border:1px solid var(--paper-3); color:var(--ink-2); font-family:var(--font-mono); font-weight:500; font-size:11px; letter-spacing:.16em; text-transform:uppercase; padding:8px 14px; cursor:pointer; transition:all var(--d-fast) var(--ease); }
-        .search-close:hover { border-color:var(--ink); color:var(--ink); }
+        .search-close { background:transparent; border:0; color:var(--ink-3); cursor:pointer; padding:6px; border-radius:50%; transition:all var(--d-fast) var(--ease); display:flex; align-items:center; justify-content:center; }
+        .search-close:hover { color:var(--ink); background:var(--paper-2); }
         .search-submit { display:block; width:100%; margin-top:var(--s-4); padding:14px 0; background:var(--ink); color:var(--paper); border:none; font-family:var(--font-mono); font-size:12px; font-weight:500; letter-spacing:.12em; text-transform:uppercase; cursor:pointer; transition:opacity 180ms; }
         .search-submit:hover { opacity:0.85; }
-        @media (max-width:720px) { .search-inner { padding:0 var(--pad-x-m); } .search-overlay { padding-top:12vh; } }
+        @media (max-width:720px) { .search-inner { padding:0 var(--pad-x-m); } }
       `}} />
-    </>
+    </>,
+    document.body
   );
 }

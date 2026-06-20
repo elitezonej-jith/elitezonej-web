@@ -39,7 +39,7 @@ export function useModalA11y<T extends HTMLElement = HTMLDivElement>(
     const node = containerRef.current;
     // Move focus into the dialog.
     const focusables = node?.querySelectorAll<HTMLElement>(FOCUSABLE);
-    (focusables?.[0] ?? node)?.focus?.();
+    (focusables?.[0] ?? node)?.focus?.({ preventScroll: true });
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {

@@ -295,9 +295,6 @@
 @media (max-width: 375px) {
   .pd { padding: 0 var(--s-3) var(--s-5); }
   .info h1 { font-size: 24px; }
-  .note { padding: var(--s-7) var(--s-3); }
-  .note .body { grid-template-columns: 1fr; }
-  .note .portrait { margin: 0 auto; }
   .info-acc { padding: 0 var(--s-3) var(--s-7); }
   .worn .inner { padding: var(--s-7) var(--s-3); }
   .spec .inner { padding: var(--s-5) var(--s-3); }
@@ -339,82 +336,6 @@
 @media (max-width: 900px) {
   .spec .inner { grid-template-columns: 1fr; gap: var(--s-5); padding: var(--s-7) var(--pad-x-m); }
   .spec td.k { width: 140px; }
-}
-
-/* Designer's note — warm paper-tone background with a subtle grain
-   overlay; serif italic signature mark (SVG path) above the printed
-   credit. Reads like a tipped-in atelier card. */
-.note {
-  max-width: var(--container);
-  margin: 0 auto;
-  padding: var(--s-9) var(--pad-x-d);
-  position: relative;
-  background:
-    linear-gradient(180deg, transparent, rgba(217, 198, 175, 0.06) 60%, rgba(217, 198, 175, 0.10)),
-    radial-gradient(ellipse at 18% 0%, rgba(208, 60, 90, 0.04), transparent 60%),
-    var(--paper);
-  isolation: isolate;
-}
-.note-grain {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.07;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240' viewBox='0 0 240 240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.18  0 0 0 0 0.14  0 0 0 0 0.11  0 0 0 0.7 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-  background-size: 240px 240px;
-}
-.note > * { position: relative; z-index: 1; }
-.note .ix { color: var(--ink-3); margin-bottom: var(--s-4); }
-.note .body { display: grid; grid-template-columns: auto 1fr; gap: var(--s-6); align-items: start; max-width: 920px; }
-.note-signature {
-  margin: var(--s-5) 0 var(--s-3);
-  color: var(--accent);
-  opacity: 0;
-  transform: translateY(6px);
-  animation: note-sig-in 1100ms cubic-bezier(.65, 0, .35, 1) 600ms forwards;
-}
-.note-signature svg path {
-  stroke-dasharray: 1100;
-  stroke-dashoffset: 1100;
-  animation: note-sig-draw 1800ms cubic-bezier(.65, 0, .35, 1) 600ms forwards;
-}
-@keyframes note-sig-in   { to { opacity: 1; transform: translateY(0); } }
-@keyframes note-sig-draw { to { stroke-dashoffset: 0; } }
-@media (prefers-reduced-motion: reduce) {
-  .note-signature, .note-signature svg path { animation: none !important; opacity: 1; }
-  .note-signature svg path { stroke-dashoffset: 0; }
-}
-.note .portrait {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  overflow: hidden;
-  background-image: url("https://images.unsplash.com/photo-1490578474895-699cd4e2cf59?w=200&q=80&auto=format&fit=crop");
-  background-size: cover;
-  background-position: center;
-  flex: 0 0 96px;
-}
-.note .body p {
-  margin: 0 0 var(--s-4);
-  font-family: var(--font-display);
-  font-weight: 500;
-  font-style: italic;
-  font-size: 21px;
-  line-height: 1.45;
-  color: var(--ink);
-  letter-spacing: -0.005em;
-}
-.note .signed { color: var(--ink-3); }
-.note .signed b {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-style: normal;
-  color: var(--ink);
-  font-size: 14px;
-  letter-spacing: 0;
-  text-transform: none;
 }
 
 /* Info accordion */
