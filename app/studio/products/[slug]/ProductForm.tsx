@@ -3,6 +3,7 @@ import { useActionState, useState } from "react";
 import { saveProductAction, type ProductSaveState } from "../../actions/products";
 import Switch from "../../components/Switch";
 import ImageUploader from "../../components/ImageUploader";
+import { useFormGuard } from "../../components/useFormGuard";
 import CategoryPicker from "./CategoryPicker";
 import FilterAttributes from "./FilterAttributes";
 import type { Product } from "../../../../lib/admin/types";
@@ -26,13 +27,14 @@ export default function ProductForm({
   const [name, setName] = useState(product?.name ?? "");
   const [seoOpen, setSeoOpen] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const { formRef, markDirty } = useFormGuard();
   const slugDerived = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const sizes = product?.sizes?.join("\n") ?? "";
   const features = product?.features?.join("\n") ?? "";
   const spec = product?.spec?.map(([k, v]) => `${k}: ${v}`).join("\n") ?? "";
 
   return (
-    <form action={action} className="stu-form">
+    <form ref={formRef} action={action} className="stu-form" onChange={markDirty}>
       {/* Hidden slug - auto-generated or preserved */}
       <input type="hidden" name="slug" value={product?.slug ?? slugDerived} />
       {/* Hidden image paths for new product */}

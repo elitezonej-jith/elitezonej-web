@@ -66,10 +66,10 @@ export default async function InventoryPage({ searchParams }: SP) {
   const oosCount = rows.filter(r => r.hasOos).length;
 
   // Untracked products for "Start tracking"
-  const untracked = await sql.all<{ slug: string; name: string }>(
-    `SELECT slug, name FROM products
+  const untracked = await sql.all<{ slug: string; name: string; kind: string }>(
+    `SELECT slug, name, kind FROM products
      WHERE status != 'archived' AND slug NOT IN (SELECT DISTINCT product_slug FROM inventory)
-     ORDER BY name ASC LIMIT 20`
+     ORDER BY kind ASC, name ASC LIMIT 50`
   );
 
   function href(params: Record<string, string | undefined>) {
@@ -144,7 +144,11 @@ export default async function InventoryPage({ searchParams }: SP) {
               <div className="inv-item__head">
                 <div className="inv-item__info">
                   <Link href={`/studio/products/${row.slug}`} className="inv-item__name">{row.name}</Link>
-                  <span className="inv-item__meta">{row.kind === "fabric" ? "Fabric · by metre" : "Clothing"}</span>
+                  <span className="inv-item__meta">
+                    {row.kind === "fabric" ? "Fabric · by metre" : "Clothing"}
+                    {" · "}
+                    <Link href={`/products/${row.slug}`} target="_blank" className="inv-item__store-link">View on store ↗</Link>
+                  </span>
                 </div>
                 <span className={`inv-item__status inv-item__status--${row.total === 0 ? "oos" : row.hasLow ? "low" : "ok"}`}>
                   {row.total === 0 ? "Out of stock" : row.hasLow ? `${row.total} units · Restock soon` : `${row.total} units`}
@@ -173,7 +177,10 @@ export default async function InventoryPage({ searchParams }: SP) {
       {untracked.length > 0 && (
         <section className="inv-untracked">
           <h3 className="inv-untracked__title">Start tracking stock</h3>
-          <p className="inv-untracked__sub">{untracked.length}+ products don't have stock tracking yet. Select one to add sizes and quantities.</p>
+          <p className="inv-untracked__sub">
+            {untracked.filter(p => p.kind !== "fabric").length} clothing products and {untracked.filter(p => p.kind === "fabric").length} fabrics don't have stock tracking yet.
+            Fabrics are sold by metre — add metre quantities if you want to track them.
+          </p>
           <StartTracking products={untracked} />
         </section>
       )}

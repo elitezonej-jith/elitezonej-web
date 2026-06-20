@@ -3,6 +3,7 @@ import { useActionState, useState } from "react";
 import { saveCategoryAction, type CatSaveState } from "../../actions/categories";
 import ImageUploader from "../../components/ImageUploader";
 import Switch from "../../components/Switch";
+import { useFormGuard } from "../../components/useFormGuard";
 
 const initial: CatSaveState = {};
 
@@ -20,10 +21,11 @@ export default function CategoryForm({ tops, category, preselectedParent }: {
   const [state, action, pending] = useActionState(saveCategoryAction, initial);
   const [name, setName] = useState(category?.name ?? "");
   const [image, setImage] = useState(category?.image_path ?? "");
+  const { formRef, markDirty } = useFormGuard();
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
   return (
-    <form action={action} className="stu-form">
+    <form ref={formRef} action={action} className="stu-form" onChange={markDirty}>
       {category?.id ? <input type="hidden" name="id" value={category.id} /> : null}
       <input type="hidden" name="image_path" value={image} />
 

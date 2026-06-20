@@ -8,6 +8,7 @@ import StatusTag from "../components/StatusTag";
 import EmptyState from "../components/EmptyState";
 import Folio from "../components/Folio";
 import FilterBar, { type Chip } from "../components/FilterBar";
+import { FlashToast } from "../components/Toast";
 import { rupees } from "../../../lib/admin/format";
 import { IconBag, IconPlus, IconStarFill } from "../components/Icons";
 import { requireUser } from "../../../lib/admin/session";
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Products · Studio" };
 const PAGE = 20;
 
-type SP = { searchParams: Promise<{ q?: string; status?: string; kind?: string; page?: string }> };
+type SP = { searchParams: Promise<{ q?: string; status?: string; kind?: string; page?: string; flash?: string }> };
 
 function href(qs: Record<string, string | undefined>): string {
   const u = new URLSearchParams();
@@ -63,6 +64,7 @@ export default async function ProductsListPage({ searchParams }: SP) {
 
   return (
     <div className="stu-page">
+      <FlashToast flash={sp.flash} />
       <PageHead
         title="Products"
         sub="Add, edit, and organize every piece in your store. Featured items and new arrivals show up across the homepage."
@@ -93,6 +95,7 @@ export default async function ProductsListPage({ searchParams }: SP) {
                     <th>Flags</th>
                     <th>Stock</th>
                     <th>Status</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -137,6 +140,7 @@ export default async function ProductsListPage({ searchParams }: SP) {
                           )}
                         </td>
                         <td><StatusTag status={p.status} /></td>
+                        <td><Link href={`/studio/products/${p.slug}`} className="stu-btn stu-btn--ghost stu-btn--sm">Edit</Link></td>
                       </tr>
                     );
                   })}

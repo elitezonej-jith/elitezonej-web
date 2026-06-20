@@ -47,7 +47,7 @@ export default async function OrdersListPage({ searchParams }: SP) {
           ) : (
             <div className="stu-tbl-wrap">
               <table className="stu-tbl">
-                <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th className="stu-tbl__num">Total</th><th>Status</th></tr></thead>
+                <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th className="stu-tbl__num">Total</th><th>Status</th><th></th></tr></thead>
                 <tbody>
                   {items.map((o) => (
                     <tr key={o.id}>
@@ -56,6 +56,7 @@ export default async function OrdersListPage({ searchParams }: SP) {
                       <td>{dateShort(o.created_at)}</td>
                       <td className="stu-tbl__num">{rupees(o.total)}</td>
                       <td><StatusTag status={o.status} /></td>
+                      <td><Link href={`/studio/orders/${o.id}`} className="stu-btn stu-btn--ghost stu-btn--sm">View</Link></td>
                     </tr>
                   ))}
                 </tbody>

@@ -23,6 +23,7 @@ export default async function BannersListPage({ searchParams }: SP) {
       <FlashToast flash={sp.flash} />
       <PageHead title="Homepage banners"
                 sub="Hero banners that appear at the top of your store. Drag to change the order, schedule a window, hide without deleting.">
+        <Link href="/" target="_blank" className="stu-btn stu-btn--ghost">Preview store ↗</Link>
         <Link href="/studio/banners/new" className="stu-btn stu-btn--primary">
           <IconPlus width={16} height={16} /> New banner
         </Link>

@@ -58,6 +58,7 @@ export default async function ProductEditorPage({ params, searchParams }: Params
       <PageHead title={product.name} sub={product.line || product.cat}
                 back={{ href: "/studio/products", label: "Back to products" }}>
         <StatusTag status={product.status} />
+        <Link href={`/products/${slug}`} target="_blank" className="stu-btn stu-btn--ghost">View on store ↗</Link>
         <form action={duplicateProductAction}>
           <input type="hidden" name="slug" value={slug} />
           <button type="submit" className="stu-btn stu-btn--ghost">Duplicate</button>

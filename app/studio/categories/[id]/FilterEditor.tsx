@@ -1,5 +1,5 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import { saveFilterAction, removeFilterAction, saveOptionAction, removeOptionAction } from "../../actions/categories";
 import type { FilterSaveState, OptionSaveState } from "../../actions/categories";
 
@@ -58,7 +58,7 @@ export default function FilterEditor({ categoryId, filters }: { categoryId: numb
 function AddFilterForm({ categoryId, nextOrder, onDone }: { categoryId: number; nextOrder: number; onDone: () => void }) {
   const [state, action, pending] = useActionState(saveFilterAction, {} as FilterSaveState);
 
-  if (state.success) { onDone(); }
+  useEffect(() => { if (state.success) onDone(); }, [state.success, onDone]);
 
   return (
     <form action={action} className="fe-add-form">
@@ -143,7 +143,7 @@ function FilterDetail({ filter, categoryId }: { filter: CategoryFilter; category
 function AddOptionForm({ filterId, filterType, nextOrder, onDone }: { filterId: number; filterType: string; nextOrder: number; onDone: () => void }) {
   const [state, action, pending] = useActionState(saveOptionAction, {} as OptionSaveState);
 
-  if (state.success) { onDone(); }
+  useEffect(() => { if (state.success) onDone(); }, [state.success, onDone]);
 
   return (
     <form action={action} className="fe-add-form">

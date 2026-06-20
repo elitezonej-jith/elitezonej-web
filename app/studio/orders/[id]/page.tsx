@@ -55,7 +55,13 @@ export default async function OrderDetailPage({ params }: Params) {
           </section>
         </div>
         <div className="stu-stack">
-          <OrderControls id={order.id} status={order.status} notes={order.notes ?? ""} />
+          <OrderControls
+            id={order.id}
+            status={order.status}
+            notes={order.notes ?? ""}
+            items={items.map(it => ({ product_name: it.product_name ?? it.product_slug, size: it.size, qty: it.qty, unit_price: it.unit_price }))}
+            orderSummary={`Order #${order.id}\n${order.customer} · ${order.email}\n${order.phone ?? ""}\n\nItems:\n${items.map(it => `• ${it.product_name ?? it.product_slug} (${it.size ?? "—"}) × ${it.qty} — ₹${it.unit_price * it.qty}`).join("\n")}\n\nTotal: ₹${order.total}\n\nShip to:\n${order.ship_name}\n${order.ship_line1}\n${order.ship_city}, ${order.ship_state} ${order.ship_pincode}`}
+          />
           <section className="stu-card">
             <header className="stu-card__head"><h3>Customer</h3></header>
             <div className="stu-card__body" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
