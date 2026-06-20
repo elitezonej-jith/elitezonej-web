@@ -158,4 +158,10 @@ export function seedFixtures(db: Database.Database): void {
   insertPromo.run("FESTIVE",   "percent", 15, daysAgo(60), daysAgo(-15), 40000, 100, "active", "Festive sherwani / lehenga 15% off");
   insertPromo.run("FREESHIP",  "free_ship", 0, null, null, 15000, null, "active", "Free shipping over ₹15,000");
   insertPromo.run("WELCOME10", "percent", 10, null, null, 0, 1000, "active", "First-order welcome 10% off");
+
+  // First-order 15% discount — uses the first_order_only flag (schema-v8)
+  db.prepare(`
+    INSERT OR IGNORE INTO promotions (code, type, value, min_total, usage_limit, status, description, first_order_only)
+    VALUES ('FIRST15', 'percent', 15, 0, NULL, 'active', '15% off your first order — one-time per customer', 1)
+  `).run();
 }

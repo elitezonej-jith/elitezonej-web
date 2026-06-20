@@ -154,7 +154,7 @@ export async function startCheckout(
     }
   }
 
-  const priced = await priceCart(linesParsed.data as CartLineInput[], form.data.promo_code);
+  const priced = await priceCart(linesParsed.data as CartLineInput[], form.data.promo_code, form.data.email);
   if (!priced.ok) return { error: priced.error };
 
   const orderId = await createPendingOrder({
@@ -263,10 +263,11 @@ export async function previewPricing(
     return { ok: false, error: "Your bag is empty." };
   }
   const promo = String(fd.get("promo_code") ?? "").trim();
+  const email = String(fd.get("email") ?? "").trim() || null;
 
   // Price once with the promo to learn whether it was accepted, and once
   // without so a rejected code still yields a usable (undiscounted) summary.
-  const withPromo = await priceCart(linesParsed.data as CartLineInput[], promo || null);
+  const withPromo = await priceCart(linesParsed.data as CartLineInput[], promo || null, email);
   if (!withPromo.ok) {
     const base = await priceCart(linesParsed.data as CartLineInput[], null);
     if (!base.ok) return { ok: false, error: base.error };

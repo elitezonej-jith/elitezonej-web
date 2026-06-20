@@ -76,6 +76,13 @@ export async function setOrderStatus(id: string, status: OrderStatus): Promise<v
     "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
     [status, id],
   );
+  // Release first-order claim if the order is cancelled
+  if (status === "cancelled") {
+    await sql.run(
+      "DELETE FROM first_order_claims WHERE order_id = ? AND status = 'pending'",
+      [id],
+    );
+  }
 }
 
 export async function setOrderNotes(id: string, notes: string): Promise<void> {
@@ -155,6 +162,19 @@ export async function createPendingOrder(args: {
         `INSERT INTO order_items (order_id, product_slug, qty, unit_price, size, colour, is_fabric)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [id, l.slug, l.qty, l.unit_price, l.size, l.colour, l.is_fabric ? 1 : 0],
+      );
+    }
+
+    // Atomic first-order claim: the UNIQUE(customer_id) constraint on
+    // first_order_claims guarantees that only ONE pending order per customer
+    // can hold the first-order discount. If a concurrent transaction already
+    // claimed, this INSERT throws a UNIQUE violation → the transaction rolls
+    // back → no order is created → checkout returns an error.
+    if (pricing.isFirstOrder && pricing.promo_code) {
+      await t.run(
+        `INSERT INTO first_order_claims (customer_id, order_id, promo_code, status)
+         VALUES (?, ?, ?, 'pending')`,
+        [customerId, id, pricing.promo_code],
       );
     }
   });
@@ -249,6 +269,11 @@ export async function fulfilOrderPaid(
           "UPDATE promotions SET usage_count = usage_count + 1 WHERE code = ?",
           [order.promo_code],
         );
+        // Mark first-order claim as used (no-op if this wasn't a first-order promo)
+        await t.run(
+          "UPDATE first_order_claims SET status = 'used' WHERE order_id = ? AND status = 'pending'",
+          [orderId],
+        );
       }
 
       await t.run(
@@ -283,6 +308,11 @@ export async function markOrderPaymentFailed(orderId: string): Promise<void> {
     );
     await t.run(
       "UPDATE payments SET status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE order_id = ? AND status = 'created'",
+      [orderId],
+    );
+    // Release first-order claim so the customer can try again
+    await t.run(
+      "DELETE FROM first_order_claims WHERE order_id = ? AND status = 'pending'",
       [orderId],
     );
   });

@@ -35,6 +35,7 @@ export type Pricing = {
   tax: number;
   total: number;
   promo_code: string | null;
+  isFirstOrder?: boolean;
 };
 
 export type PriceResult =
@@ -78,6 +79,7 @@ function effectiveUnitPrice(p: ProductRow): number {
 export async function priceCart(
   lines: CartLineInput[],
   promoCode?: string | null,
+  customerEmail?: string | null,
 ): Promise<PriceResult> {
   if (!Array.isArray(lines) || lines.length === 0) {
     return { ok: false, error: "Your bag is empty." };
@@ -147,12 +149,14 @@ export async function priceCart(
   let discount = 0;
   let appliedPromo: string | null = null;
   let waiveShipping = false;
+  let isFirstOrder = false;
   if (promoCode && promoCode.trim()) {
-    const v = await validatePromo(promoCode.trim(), priced, subtotal);
+    const v = await validatePromo(promoCode.trim(), priced, subtotal, customerEmail ?? null);
     if (!v.ok) return { ok: false, error: v.error };
     discount = v.discount;
     waiveShipping = v.waiveShipping;
     appliedPromo = v.code;
+    isFirstOrder = v.isFirstOrder;
   }
 
   const baseShipping =
@@ -165,7 +169,7 @@ export async function priceCart(
   return {
     ok: true,
     lines: priced,
-    pricing: { subtotal, discount, shipping, tax, total, promo_code: appliedPromo },
+    pricing: { subtotal, discount, shipping, tax, total, promo_code: appliedPromo, isFirstOrder },
   };
 }
 
@@ -179,16 +183,18 @@ type PromoRow = {
   usage_limit: number | null;
   usage_count: number;
   status: string;
+  first_order_only: number;
 };
 
 type PromoCheck =
-  | { ok: true; code: string; discount: number; waiveShipping: boolean }
+  | { ok: true; code: string; discount: number; waiveShipping: boolean; isFirstOrder: boolean }
   | { ok: false; error: string };
 
 export async function validatePromo(
   code: string,
   lines: PricedLine[],
   subtotal: number,
+  customerEmail?: string | null,
 ): Promise<PromoCheck> {
   const promoRow = await sql.get<PromoRow>(
     "SELECT * FROM promotions WHERE code = ?",
@@ -203,7 +209,35 @@ export async function validatePromo(
     min_total: num(promoRow.min_total),
     usage_limit: numOrNull(promoRow.usage_limit),
     usage_count: num(promoRow.usage_count),
+    first_order_only: num(promoRow.first_order_only),
   };
+
+  // First-order-only check: customer must have zero completed orders and no
+  // active claim. This is a soft check (UX feedback); the hard guarantee is
+  // the UNIQUE constraint on first_order_claims.customer_id at order creation.
+  if (promo.first_order_only) {
+    if (!customerEmail) {
+      return { ok: false, error: "Enter your email first to use this code." };
+    }
+    const email = customerEmail.trim().toLowerCase();
+    const customer = await sql.get<{ id: number | string; total_orders: number | string }>(
+      "SELECT id, total_orders FROM customers WHERE LOWER(email) = ?",
+      [email],
+    );
+    if (customer && Number(customer.total_orders) > 0) {
+      return { ok: false, error: "This code is valid for first orders only." };
+    }
+    // Check if there's already an active claim (pending order with this promo)
+    if (customer) {
+      const existingClaim = await sql.get<{ id: number | string }>(
+        "SELECT id FROM first_order_claims WHERE customer_id = ? AND status = 'pending'",
+        [Number(customer.id)],
+      );
+      if (existingClaim) {
+        return { ok: false, error: "You already have an order in progress with this discount." };
+      }
+    }
+  }
 
   const now = Date.now();
   if (promo.starts_at && Date.parse(promo.starts_at) > now) {
@@ -239,11 +273,11 @@ export async function validatePromo(
   }
 
   if (promo.type === "free_ship") {
-    return { ok: true, code: promo.code, discount: 0, waiveShipping: true };
+    return { ok: true, code: promo.code, discount: 0, waiveShipping: true, isFirstOrder: !!promo.first_order_only };
   }
   const discount =
     promo.type === "percent"
       ? Math.round((eligible * promo.value) / 100)
       : Math.min(promo.value, eligible);
-  return { ok: true, code: promo.code, discount, waiveShipping: false };
+  return { ok: true, code: promo.code, discount, waiveShipping: false, isFirstOrder: !!promo.first_order_only };
 }
