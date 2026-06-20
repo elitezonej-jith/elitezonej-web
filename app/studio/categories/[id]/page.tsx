@@ -5,8 +5,10 @@ import PageHead from "../../components/PageHead";
 import StatusTag from "../../components/StatusTag";
 import { FlashToast } from "../../components/Toast";
 import CategoryForm from "./CategoryForm";
-import CategoryDangerZone from "./CategoryDangerZone";
+import FilterEditor from "./FilterEditor";
 import { requireUser } from "../../../../lib/admin/session";
+import { listFiltersForCategory } from "../../../../lib/admin/repos/category-filters";
+import { getDescendantIds } from "../../../../lib/admin/repos/categories";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +26,17 @@ export default async function EditCategoryPage({ params, searchParams }: Params)
   const { saved } = await searchParams;
   const cat = await sql.get<Cat>("SELECT * FROM categories WHERE id = ?", [Number(id)]);
   if (!cat) notFound();
-  const tops = await sql.all<{ id: number; name: string; parent_id: number | null }>("SELECT id, name, parent_id FROM categories WHERE parent_id IS NULL AND id != ? ORDER BY sort_order ASC", [cat.id]);
+
+  // Get all categories for parent dropdown, excluding self and descendants
+  const descendantIds = await getDescendantIds(cat.id);
+  const excludeIds = [cat.id, ...descendantIds];
+  const allCats = await sql.all<{ id: number; name: string; parent_id: number | null }>(
+    "SELECT id, name, parent_id FROM categories ORDER BY sort_order ASC",
+  );
+  const availableParents = allCats.filter((c) => !excludeIds.includes(c.id));
+
+  const filters = await listFiltersForCategory(cat.id);
+
   return (
     <div className="stu-page stu-page--narrow">
       <FlashToast flash={saved ? "Category saved" : undefined} />
@@ -32,9 +44,9 @@ export default async function EditCategoryPage({ params, searchParams }: Params)
         <StatusTag status={cat.enabled ? "active" : "disabled"} />
         <Link href="/studio/categories" className="stu-btn stu-btn--ghost">Done</Link>
       </PageHead>
-      <CategoryForm tops={tops} category={cat} />
-      <div style={{ height: 32 }} />
-      <CategoryDangerZone id={cat.id} name={cat.name} />
+      <CategoryForm tops={availableParents} category={cat} />
+      <div style={{ height: 24 }} />
+      <FilterEditor categoryId={cat.id} filters={filters} />
     </div>
   );
 }

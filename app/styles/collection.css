@@ -357,3 +357,13 @@
   letter-spacing: 0.04em;
   padding-bottom: var(--s-3);
 }
+
+/* Dynamic filter types */
+.filter-colors { display: flex; flex-wrap: wrap; gap: 12px; }
+.color-swatch { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 4px; }
+.color-swatch.on { outline: 2px solid var(--ink-1); outline-offset: 2px; border-radius: 4px; }
+.color-swatch__circle { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(0,0,0,.15); }
+.color-swatch__label { font-size: 10px; color: var(--ink-2); text-transform: capitalize; }
+.filter-sizes { display: flex; flex-wrap: wrap; gap: 6px; }
+.size-pill { min-width: 36px; padding: 6px 10px; border: 1px solid var(--ink-4, #ddd); border-radius: 4px; background: var(--paper-1, #fff); font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s; }
+.size-pill.on { background: var(--ink-1, #1a1a1a); color: #fff; border-color: var(--ink-1, #1a1a1a); }

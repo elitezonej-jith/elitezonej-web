@@ -18,7 +18,7 @@ const ProductSchema = z.object({
   slug: z.string().min(2).max(64).regex(/^[a-z0-9-]+$/),
   name: z.string().min(2).max(140),
   cat: z.string().max(180).default(""),
-  cat_link: z.enum(["Men", "Women", "Fabrics"]),
+  cat_link: z.union([z.enum(["Men", "Women", "Fabrics", "Accessories"]), z.literal("")]).default(""),
   price: z.coerce.number().int().min(0),
   sale_price: z.union([z.literal(""), z.coerce.number().int().min(0)]).optional(),
   line: z.string().max(500).default(""),

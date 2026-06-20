@@ -80,7 +80,7 @@ export type ProductInput = {
   slug: string;
   name: string;
   cat: string;
-  cat_link: "Men" | "Women" | "Fabrics";
+  cat_link: "Men" | "Women" | "Fabrics" | "Accessories" | "";
   price: number;
   sale_price: number | null;
   line: string;

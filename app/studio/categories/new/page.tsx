@@ -8,16 +8,22 @@ export const metadata = { title: "New category · Studio" };
 
 type Cat = { id: number; name: string; parent_id: number | null };
 
-export default async function NewCategoryPage() {
+export default async function NewCategoryPage({ searchParams }: { searchParams: Promise<{ parent?: string }> }) {
   await requireUser("/studio/login");
-  const tops = await sql.all<Cat>("SELECT id, name, parent_id FROM categories WHERE parent_id IS NULL ORDER BY sort_order ASC");
+  const sp = await searchParams;
+  const allCats = await sql.all<Cat>("SELECT id, name, parent_id FROM categories ORDER BY sort_order ASC");
+  const preselectedParent = sp.parent ? Number(sp.parent) : undefined;
+  const parentCat = preselectedParent ? allCats.find(c => c.id === preselectedParent) : undefined;
+
   return (
     <div className="stu-page stu-page--narrow">
-      <PageHead title="New category" sub="Categories appear in your storefront navigation."
-                back={{ href: "/studio/categories", label: "Back to categories" }}>
+      <PageHead
+        title={parentCat ? `New subcategory under ${parentCat.name}` : "New category"}
+        sub="This will appear in your store navigation."
+        back={{ href: "/studio/categories", label: "Back to categories" }}>
         <Link href="/studio/categories" className="stu-btn stu-btn--ghost">Cancel</Link>
       </PageHead>
-      <CategoryForm tops={tops} />
+      <CategoryForm tops={allCats} preselectedParent={preselectedParent} />
     </div>
   );
 }

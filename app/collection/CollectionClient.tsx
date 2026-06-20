@@ -16,6 +16,13 @@ import "../styles/collection.css";
 
 type FilterKey = "fit" | "fabric" | "occasion" | "size";
 
+type DbFilter = {
+  name: string;
+  field_key: string;
+  filter_type: string;
+  options: Array<{ value: string; label: string | null; color_hex: string | null }>;
+};
+
 export default function CollectionClient({
   cat,
   sub,
@@ -24,6 +31,7 @@ export default function CollectionClient({
   headStand,
   parentTitle,
   hasSub,
+  filters: dbFilters = [],
 }: {
   cat: string;
   sub: string;
@@ -32,9 +40,17 @@ export default function CollectionClient({
   headStand: string;
   parentTitle: string;
   hasSub: boolean;
+  filters?: DbFilter[];
 }) {
-  const [active, setActive] = useState<Record<FilterKey, Set<string>>>({
-    fit: new Set(), fabric: new Set(), occasion: new Set(), size: new Set(),
+  const hasDbFilters = dbFilters.length > 0;
+  const [active, setActive] = useState<Record<string, Set<string>>>(() => {
+    const init: Record<string, Set<string>> = {};
+    if (hasDbFilters) {
+      dbFilters.forEach((f) => { init[f.field_key] = new Set(); });
+    } else {
+      init.fit = new Set(); init.fabric = new Set(); init.occasion = new Set(); init.size = new Set();
+    }
+    return init;
   });
   const [price, setPrice] = useState<{ min: string; max: string }>({ min: "", max: "" });
   const router = useRouter();
@@ -55,7 +71,7 @@ export default function CollectionClient({
   // headTitle / headStand / parentTitle / hasSub are resolved server-side
   // (rename-aware via the DB categories overlay) and passed in as props.
 
-  const toggle = (k: FilterKey, v: string) => {
+  const toggle = (k: string, v: string) => {
     setActive(prev => {
       const next = { ...prev, [k]: new Set(prev[k]) };
       if (next[k].has(v)) next[k].delete(v); else next[k].add(v);
@@ -63,7 +79,9 @@ export default function CollectionClient({
     });
   };
   const clear = () => {
-    setActive({ fit: new Set(), fabric: new Set(), occasion: new Set(), size: new Set() });
+    const cleared: Record<string, Set<string>> = {};
+    Object.keys(active).forEach((k) => { cleared[k] = new Set(); });
+    setActive(cleared);
     setPrice({ min: "", max: "" });
   };
 
@@ -86,11 +104,29 @@ export default function CollectionClient({
     }
     if (sub) list = list.filter(p => p.sub === sub);
     if (!isFabricMode) {
-      if (active.fit.size) list = list.filter(p => active.fit.has(p.fit));
-      if (active.fabric.size) list = list.filter(p => active.fabric.has(p.fabric));
-      if (active.occasion.size) list = list.filter(p => active.occasion.has(p.occasion));
-      if (active.size.size) {
-        list = list.filter(p => p.sizes?.some(s => active.size.has(s.replace("-oos", ""))));
+      if (hasDbFilters) {
+        // Dynamic filtering from DB-configured filters
+        for (const f of dbFilters) {
+          const selected = active[f.field_key];
+          if (!selected || !selected.size) continue;
+          if (f.field_key === "sizes_json") {
+            list = list.filter(p => p.sizes?.some(s => selected.has(s.replace("-oos", ""))));
+          } else {
+            list = list.filter(p => {
+              const val = (p as Record<string, unknown>)[f.field_key];
+              if (typeof val === "string") return selected.has(val);
+              return false;
+            });
+          }
+        }
+      } else {
+        // Legacy hardcoded filters
+        if (active.fit?.size) list = list.filter(p => active.fit.has(p.fit));
+        if (active.fabric?.size) list = list.filter(p => active.fabric.has(p.fabric));
+        if (active.occasion?.size) list = list.filter(p => active.occasion.has(p.occasion));
+        if (active.size?.size) {
+          list = list.filter(p => p.sizes?.some(s => active.size.has(s.replace("-oos", ""))));
+        }
       }
     }
     // Sort by the price the customer actually pays (sale price when on sale).
@@ -130,7 +166,7 @@ export default function CollectionClient({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const activeFilterCount = active.fit.size + active.fabric.size + active.occasion.size + active.size.size + (price.min ? 1 : 0) + (price.max ? 1 : 0);
+  const activeFilterCount = Object.values(active).reduce((sum, s) => sum + (s?.size || 0), 0) + (price.min ? 1 : 0) + (price.max ? 1 : 0);
   const [filterOpen, setFilterOpen] = useState(false);
 
   return (
@@ -176,10 +212,26 @@ export default function CollectionClient({
       <section className={`plp${isFabricMode ? " plp-fabric" : ""}`}>
         {!isFabricMode && (
           <aside className="filters" data-open={filterOpen}>
-            <FilterGroup name="Fit" values={["Slim","Tailored","Regular","Relaxed"]} active={active.fit} onToggle={v => toggle("fit", v)} />
-            <FilterGroup name="Fabric" values={["Wool","Linen","Cotton","Silk","Velvet"]} active={active.fabric} onToggle={v => toggle("fabric", v)} />
-            <FilterGroup name="Occasion" values={["Wedding","Boardroom","Black Tie","Festive","Casual"]} active={active.occasion} onToggle={v => toggle("occasion", v)} />
-            <FilterGroup name="Size" values={["36","38","40","42","44","46","XS","S","M","L","XL","XXL"]} active={active.size} onToggle={v => toggle("size", v)} />
+            {hasDbFilters ? (
+              <>
+                {dbFilters.filter(f => f.filter_type !== "range").map((f) => (
+                  f.filter_type === "color" ? (
+                    <ColorFilterGroup key={f.name} name={f.name} options={f.options} active={active[f.field_key] || new Set()} onToggle={v => toggle(f.field_key, v)} />
+                  ) : f.filter_type === "size" ? (
+                    <SizeFilterGroup key={f.name} name={f.name} options={f.options} active={active[f.field_key] || new Set()} onToggle={v => toggle(f.field_key, v)} />
+                  ) : (
+                    <FilterGroup key={f.name} name={f.name} values={f.options.map(o => o.value)} active={active[f.field_key] || new Set()} onToggle={v => toggle(f.field_key, v)} />
+                  )
+                ))}
+              </>
+            ) : (
+              <>
+                <FilterGroup name="Fit" values={["Slim","Tailored","Regular","Relaxed"]} active={active.fit || new Set()} onToggle={v => toggle("fit", v)} />
+                <FilterGroup name="Fabric" values={["Wool","Linen","Cotton","Silk","Velvet"]} active={active.fabric || new Set()} onToggle={v => toggle("fabric", v)} />
+                <FilterGroup name="Occasion" values={["Wedding","Boardroom","Black Tie","Festive","Casual"]} active={active.occasion || new Set()} onToggle={v => toggle("occasion", v)} />
+                <FilterGroup name="Size" values={["36","38","40","42","44","46","XS","S","M","L","XL","XXL"]} active={active.size || new Set()} onToggle={v => toggle("size", v)} />
+              </>
+            )}
             <div className="filter-group">
               <h4>Price (₹)</h4>
               <div className="price-row">
@@ -303,6 +355,37 @@ function FilterGroup({ name, values, active, onToggle }: { name: string; values:
       <div className="filter-chips">
         {values.map(v => (
           <button key={v} className={active.has(v) ? "on" : ""} onClick={() => onToggle(v)}>{v}</button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ColorFilterGroup({ name, options, active, onToggle }: { name: string; options: Array<{ value: string; label: string | null; color_hex: string | null }>; active: Set<string>; onToggle: (v: string) => void }) {
+  return (
+    <div className="filter-group">
+      <h4>{name}</h4>
+      <div className="filter-colors">
+        {options.map(o => (
+          <button key={o.value} className={`color-swatch${active.has(o.value) ? " on" : ""}`} onClick={() => onToggle(o.value)} title={o.label || o.value}>
+            <span className="color-swatch__circle" style={{ background: o.color_hex || "#ccc" }} />
+            <span className="color-swatch__label">{o.label || o.value}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SizeFilterGroup({ name, options, active, onToggle }: { name: string; options: Array<{ value: string; label: string | null; color_hex: string | null }>; active: Set<string>; onToggle: (v: string) => void }) {
+  return (
+    <div className="filter-group">
+      <h4>{name}</h4>
+      <div className="filter-sizes">
+        {options.map(o => (
+          <button key={o.value} className={`size-pill${active.has(o.value) ? " on" : ""}`} onClick={() => onToggle(o.value)}>
+            {o.label || o.value}
+          </button>
         ))}
       </div>
     </div>

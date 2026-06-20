@@ -240,6 +240,24 @@ export type MediaAsset = {
   used_in_json: string | null;
 };
 
+export type CategoryFilter = {
+  id: number;
+  category_id: number;
+  name: string;
+  field_key: string;
+  filter_type: string;
+  sort_order: number;
+};
+
+export type FilterOption = {
+  id: number;
+  filter_id: number;
+  value: string;
+  label: string;
+  color_hex: string | null;
+  sort_order: number;
+};
+
 export type Setting = { key: string; value: string };
 
 export type AuditLog = {

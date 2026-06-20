@@ -4,6 +4,8 @@ import { getProduct } from "../../../../lib/admin/repos/products";
 import { listImages, fallbackImages } from "../../../../lib/admin/repos/product-images";
 import { getMeta } from "../../../../lib/admin/repos/product-meta";
 import { listColours } from "../../../../lib/admin/repos/product-colours";
+import { sql } from "../../../../lib/admin/db";
+import { getInheritedFilters } from "../../../../lib/admin/repos/category-filters";
 import PageHead from "../../components/PageHead";
 import StatusTag from "../../components/StatusTag";
 import { FlashToast } from "../../components/Toast";
@@ -28,6 +30,27 @@ export default async function ProductEditorPage({ params, searchParams }: Params
   const images = await listImages(slug);
   const colours = await listColours(slug);
   const fallback = images.length === 0 ? fallbackImages(slug) : [];
+
+  // Load categories for picker
+  const categories = await sql.all<{ id: number; name: string; slug: string; parent_id: number | null }>(
+    "SELECT id, name, slug, parent_id FROM categories ORDER BY sort_order ASC, name ASC"
+  );
+
+  // Load filters for the product's current category
+  let filterDefs: Array<{ name: string; field_key: string; options: string[] }> = [];
+  const catSlug = product.sub || product.category;
+  if (catSlug) {
+    const catRow = await sql.get<{ id: number }>(
+      "SELECT id FROM categories WHERE slug = ? OR LOWER(name) = LOWER(?)",
+      [catSlug, catSlug]
+    );
+    if (catRow) {
+      const inherited = await getInheritedFilters(catRow.id);
+      filterDefs = inherited
+        .filter(f => ["fit", "fabric", "occasion"].includes(f.field_key))
+        .map(f => ({ name: f.name, field_key: f.field_key, options: f.options.map(o => o.value) }));
+    }
+  }
 
   return (
     <div className="stu-page">
@@ -62,7 +85,7 @@ export default async function ProductEditorPage({ params, searchParams }: Params
 
       <div style={{ height: 32 }} />
 
-      <ProductForm mode="edit" product={product} meta={meta} />
+      <ProductForm mode="edit" product={product} meta={meta} categories={categories} filters={filterDefs} />
 
       <div style={{ height: 32 }} />
 

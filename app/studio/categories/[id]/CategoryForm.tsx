@@ -12,9 +12,10 @@ type CatRow = {
   image_path: string; enabled: number;
 };
 
-export default function CategoryForm({ tops, category }: {
+export default function CategoryForm({ tops, category, preselectedParent }: {
   tops: Array<{ id: number; name: string; parent_id: number | null }>;
   category?: CatRow;
+  preselectedParent?: number;
 }) {
   const [state, action, pending] = useActionState(saveCategoryAction, initial);
   const [name, setName] = useState(category?.name ?? "");
@@ -44,7 +45,7 @@ export default function CategoryForm({ tops, category }: {
           <div className="stu-row" style={{ marginTop: 16 }}>
             <label className="stu-field">
               <span className="stu-field__label">Parent <span className="stu-field__hint">(blank for top-level)</span></span>
-              <select name="parent_id" defaultValue={category?.parent_id ?? ""} className="stu-select">
+              <select name="parent_id" defaultValue={category?.parent_id ?? preselectedParent ?? ""} className="stu-select">
                 <option value="">— Top-level —</option>
                 {tops.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
               </select>
