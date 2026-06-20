@@ -64,6 +64,12 @@ export function seedStudioDefaults(db: Database.Database): void {
       headingSide: "left",
       filter: { gender: "men", limit: 6 },
     }, 30],
+    ["product_carousel", "Premium", "Carousel", {
+      ctaLabel: "View Premium Collection",
+      ctaHref: "/premium",
+      headingSide: "left",
+      filter: { premium: true, limit: 6 },
+    }, 35],
     ["editorial_split", "The Men's Edit", "Editorial", {
       title: "The Men's Edit",
       ctaLabel: "Shop Menswear",

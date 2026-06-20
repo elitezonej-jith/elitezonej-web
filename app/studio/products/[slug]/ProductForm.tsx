@@ -160,6 +160,8 @@ export default function ProductForm({
                       defaultChecked={meta?.is_trending === 1} />
               <Switch name="is_new_arrival" label="New arrival" hint="Shows in the 'Just arrived' section."
                       defaultChecked={meta?.is_new_arrival === 1} />
+              <Switch name="is_premium" label="Premium" hint="Shows on the Premium collection page."
+                      defaultChecked={meta?.is_premium === 1} />
             </div>
           </section>
 

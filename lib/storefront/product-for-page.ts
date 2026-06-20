@@ -58,6 +58,7 @@ export function adaptDbProduct(p: StorefrontProduct): LegacyProduct {
     isNewArrival: p.meta?.is_new_arrival === 1,
     isFeatured: p.meta?.is_featured === 1,
     isTrending: p.meta?.is_trending === 1,
+    isPremium: p.meta?.is_premium === 1,
   };
 }
 

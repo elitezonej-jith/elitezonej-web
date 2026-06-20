@@ -6,6 +6,7 @@ export type ProductMeta = {
   is_featured: number;
   is_trending: number;
   is_new_arrival: number;
+  is_premium: number;
   short_description: string;
   long_description: string;
   meta_title: string;
@@ -21,6 +22,7 @@ export function emptyMeta(slug: string): ProductMeta {
     is_featured: 0,
     is_trending: 0,
     is_new_arrival: 0,
+    is_premium: 0,
     short_description: "",
     long_description: "",
     meta_title: "",
@@ -56,14 +58,15 @@ export async function getMetaForSlugs(slugs: string[]): Promise<Map<string, Prod
 export async function upsertMeta(meta: ProductMeta): Promise<void> {
   await sql.run(
     `INSERT INTO product_meta
-         (product_slug, is_featured, is_trending, is_new_arrival,
+         (product_slug, is_featured, is_trending, is_new_arrival, is_premium,
           short_description, long_description, meta_title, meta_description, og_image_path)
        VALUES
-         (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(product_slug) DO UPDATE SET
          is_featured       = excluded.is_featured,
          is_trending       = excluded.is_trending,
          is_new_arrival    = excluded.is_new_arrival,
+         is_premium        = excluded.is_premium,
          short_description = excluded.short_description,
          long_description  = excluded.long_description,
          meta_title        = excluded.meta_title,
@@ -74,6 +77,7 @@ export async function upsertMeta(meta: ProductMeta): Promise<void> {
       meta.is_featured,
       meta.is_trending,
       meta.is_new_arrival,
+      meta.is_premium,
       meta.short_description,
       meta.long_description,
       meta.meta_title,

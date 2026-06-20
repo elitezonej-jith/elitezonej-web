@@ -128,6 +128,7 @@ function Block({
           headingSide={(cfg.headingSide as "left" | "right" | undefined) ?? "left"}
           gender={f.gender ? String(f.gender) : undefined}
           category={f.category ? String(f.category) : undefined}
+          premium={f.premium ? true : undefined}
           limit={Number(f.limit ?? 6)}
         />
       );
@@ -145,7 +146,6 @@ function Block({
           imageSide={(cfg.imageSide as "left" | "right" | undefined) ?? "left"}
           gender={f.gender ? String(f.gender) : undefined}
           occasion={f.occasion ? String(f.occasion) : undefined}
-          category={f.category ? String(f.category) : undefined}
           limit={Number(f.limit ?? 6)}
         />
       );
