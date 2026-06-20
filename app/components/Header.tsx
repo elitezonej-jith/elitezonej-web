@@ -154,7 +154,6 @@ export default async function Header() {
                   </div>
                   {cat.footer && (
                     <div className="footer">
-                      <span>{cat.footer.caption}</span>
                       <Link href={cat.footer.ctaHref}>{cat.footer.ctaLabel} &rarr;</Link>
                     </div>
                   )}
