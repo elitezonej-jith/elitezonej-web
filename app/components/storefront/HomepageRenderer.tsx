@@ -56,7 +56,11 @@ export default async function HomepageRenderer() {
     (b) =>
       b.type !== "announce_bar" &&
       b.type !== "promo_modal" &&
-      b.type !== "service_cards",
+      b.type !== "service_cards" &&
+      b.type !== "wedding_editorial" &&
+      b.type !== "process_strip" &&
+      !(b.type === "full_banner" && b.title === "Women's collection") &&
+      !(b.type === "editorial_split" && b.title === "Festive Edit"),
   );
 
   return (
