@@ -374,7 +374,6 @@
 .hg-tile {
   position: relative;
   display: block;
-  aspect-ratio: 3/4;
   min-height: 540px;
   max-height: 86vh;
   overflow: hidden;
@@ -382,10 +381,12 @@
   color: #ffffff;
   text-decoration: none;
   isolation: isolate;
+  border-right: 1px solid rgba(255,255,255,0.12);
   transition: filter 600ms cubic-bezier(.22, 1, .36, 1);
 }
 
 /* SIGNATURE MOVE — when any tile is hovered, dim the OTHER tiles. */
+.hg-tile:last-child { border-right: none; }
 .hg:hover .hg-tile { filter: brightness(0.55) saturate(0.5); }
 .hg:hover .hg-tile:hover { filter: none; }
 

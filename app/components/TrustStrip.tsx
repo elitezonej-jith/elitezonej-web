@@ -27,6 +27,17 @@ function TruckIcon() {
   );
 }
 
+function ExpressIcon() {
+  return (
+    <svg viewBox="0 0 48 48" {...stroke}>
+      <path d="M26 8L18 24h8l-4 16 14-20h-9z" />
+      <path d="M8 18h6" />
+      <path d="M6 24h8" />
+      <path d="M8 30h6" />
+    </svg>
+  );
+}
+
 function PhoneIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18" {...stroke}>
@@ -74,22 +85,29 @@ export default function TrustStrip() {
           </div>
           <div className="trust-sub">On orders over ₹15,000</div>
         </div>
+        <div className="trust-item">
+          <ExpressIcon />
+          <div className="trust-title">
+            <span className="trust-label--full">Express Delivery</span>
+            <span className="trust-label--short">Express</span>
+          </div>
+        </div>
       </div>
 
       <div className="support-row">
         <div className="support-title">Need a helping hand?</div>
         <div className="support-links">
-          <a href="tel:+919800000000" aria-label="Call +91 98000 00000">
+          <a href="tel:+918939888594" aria-label="Call +91 89398 88594">
             <PhoneIcon />
-            <span className="trust-label--full">+91 98000 00000</span>
+            <span className="trust-label--full">+91 89398 88594</span>
             <span className="trust-label--short">Call</span>
           </a>
-          <a href="#chat" aria-label="Open live chat">
+          <a href="https://wa.me/918939888594" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
             <ChatIcon />
-            <span className="trust-label--full">Chat</span>
+            <span className="trust-label--full">WhatsApp</span>
             <span className="trust-label--short">Chat</span>
           </a>
-          <a href="/bespoke" aria-label="Contact us by email">
+          <a href="mailto:elitezonej@gmail.com" aria-label="Email us">
             <EnvelopeIcon />
             <span className="trust-label--full">Contact Us</span>
             <span className="trust-label--short">Email</span>
