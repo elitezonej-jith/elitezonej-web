@@ -7,7 +7,7 @@ import { FlashToast } from "../components/Toast";
 import { rupees, dateShort } from "../../../lib/admin/format";
 import { IconTag, IconPlus, IconEdit, IconStarFill } from "../components/Icons";
 import { sql } from "../../../lib/admin/db";
-import { requireUser } from "../../../lib/admin/session";
+import { requireRole } from "../../../lib/admin/session";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Offers · Studio" };
@@ -21,7 +21,7 @@ function formatValue(p: { type: string; value: number }) {
 }
 
 export default async function OffersPage({ searchParams }: SP) {
-  await requireUser("/studio/login");
+  await requireRole("owner");
   const sp = await searchParams;
   const offers = await listPromotions();
   const featuredMap = new Map<string, number>();

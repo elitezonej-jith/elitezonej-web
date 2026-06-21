@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import AdminSidebar from "./components/AdminSidebar";
 import AdminTopbar from "./components/AdminTopbar";
 import FlashToast from "./components/FlashToast";
@@ -25,6 +26,11 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // routes, so here we are necessarily on /admin/login or /admin/setup.
   if (!me) {
     return <div className="adm-auth-root">{children}</div>;
+  }
+
+  // Staff users cannot access the admin panel — redirect to Studio.
+  if (me.role !== "owner") {
+    redirect("/studio");
   }
 
   const counts = {

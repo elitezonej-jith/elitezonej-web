@@ -10,7 +10,8 @@ export const dynamic = "force-dynamic";
 type Params = { params: Promise<{ id: string }> };
 
 export default async function CustomerDetailPage({ params }: Params) {
-  await requireUser("/studio/login");
+  const me = await requireUser("/studio/login");
+  const isStaff = me.role === "staff";
   const { id } = await params;
   const c = await getCustomer(Number(id));
   if (!c) notFound();
@@ -28,13 +29,13 @@ export default async function CustomerDetailPage({ params }: Params) {
             ) : (
               <div className="stu-tbl-wrap">
                 <table className="stu-tbl">
-                  <thead><tr><th>Order</th><th>Date</th><th className="stu-tbl__num">Total</th><th>Status</th></tr></thead>
+                  <thead><tr><th>Order</th><th>Date</th>{!isStaff && <th className="stu-tbl__num">Total</th>}<th>Status</th></tr></thead>
                   <tbody>
                     {orders.map((o) => (
                       <tr key={o.id}>
                         <td><Link href={`/studio/orders/${o.id}`} className="stu-tbl__name" style={{ fontFamily: "ui-monospace, monospace" }}>#{o.id}</Link></td>
                         <td>{dateShort(o.created_at)}</td>
-                        <td className="stu-tbl__num">{rupees(o.total)}</td>
+                        {!isStaff && <td className="stu-tbl__num">{rupees(o.total)}</td>}
                         <td><StatusTag status={o.status} /></td>
                       </tr>
                     ))}
@@ -52,7 +53,7 @@ export default async function CustomerDetailPage({ params }: Params) {
             <Row label="Phone" value={c.phone ?? "—"} />
             <Row label="City" value={c.city ?? "—"} />
             <Row label="Joined" value={dateShort(c.created_at)} />
-            <Row label="Lifetime spend" value={rupees(c.total_spent)} />
+            {!isStaff && <Row label="Lifetime spend" value={rupees(c.total_spent)} />}
           </div>
         </section>
       </div>

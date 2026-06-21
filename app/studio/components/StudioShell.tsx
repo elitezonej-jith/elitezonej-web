@@ -112,7 +112,13 @@ export default function StudioShell({
         <nav className="stu-side__nav">
           {NAV.map((item, i) => {
             if (item.kind === "group") {
+              // Hide the "Marketing" group heading for staff (its children are hidden)
+              if (user.role === "staff" && item.label === "Marketing") return null;
               return <div key={`g-${i}`} className="stu-side__group">{item.label}</div>;
+            }
+            // Hide financial routes from staff
+            if (user.role === "staff" && (item.href === "/studio/offers" || item.href === "/studio/flash-sales")) {
+              return null;
             }
             const Icon = ICONS[item.icon];
             const count = item.countKey ? counts[item.countKey] : 0;

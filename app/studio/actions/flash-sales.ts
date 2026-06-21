@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
-import { requireUser } from "../../../lib/admin/session";
+import { requireRole } from "../../../lib/admin/session";
 import { createFlashSale, deleteFlashSale, updateFlashSale } from "../../../lib/admin/repos/flash-sales";
 import { logAudit } from "../../../lib/admin/repos/audit";
 
@@ -19,7 +19,7 @@ const Schema = z.object({
 export type FlashState = { error?: string };
 
 export async function saveFlashSaleAction(_prev: FlashState, fd: FormData): Promise<FlashState> {
-  const me = await requireUser("/studio/login");
+  const me = await requireRole("owner");
   const id = Number(fd.get("id") ?? 0);
   const parsed = Schema.safeParse(Object.fromEntries(fd.entries()));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please review the form." };
@@ -45,7 +45,7 @@ export async function saveFlashSaleAction(_prev: FlashState, fd: FormData): Prom
 }
 
 export async function deleteFlashSaleAction(fd: FormData): Promise<void> {
-  const me = await requireUser("/studio/login");
+  const me = await requireRole("owner");
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
   await deleteFlashSale(id);

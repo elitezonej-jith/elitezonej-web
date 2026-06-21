@@ -2,12 +2,12 @@ import Link from "next/link";
 import { listPromotions } from "../../../../lib/admin/repos/promotions";
 import PageHead from "../../components/PageHead";
 import FlashSaleForm from "../[id]/FlashSaleForm";
-import { requireUser } from "../../../../lib/admin/session";
+import { requireRole } from "../../../../lib/admin/session";
 
 export const metadata = { title: "New flash sale · Studio" };
 
 export default async function NewFlashSalePage() {
-  await requireUser("/studio/login");
+  await requireRole("owner");
   const promos = await listPromotions();
   return (
     <div className="stu-page stu-page--narrow">

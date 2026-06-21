@@ -23,7 +23,8 @@ function href(qs: Record<string, string | undefined>): string {
 }
 
 export default async function OrdersListPage({ searchParams }: SP) {
-  await requireUser("/studio/login");
+  const me = await requireUser("/studio/login");
+  const isStaff = me.role === "staff";
   const sp = await searchParams;
   const status = sp.status as OrderStatus | undefined;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
@@ -47,14 +48,14 @@ export default async function OrdersListPage({ searchParams }: SP) {
           ) : (
             <div className="stu-tbl-wrap">
               <table className="stu-tbl">
-                <thead><tr><th>Order</th><th>Customer</th><th>Date</th><th className="stu-tbl__num">Total</th><th>Status</th><th></th></tr></thead>
+                <thead><tr><th>Order</th><th>Customer</th><th>Date</th>{!isStaff && <th className="stu-tbl__num">Total</th>}<th>Status</th><th></th></tr></thead>
                 <tbody>
                   {items.map((o) => (
                     <tr key={o.id}>
                       <td><Link href={`/studio/orders/${o.id}`} className="stu-tbl__name" style={{ fontFamily: "ui-monospace, monospace" }}>#{o.id}</Link></td>
                       <td>{o.customer}<span className="stu-tbl__sub">{o.email}</span></td>
                       <td>{dateShort(o.created_at)}</td>
-                      <td className="stu-tbl__num">{rupees(o.total)}</td>
+                      {!isStaff && <td className="stu-tbl__num">{rupees(o.total)}</td>}
                       <td><StatusTag status={o.status} /></td>
                       <td><Link href={`/studio/orders/${o.id}`} className="stu-btn stu-btn--ghost stu-btn--sm">View</Link></td>
                     </tr>

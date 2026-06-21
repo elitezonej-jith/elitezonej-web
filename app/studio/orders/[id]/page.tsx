@@ -11,7 +11,8 @@ export const dynamic = "force-dynamic";
 type Params = { params: Promise<{ id: string }> };
 
 export default async function OrderDetailPage({ params }: Params) {
-  await requireUser("/studio/login");
+  const me = await requireUser("/studio/login");
+  const isStaff = me.role === "staff";
   const { id } = await params;
   const order = await getOrder(id);
   if (!order) notFound();
@@ -30,7 +31,7 @@ export default async function OrderDetailPage({ params }: Params) {
             <div className="stu-card__body--flush">
               <div className="stu-tbl-wrap">
                 <table className="stu-tbl">
-                  <thead><tr><th>Product</th><th>Variant</th><th className="stu-tbl__num">Qty</th><th className="stu-tbl__num">Unit</th><th className="stu-tbl__num">Line</th></tr></thead>
+                  <thead><tr><th>Product</th><th>Variant</th><th className="stu-tbl__num">Qty</th>{!isStaff && <th className="stu-tbl__num">Unit</th>}{!isStaff && <th className="stu-tbl__num">Line</th>}</tr></thead>
                   <tbody>
                     {items.map((it) => (
                       <tr key={it.id}>
@@ -40,16 +41,18 @@ export default async function OrderDetailPage({ params }: Params) {
                         </td>
                         <td>{it.is_fabric ? `${it.colour ?? "—"} (metres)` : (it.size ?? "—")}</td>
                         <td className="stu-tbl__num">{it.qty}</td>
-                        <td className="stu-tbl__num">{rupees(it.unit_price)}</td>
-                        <td className="stu-tbl__num">{rupees(it.unit_price * it.qty)}</td>
+                        {!isStaff && <td className="stu-tbl__num">{rupees(it.unit_price)}</td>}
+                        {!isStaff && <td className="stu-tbl__num">{rupees(it.unit_price * it.qty)}</td>}
                       </tr>
                     ))}
                   </tbody>
+                  {!isStaff && (
                   <tfoot>
                     <tr><td colSpan={4} className="stu-tbl__num">Subtotal</td><td className="stu-tbl__num">{rupees(order.subtotal)}</td></tr>
                     <tr><td colSpan={4} className="stu-tbl__num">Tax (18%)</td><td className="stu-tbl__num">{rupees(order.tax)}</td></tr>
                     <tr><td colSpan={4} className="stu-tbl__num" style={{ fontWeight: 700 }}>Total</td><td className="stu-tbl__num" style={{ fontWeight: 700 }}>{rupees(order.total)}</td></tr>
                   </tfoot>
+                  )}
                 </table>
               </div>
             </div>

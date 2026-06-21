@@ -15,7 +15,8 @@ const PAGE = 20;
 type SP = { searchParams: Promise<{ q?: string; page?: string }> };
 
 export default async function CustomersListPage({ searchParams }: SP) {
-  await requireUser("/studio/login");
+  const me = await requireUser("/studio/login");
+  const isStaff = me.role === "staff";
   const sp = await searchParams;
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
   const items = await listCustomers({ q: sp.q, limit: PAGE, offset: (page - 1) * PAGE });
@@ -32,7 +33,7 @@ export default async function CustomersListPage({ searchParams }: SP) {
           ) : (
             <div className="stu-tbl-wrap">
               <table className="stu-tbl">
-                <thead><tr><th>Name</th><th>Email</th><th>City</th><th className="stu-tbl__num">Orders</th><th className="stu-tbl__num">Lifetime</th><th>Joined</th></tr></thead>
+                <thead><tr><th>Name</th><th>Email</th><th>City</th><th className="stu-tbl__num">Orders</th>{!isStaff && <th className="stu-tbl__num">Lifetime</th>}<th>Joined</th></tr></thead>
                 <tbody>
                   {items.map((c) => (
                     <tr key={c.id}>
@@ -40,7 +41,7 @@ export default async function CustomersListPage({ searchParams }: SP) {
                       <td>{c.email}</td>
                       <td>{c.city ?? "—"}</td>
                       <td className="stu-tbl__num">{c.total_orders}</td>
-                      <td className="stu-tbl__num">{rupees(c.total_spent)}</td>
+                      {!isStaff && <td className="stu-tbl__num">{rupees(c.total_spent)}</td>}
                       <td>{dateShort(c.created_at)}</td>
                     </tr>
                   ))}

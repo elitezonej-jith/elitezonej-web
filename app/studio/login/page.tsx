@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { countUsers } from "../../../lib/admin/repos/users";
 import { cookies } from "next/headers";
 import { SESSION_COOKIE, getSessionUser } from "../../../lib/admin/auth";
+import { ensureDefaultUsersAsync } from "../../../lib/admin/db";
 import LoginForm from "./LoginForm";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ export const metadata = { title: "Sign in · Studio" };
 type SP = { searchParams: Promise<{ next?: string }> };
 
 export default async function StudioLoginPage({ searchParams }: SP) {
+  await ensureDefaultUsersAsync();
   if ((await countUsers()) === 0) redirect("/studio/setup");
   const c = await cookies();
   const me = await getSessionUser(c.get(SESSION_COOKIE)?.value);

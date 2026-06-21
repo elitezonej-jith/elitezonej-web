@@ -2,7 +2,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireUser } from "../../../lib/admin/session";
+import { requireRole } from "../../../lib/admin/session";
 import { upsertPromotion, deletePromotion } from "../../../lib/admin/repos/promotions";
 import { setTargets } from "../../../lib/admin/repos/offer-targets";
 import { sql } from "../../../lib/admin/db";
@@ -24,7 +24,7 @@ const Schema = z.object({
 export type OfferSaveState = { error?: string };
 
 export async function saveOfferAction(_prev: OfferSaveState, fd: FormData): Promise<OfferSaveState> {
-  const me = await requireUser("/studio/login");
+  const me = await requireRole("owner");
   const parsed = Schema.safeParse(Object.fromEntries(fd.entries()));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please review the form." };
   const v = parsed.data;
@@ -57,7 +57,7 @@ export async function saveOfferAction(_prev: OfferSaveState, fd: FormData): Prom
 }
 
 export async function deleteOfferAction(fd: FormData): Promise<void> {
-  const me = await requireUser("/studio/login");
+  const me = await requireRole("owner");
   const code = String(fd.get("code") ?? "").toUpperCase();
   if (!code) return;
   await deletePromotion(code);

@@ -16,7 +16,8 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: "Dashboard · Studio" };
 
 export default async function StudioDashboardPage() {
-  await requireUser("/studio/login");
+  const me = await requireUser("/studio/login");
+  const isStaff = me.role === "staff";
   const kpis = await getKpis();
   const revDelta = deltaPct(kpis.revenue30d, kpis.revenue30dPrior);
   const noSalesYet = kpis.revenue30d === 0 && kpis.revenue30dPrior === 0;
@@ -43,10 +44,12 @@ export default async function StudioDashboardPage() {
 
       {/* Stats */}
       <div className="stu-stat-grid">
-        <Stat icon={<IconCart />} label="Revenue · 30 days" value={noSalesYet ? "—" : rupees(kpis.revenue30d)}
-              delta={noSalesYet ? "No sales yet" : `${revDelta.label} vs. previous 30`} dir={noSalesYet ? "flat" : revDelta.delta} />
+        {!isStaff && (
+          <Stat icon={<IconCart />} label="Revenue · 30 days" value={noSalesYet ? "—" : rupees(kpis.revenue30d)}
+                delta={noSalesYet ? "No sales yet" : `${revDelta.label} vs. previous 30`} dir={noSalesYet ? "flat" : revDelta.delta} />
+        )}
         <Stat icon={<IconBag />}  label="Orders · 30 days" value={String(kpis.orders30d)}
-              delta={`AOV ${rupees(kpis.aov30d)}`} />
+              delta={!isStaff ? `AOV ${rupees(kpis.aov30d)}` : undefined} />
         <Stat icon={<IconScissors />} label="Bespoke leads"  value={String(kpis.bookingsNew)}
               delta={`${kpis.bookings30d} this month`} />
         <Stat icon={<IconBag />} label="Active products" value={String(kpis.totalActiveSkus)}
@@ -61,10 +64,14 @@ export default async function StudioDashboardPage() {
                sub="Hero image with title, subtitle, button." />
         <Quick href="/studio/notices/new" icon={<IconBell />} title="Post a notice"
                sub="Scrolling ticker, popup, or festive banner." />
-        <Quick href="/studio/offers/new" icon={<IconTag />} title="Create offer"
-               sub="Discount code, applied to anything." />
-        <Quick href="/studio/flash-sales/new" icon={<IconSparkles />} title="Flash sale"
-               sub="Countdown banner with code." />
+        {!isStaff && (
+          <Quick href="/studio/offers/new" icon={<IconTag />} title="Create offer"
+                 sub="Discount code, applied to anything." />
+        )}
+        {!isStaff && (
+          <Quick href="/studio/flash-sales/new" icon={<IconSparkles />} title="Flash sale"
+                 sub="Countdown banner with code." />
+        )}
         <Quick href="/studio/homepage" icon={<IconLayers />} title="Edit homepage"
                sub="Reorder, add or remove sections." />
       </div>
@@ -124,7 +131,7 @@ export default async function StudioDashboardPage() {
                     <tr>
                       <th>Order</th>
                       <th>Customer</th>
-                      <th className="stu-tbl__num">Total</th>
+                      {!isStaff && <th className="stu-tbl__num">Total</th>}
                       <th>Status</th>
                     </tr>
                   </thead>
@@ -133,7 +140,7 @@ export default async function StudioDashboardPage() {
                       <tr key={o.id}>
                         <td><Link href={`/studio/orders/${o.id}`} className="stu-tbl__name">#{o.id}</Link></td>
                         <td>{o.customer}<span className="stu-tbl__sub">{dateShort(o.created_at)}</span></td>
-                        <td className="stu-tbl__num">{rupees(o.total)}</td>
+                        {!isStaff && <td className="stu-tbl__num">{rupees(o.total)}</td>}
                         <td><StatusTag status={o.status} /></td>
                       </tr>
                     ))}
@@ -176,7 +183,7 @@ export default async function StudioDashboardPage() {
             <div className="stu-card__body" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <Row label="Banners published" value={String(banners.filter((b) => b.status === "published" && b.enabled).length)} sub={`${banners.length} total`} href="/studio/banners" />
               <Row label="Notices live" value={String(notices.filter((n) => n.enabled).length)} sub={`${notices.length} total`} href="/studio/notices" />
-              <Row label="Offers active" value={String(offers.filter((o) => o.status === "active").length)} sub={`${offers.length} total`} href="/studio/offers" />
+              {!isStaff && <Row label="Offers active" value={String(offers.filter((o) => o.status === "active").length)} sub={`${offers.length} total`} href="/studio/offers" />}
             </div>
           </section>
         </div>

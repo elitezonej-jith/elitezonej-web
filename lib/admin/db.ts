@@ -6,7 +6,9 @@ import path from "node:path";
 import crypto from "node:crypto";
 
 const DEFAULT_ADMIN_EMAIL = "admin@elitezonej.com";
-const DEFAULT_ADMIN_NAME = "Studio Owner";
+const DEFAULT_ADMIN_NAME = "Admin";
+const DEFAULT_STAFF_EMAIL = "studio@elitezonej.com";
+const DEFAULT_STAFF_NAME = "Studio Operator";
 
 declare global {
   // eslint-disable-next-line no-var
@@ -73,27 +75,18 @@ function applyAdditive(db: Database.Database, statements: string[], tag: string)
 }
 
 function ensureDefaultAdmin(db: Database.Database): void {
-  // Static credentials so a fresh DB is immediately usable.
-  // If a user with this email already exists, leave their hash alone — the
-  // operator may have changed the password through /admin/settings.
-  const existing = db
-    .prepare("SELECT id FROM users WHERE email = ?")
-    .get(DEFAULT_ADMIN_EMAIL) as { id: number } | undefined;
-  if (existing) return;
-
-  // No committed secret. Use ADMIN_BOOTSTRAP_PASSWORD if provided, else mint a
-  // random one-time password and print it once so a fresh DB stays usable.
-  const envPw = process.env.ADMIN_BOOTSTRAP_PASSWORD;
-  const password =
-    envPw && envPw.length >= 8 ? envPw : crypto.randomBytes(18).toString("base64url");
-  const hash = bcrypt.hashSync(password, 12);
+  // Seed owner and staff accounts — only if they don't already exist.
+  const ownerPw = process.env.ADMIN_BOOTSTRAP_PASSWORD ?? "Admin@123";
+  const ownerHash = bcrypt.hashSync(ownerPw, 12).replace(/^\$2b\$/, "$2a$");
   db.prepare(
-    `INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'owner')`,
-  ).run(DEFAULT_ADMIN_EMAIL, hash, DEFAULT_ADMIN_NAME);
-  if (!envPw)
-    console.warn(
-      `[db] Seeded owner ${DEFAULT_ADMIN_EMAIL} with a GENERATED one-time password: ${password} — sign in and change it now (set ADMIN_BOOTSTRAP_PASSWORD to control this).`,
-    );
+    `INSERT OR IGNORE INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'owner')`,
+  ).run(DEFAULT_ADMIN_EMAIL, ownerHash, DEFAULT_ADMIN_NAME);
+
+  const staffPw = process.env.STAFF_BOOTSTRAP_PASSWORD ?? "Studio@123";
+  const staffHash = bcrypt.hashSync(staffPw, 12).replace(/^\$2b\$/, "$2a$");
+  db.prepare(
+    `INSERT OR IGNORE INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'staff')`,
+  ).run(DEFAULT_STAFF_EMAIL, staffHash, DEFAULT_STAFF_NAME);
 }
 
 // Studio-defaults seed version tracking. The parity homepage seed lives in
@@ -379,5 +372,33 @@ export async function isDurablePersistence(): Promise<boolean> {
     return Number(m?.n ?? 0) >= 1;
   } catch {
     return false;
+  }
+}
+
+/**
+ * Ensures the default admin (owner) and studio (staff) accounts exist with
+ * known credentials. Works on both SQLite and Postgres via the async sql client.
+ * Idempotent — safe to call on every cold start.
+ */
+export async function ensureDefaultUsersAsync(): Promise<void> {
+  const ownerPw = process.env.ADMIN_BOOTSTRAP_PASSWORD ?? "Admin@123";
+  const staffPw = process.env.STAFF_BOOTSTRAP_PASSWORD ?? "Studio@123";
+  const ownerHash = bcrypt.hashSync(ownerPw, 12).replace(/^\$2b\$/, "$2a$");
+  const staffHash = bcrypt.hashSync(staffPw, 12).replace(/^\$2b\$/, "$2a$");
+
+  // Only insert if missing — never overwrite an existing password
+  const existingOwner = await sql.get<{ id: number }>("SELECT id FROM users WHERE email = ?", [DEFAULT_ADMIN_EMAIL]);
+  if (!existingOwner) {
+    await sql.run(
+      `INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'owner')`,
+      [DEFAULT_ADMIN_EMAIL, ownerHash, DEFAULT_ADMIN_NAME],
+    );
+  }
+  const existingStaff = await sql.get<{ id: number }>("SELECT id FROM users WHERE email = ?", [DEFAULT_STAFF_EMAIL]);
+  if (!existingStaff) {
+    await sql.run(
+      `INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'staff')`,
+      [DEFAULT_STAFF_EMAIL, staffHash, DEFAULT_STAFF_NAME],
+    );
   }
 }

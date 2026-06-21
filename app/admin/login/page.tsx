@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { countUsers } from "../../../lib/admin/repos/users";
 import { getCurrentUser } from "../../../lib/admin/session";
+import { ensureDefaultUsersAsync } from "../../../lib/admin/db";
 import LoginForm from "./LoginForm";
 import "../styles/admin.css";
 
@@ -10,6 +11,7 @@ export const metadata = { title: "Sign in · Elite Zone J Atelier" };
 type SP = { searchParams: Promise<{ next?: string }> };
 
 export default async function LoginPage({ searchParams }: SP) {
+  await ensureDefaultUsersAsync();
   if ((await countUsers()) === 0) redirect("/admin/setup");
   const me = await getCurrentUser();
   if (me) redirect("/admin");
