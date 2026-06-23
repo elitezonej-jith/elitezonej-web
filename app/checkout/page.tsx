@@ -17,6 +17,11 @@ export default async function CheckoutPage() {
   const defaultAddressId =
     savedAddresses.find((a) => a.is_default === 1)?.id ?? null;
 
+  // Pass customer profile for prefilling email/phone/name when logged in
+  const customerPrefill = me
+    ? { email: me.email, phone: me.phone ?? "", first_name: me.first_name, last_name: me.last_name, city: me.city ?? "" }
+    : null;
+
   return (
     <>
       <Header />
@@ -24,6 +29,7 @@ export default async function CheckoutPage() {
         <CheckoutClient
           savedAddresses={savedAddresses}
           defaultAddressId={defaultAddressId}
+          customerPrefill={customerPrefill}
         />
       </main>
       <TrustStrip />

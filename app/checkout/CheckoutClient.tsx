@@ -111,9 +111,11 @@ function toPrefill(a: Address): ShipPrefill {
 export default function CheckoutClient({
   savedAddresses = [],
   defaultAddressId = null,
+  customerPrefill = null,
 }: {
   savedAddresses?: Address[];
   defaultAddressId?: number | null;
+  customerPrefill?: { email: string; phone: string; first_name: string; last_name: string; city: string } | null;
 }) {
   const { items, subtotal, hydrated, clear } = useCart();
   const router = useRouter();
@@ -383,15 +385,15 @@ export default function CheckoutClient({
             )}
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <Field key={`first_name-${prefillKey}`} name="first_name" autoComplete="given-name" placeholder="First name" required aria-label="First name" defaultValue={prefill?.first_name ?? ""} onBlur={(e) => validateField("first_name", e.target.value)} err={clientErrors.first_name ?? state.fieldErrors?.first_name} />
-              <Field key={`last_name-${prefillKey}`} name="last_name" autoComplete="family-name" placeholder="Last name" required aria-label="Last name" defaultValue={prefill?.last_name ?? ""} onBlur={(e) => validateField("last_name", e.target.value)} err={clientErrors.last_name ?? state.fieldErrors?.last_name} />
+              <Field key={`first_name-${prefillKey}`} name="first_name" autoComplete="given-name" placeholder="First name" required aria-label="First name" defaultValue={prefill?.first_name ?? customerPrefill?.first_name ?? ""} onBlur={(e) => validateField("first_name", e.target.value)} err={clientErrors.first_name ?? state.fieldErrors?.first_name} />
+              <Field key={`last_name-${prefillKey}`} name="last_name" autoComplete="family-name" placeholder="Last name" required aria-label="Last name" defaultValue={prefill?.last_name ?? customerPrefill?.last_name ?? ""} onBlur={(e) => validateField("last_name", e.target.value)} err={clientErrors.last_name ?? state.fieldErrors?.last_name} />
             </div>
-            <Field type="email" name="email" autoComplete="email" placeholder="Email" required aria-label="Email" onBlur={(e) => validateField("email", e.target.value)} err={clientErrors.email ?? state.fieldErrors?.email} />
-            <Field name="phone" autoComplete="tel" placeholder="Phone" required aria-label="Phone" onBlur={(e) => validateField("phone", e.target.value)} err={clientErrors.phone ?? state.fieldErrors?.phone} />
+            <Field type="email" name="email" autoComplete="email" placeholder="Email" required aria-label="Email" defaultValue={customerPrefill?.email ?? ""} onBlur={(e) => validateField("email", e.target.value)} err={clientErrors.email ?? state.fieldErrors?.email} />
+            <Field name="phone" autoComplete="tel" placeholder="Phone" required aria-label="Phone" defaultValue={customerPrefill?.phone ?? ""} onBlur={(e) => validateField("phone", e.target.value)} err={clientErrors.phone ?? state.fieldErrors?.phone} />
             <Field key={`ship_line1-${prefillKey}`} name="ship_line1" autoComplete="address-line1" placeholder="Address line 1" required aria-label="Address line 1" defaultValue={prefill?.ship_line1 ?? ""} onBlur={(e) => validateField("ship_line1", e.target.value)} err={clientErrors.ship_line1 ?? state.fieldErrors?.ship_line1} />
             <Field key={`ship_line2-${prefillKey}`} name="ship_line2" autoComplete="address-line2" placeholder="Address line 2 (optional)" aria-label="Address line 2" defaultValue={prefill?.ship_line2 ?? ""} err={state.fieldErrors?.ship_line2} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-              <Field key={`ship_city-${prefillKey}`} name="ship_city" autoComplete="address-level2" placeholder="City" required aria-label="City" defaultValue={prefill?.ship_city ?? ""} onBlur={(e) => validateField("ship_city", e.target.value)} err={clientErrors.ship_city ?? state.fieldErrors?.ship_city} />
+              <Field key={`ship_city-${prefillKey}`} name="ship_city" autoComplete="address-level2" placeholder="City" required aria-label="City" defaultValue={prefill?.ship_city ?? customerPrefill?.city ?? ""} onBlur={(e) => validateField("ship_city", e.target.value)} err={clientErrors.ship_city ?? state.fieldErrors?.ship_city} />
               <Field key={`ship_state-${prefillKey}`} name="ship_state" autoComplete="address-level1" placeholder="State" required aria-label="State" defaultValue={prefill?.ship_state ?? ""} onBlur={(e) => validateField("ship_state", e.target.value)} err={clientErrors.ship_state ?? state.fieldErrors?.ship_state} />
             </div>
             <Field key={`ship_pincode-${prefillKey}`} name="ship_pincode" autoComplete="postal-code" placeholder="Pincode" inputMode="numeric" required aria-label="Pincode" defaultValue={prefill?.ship_pincode ?? ""} onBlur={(e) => validateField("ship_pincode", e.target.value)} err={clientErrors.ship_pincode ?? state.fieldErrors?.ship_pincode} />
