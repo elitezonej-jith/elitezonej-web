@@ -1,5 +1,5 @@
 "use client";
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { updateProfileAction, type AuthState } from "./actions";
 
 const initial: AuthState = {};
@@ -9,13 +9,20 @@ export default function ProfileForm({
   lastName,
   phone,
   city,
+  onSaved,
 }: {
   firstName: string;
   lastName: string;
   phone: string;
   city: string;
+  onSaved?: () => void;
 }) {
   const [state, action, pending] = useActionState(updateProfileAction, initial);
+
+  useEffect(() => {
+    if (state.ok && onSaved) onSaved();
+  }, [state.ok, onSaved]);
+
   return (
     <form className="auth-form" action={action} noValidate>
       <div className="two">
@@ -37,7 +44,6 @@ export default function ProfileForm({
         <input id="city" name="city" defaultValue={city} />
       </div>
       {state.error && <p className="auth-err" role="alert">{state.error}</p>}
-      {state.ok && <p className="auth-sub" role="status" style={{ margin: "4px 0 0" }}>Saved ✓</p>}
       <button type="submit" className="btn btn-secondary btn-block" disabled={pending}>
         {pending ? "Saving…" : "Save changes"}
       </button>
