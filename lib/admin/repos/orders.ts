@@ -304,7 +304,11 @@ export async function fulfilOrderPaid(
 // ── Shipping / tracking ──────────────────────────────────────────────────────
 
 export async function listCouriers(): Promise<Courier[]> {
-  return sql.all<Courier>("SELECT code, name, url_pattern FROM couriers ORDER BY name", []);
+  try {
+    return await sql.all<Courier>("SELECT code, name, url_pattern FROM couriers ORDER BY name", []);
+  } catch {
+    return [];
+  }
 }
 
 /**
