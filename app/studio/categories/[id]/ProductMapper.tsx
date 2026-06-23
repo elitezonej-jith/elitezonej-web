@@ -2,7 +2,25 @@
 import { useState } from "react";
 import { assignProductsToCategoryAction } from "../../actions/categories";
 
-type Product = { slug: string; name: string; category: string | null; sub: string | null };
+type Product = { slug: string; name: string; category: string | null; sub: string | null; thumbnail: string | null };
+
+function Thumb({ src, slug }: { src: string | null; slug: string }) {
+  const [errored, setErrored] = useState(false);
+  const imgSrc = src || `/generated/${slug}/01-front.webp`;
+
+  if (errored) {
+    return <span className="pm-thumb pm-thumb--empty">{slug.charAt(0).toUpperCase()}</span>;
+  }
+
+  return (
+    <img
+      src={imgSrc}
+      alt=""
+      className="pm-thumb"
+      onError={() => setErrored(true)}
+    />
+  );
+}
 
 export default function ProductMapper({
   categoryId,
@@ -37,13 +55,13 @@ export default function ProductMapper({
         <span className="stu-card__count">{mapped.length} mapped</span>
       </header>
       <div className="stu-card__body">
-        {/* Currently mapped */}
         {mapped.length > 0 ? (
           <div className="pm-mapped">
             {mapped.map(p => (
               <div key={p.slug} className="pm-mapped__item">
-                <span className="pm-mapped__check">✓</span>
+                <Thumb src={p.thumbnail} slug={p.slug} />
                 <span className="pm-mapped__name">{p.name}</span>
+                <span className="pm-mapped__tag">{p.sub || p.category || "—"}</span>
               </div>
             ))}
           </div>
@@ -51,7 +69,6 @@ export default function ProductMapper({
           <p className="pm-empty">No products assigned to {categoryName} yet.</p>
         )}
 
-        {/* Add products */}
         <div className="pm-add">
           <h4 className="pm-add__title">Add products to {categoryName}</h4>
           <input
@@ -79,8 +96,9 @@ export default function ProductMapper({
                       onChange={() => toggle(p.slug)}
                       className="pm-list__check"
                     />
+                    <Thumb src={p.thumbnail} slug={p.slug} />
                     <span className="pm-list__name">{p.name}</span>
-                    <span className="pm-list__current">
+                    <span className="pm-list__tag">
                       {p.sub || p.category || "uncategorized"}
                     </span>
                   </label>

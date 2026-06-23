@@ -2,33 +2,28 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { sql } from "../admin/db";
 import { CACHE_TAGS } from "./cache";
-import { NAV, type NavCategory, type NavGroup } from "../../app/components/nav-data";
+import { NAV, type NavCategory, type NavGroup, type NavLink } from "../../app/components/nav-data";
 import { CAT_DATA, SUBCATS, type SubcatMeta } from "../subcats";
 
-// Scoped category→storefront reflection (no schema change).
-//
-// The static NAV is a curated mega-menu (groups/footers/meta) far richer than
-// the flat `categories` table. We keep that curated structure verbatim and only
-// overlay GENUINE operator edits: a category that has been *renamed* (its DB
-// name differs from the seeded default title) relabels its canonical menu
-// entry + collection H1; a category *disabled* in Studio drops its canonical
-// entry. When nothing has been changed the output equals the static NAV
-// byte-for-byte (parity). Curated order, groups, footers and marketing "stand"
-// copy always stay static (no DB column exists for them).
+// ── Types ────────────────────────────────────────────────────────────────
+type DbCatRow = {
+  id: number;
+  parent_id: number | null;
+  name: string;
+  slug: string;
+  gender: string | null;
+  kind: string | null;
+  sort_order: number;
+  enabled: number;
+};
 
-type DbCat = { name: string; enabled: number };
-type DbCatRow = { slug: string; name: string; gender: string | null; enabled: number };
-
-// Cached raw category rows. This read previously ran on EVERY route (the nav
-// renders in the shared header), so it dominated per-request Neon egress on
-// non-product pages — including 404s. 1h TTL; Studio/Admin category edits call
-// `bustCategories()`. Rows (not the Map) are cached because `unstable_cache`
-// only stores JSON-serialisable values; an empty array also covers the
-// no-table / ephemeral fallback so the Map stays empty → static NAV.
+// ── Cached DB read ───────────────────────────────────────────────────────
 const _dbCatRows = unstable_cache(
   async (): Promise<DbCatRow[]> => {
     try {
-      return await sql.all<DbCatRow>("SELECT slug, name, gender, enabled FROM categories");
+      return await sql.all<DbCatRow>(
+        "SELECT id, parent_id, name, slug, gender, kind, sort_order, enabled FROM categories ORDER BY sort_order ASC, id ASC",
+      );
     } catch {
       return [];
     }
@@ -37,92 +32,132 @@ const _dbCatRows = unstable_cache(
   { revalidate: 3600, tags: [CACHE_TAGS.categories] },
 );
 
-async function loadDbCats(): Promise<Map<string, DbCat>> {
-  const map = new Map<string, DbCat>();
-  for (const r of await _dbCatRows()) {
-    map.set(`${r.gender ?? ""}:${r.slug}`, { name: r.name, enabled: r.enabled });
+// ── Static NAV lookup helpers ────────────────────────────────────────────
+// Index static nav items by their href slug for metadata enrichment.
+const STATIC_NAV_BY_SLUG = new Map<string, NavCategory>();
+const STATIC_ITEMS_BY_HREF = new Map<string, NavLink>();
+for (const cat of NAV) {
+  const slug = hrefToSlug(cat.href);
+  if (slug) STATIC_NAV_BY_SLUG.set(slug, cat);
+  for (const g of cat.groups ?? []) {
+    for (const it of g.items) STATIC_ITEMS_BY_HREF.set(it.href, it);
   }
-  return map;
 }
 
-function defaultTitle(slug: string, gender: string | null): string | undefined {
-  if (gender && SUBCATS[gender]?.[slug]) return SUBCATS[gender][slug].title;
-  return CAT_DATA[slug]?.title;
-}
-
-// Parse a nav href like "/collection?c=men&sub=tuxedos" into the category key.
-// Top-level (no sub) has gender "" (DB top-level rows have gender NULL);
-// sub-items key on their parent gender.
-function keyForHref(href: string): { key: string; slug: string; gender: string | null } | null {
+function hrefToSlug(href: string): string | null {
   const q = href.indexOf("?");
   if (q < 0) return null;
   const sp = new URLSearchParams(href.slice(q + 1));
-  const c = sp.get("c");
-  const sub = sp.get("sub");
-  if (sub && c) return { key: `${c}:${sub}`, slug: sub, gender: c };
-  if (c) return { key: `:${c}`, slug: c, gender: null };
-  return null;
+  return sp.get("sub") || sp.get("c") || null;
 }
 
-// Returns the DB override for a node, but ONLY when this node is the canonical
-// entry for its category (its static label equals the seeded default title) —
-// auxiliary curated links ("View All", "Sale") that happen to point at the same
-// href are left untouched. Result: { drop } or { label } or null (unchanged).
-function resolve(href: string, label: string, db: Map<string, DbCat>):
-  | { drop: true }
-  | { label: string }
-  | null {
-  const parsed = keyForHref(href);
-  if (!parsed) return null;
-  const def = defaultTitle(parsed.slug, parsed.gender);
-  if (def === undefined || label !== def) return null; // not the canonical entry
-  const hit = db.get(parsed.key);
-  if (!hit) return null;
-  if (hit.enabled === 0) return { drop: true };
-  if (hit.name && hit.name !== def) return { label: hit.name };
-  return null;
-}
-
+// ── Build nav from DB hierarchy ──────────────────────────────────────────
 export async function getStorefrontNav(): Promise<NavCategory[]> {
-  const db = await loadDbCats();
-  if (db.size === 0) return NAV;
-  const out: NavCategory[] = [];
-  for (const cat of NAV) {
-    const r = resolve(cat.href, cat.label, db);
-    if (r && "drop" in r) continue;
-    const groups: NavGroup[] | undefined = cat.groups?.map((g) => ({
-      title: g.title,
-      items: g.items
-        .map((it) => {
-          const ir = resolve(it.href, it.label, db);
-          if (ir && "drop" in ir) return null;
-          return ir && "label" in ir ? { ...it, label: ir.label } : it;
-        })
-        .filter((x): x is NonNullable<typeof x> => x !== null),
-    }));
-    out.push({
-      ...cat,
-      label: r && "label" in r ? r.label : cat.label,
-      groups,
+  const rows = await _dbCatRows();
+  if (!rows.length) return NAV; // no DB categories yet — pure static fallback
+
+  const enabled = rows.filter((r) => r.enabled !== 0);
+  const topLevel = enabled.filter((r) => r.parent_id === null);
+  const byParent = new Map<number, DbCatRow[]>();
+  for (const r of enabled) {
+    if (r.parent_id !== null) {
+      const siblings = byParent.get(r.parent_id) ?? [];
+      siblings.push(r);
+      byParent.set(r.parent_id, siblings);
+    }
+  }
+
+  const result: NavCategory[] = [];
+
+  for (const top of topLevel) {
+    const href = `/collection?c=${top.slug}`;
+    const children = byParent.get(top.id) ?? [];
+    const staticCat = STATIC_NAV_BY_SLUG.get(top.slug);
+
+    // No children → simple link (like "Fabrics", "Bespoke")
+    if (!children.length) {
+      result.push({
+        href,
+        label: top.name,
+        sale: staticCat?.sale,
+      });
+      continue;
+    }
+
+    // Has children → build mega-menu groups.
+    // Group by: if children themselves have children (sub-sub), each child is
+    // a group title. Otherwise all children go into one group named after the parent.
+    const groups: NavGroup[] = [];
+    const childrenWithSubs: DbCatRow[] = [];
+    const leafChildren: DbCatRow[] = [];
+
+    for (const child of children) {
+      if (byParent.has(child.id)) childrenWithSubs.push(child);
+      else leafChildren.push(child);
+    }
+
+    // Children that have their own sub-categories → each becomes a group
+    for (const child of childrenWithSubs) {
+      const subs = byParent.get(child.id) ?? [];
+      const items: NavLink[] = subs.map((sub) => {
+        const subHref = `/collection?c=${top.slug}&sub=${sub.slug}`;
+        const staticItem = STATIC_ITEMS_BY_HREF.get(subHref);
+        return { href: subHref, label: sub.name, meta: staticItem?.meta };
+      });
+      groups.push({ title: child.name, items });
+    }
+
+    // Leaf children (no sub-sub) → grouped together
+    if (leafChildren.length) {
+      const items: NavLink[] = leafChildren.map((child) => {
+        const childHref = `/collection?c=${top.slug}&sub=${child.slug}`;
+        const staticItem = STATIC_ITEMS_BY_HREF.get(childHref);
+        return { href: childHref, label: child.name, meta: staticItem?.meta };
+      });
+      // If there are already groups, put these under a generic group
+      groups.push({ title: groups.length ? "More" : top.name, items });
+    }
+
+    result.push({
+      href,
+      label: top.name,
+      groups: groups.length ? groups : undefined,
+      footer: staticCat?.footer,
+      sale: staticCat?.sale,
     });
   }
-  return out;
+
+  // Append non-category static nav items (Bespoke, Premium, View All, Sale)
+  // that don't correspond to a DB category.
+  const dbSlugs = new Set(topLevel.map((r) => r.slug));
+  for (const cat of NAV) {
+    const slug = hrefToSlug(cat.href);
+    // Keep items that aren't DB-driven categories (bespoke page, premium, sale, view all)
+    if (!slug || !dbSlugs.has(slug)) {
+      // Avoid duplicates if DB has "all" or "sale" as categories
+      if (!result.some((r) => r.href === cat.href)) {
+        result.push(cat);
+      }
+    }
+  }
+
+  return result;
 }
 
-// Collection-page heading. Title reflects a genuine rename; "stand" (marketing
-// sub-copy) and the `empty` flag always come from the static metadata, which
-// has no DB column (per the approved scoped decision).
+// ── Collection-page heading (unchanged logic) ────────────────────────────
 export async function getCategoryMeta(cat: string, sub: string): Promise<SubcatMeta> {
   const fromSub = sub ? SUBCATS[cat]?.[sub] : undefined;
   const base: SubcatMeta = fromSub ?? CAT_DATA[cat] ?? { title: "Collection", stand: "" };
-  const db = await loadDbCats();
-  if (db.size === 0) return base;
+
+  // Check DB for renamed category
   const slug = sub || cat;
-  const gender = sub ? cat : null;
-  const def = defaultTitle(slug, gender);
-  const hit = db.get(`${gender ?? ""}:${slug}`);
-  if (hit && def !== undefined && hit.name && hit.name !== def) {
-    return { ...base, title: hit.name };
+  const rows = await _dbCatRows();
+  const match = rows.find((r) => r.slug === slug && r.enabled !== 0);
+  if (match) {
+    const defaultTitle = fromSub?.title ?? CAT_DATA[cat]?.title;
+    if (match.name !== defaultTitle) {
+      return { ...base, title: match.name };
+    }
   }
   return base;
 }
