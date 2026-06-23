@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "../../../lib/admin/session";
 import { sql } from "../../../lib/admin/db";
+import { bustInventory } from "../../../lib/storefront/cache";
 
 export async function updateStockAction(fd: FormData): Promise<void> {
   await requireUser("/studio/login");
@@ -17,6 +18,7 @@ export async function updateStockAction(fd: FormData): Promise<void> {
      ON CONFLICT (product_slug, size) DO UPDATE SET stock = ?, oos_flag = ?`,
     [slug, size, stock, stock === 0 ? 1 : 0, stock, stock === 0 ? 1 : 0],
   );
+  bustInventory();
   revalidatePath("/studio/inventory");
 }
 
@@ -41,6 +43,7 @@ export async function startTrackingAction(fd: FormData): Promise<void> {
     }
   });
 
+  bustInventory();
   revalidatePath("/studio/inventory");
   redirect("/studio/inventory?flash=Stock+tracking+started");
 }

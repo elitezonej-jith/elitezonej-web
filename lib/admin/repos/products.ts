@@ -186,12 +186,29 @@ export async function setInventory(
   rows: Array<{ size: string; stock: number; oos_flag: number }>,
 ): Promise<void> {
   await sql.tx(async (t) => {
-    await t.run("DELETE FROM inventory WHERE product_slug = ?", [slug]);
+    // UPSERT each row — preserves concurrent stock decrements that happened
+    // between page load and save, unlike the old DELETE + re-INSERT pattern.
+    const incomingSizes = new Set(rows.map((r) => r.size));
     for (const r of rows) {
       await t.run(
-        "INSERT INTO inventory (product_slug, size, stock, oos_flag) VALUES (?, ?, ?, ?)",
-        [slug, r.size, r.stock, r.oos_flag],
+        `INSERT INTO inventory (product_slug, size, stock, oos_flag)
+         VALUES (?, ?, ?, ?)
+         ON CONFLICT (product_slug, size) DO UPDATE SET stock = ?, oos_flag = ?`,
+        [slug, r.size, r.stock, r.oos_flag, r.stock, r.oos_flag],
       );
+    }
+    // Remove sizes that were explicitly dropped from the form
+    const existing = await t.all<{ size: string }>(
+      "SELECT size FROM inventory WHERE product_slug = ?",
+      [slug],
+    );
+    for (const e of existing) {
+      if (!incomingSizes.has(e.size)) {
+        await t.run(
+          "DELETE FROM inventory WHERE product_slug = ? AND size = ?",
+          [slug, e.size],
+        );
+      }
     }
   });
 }

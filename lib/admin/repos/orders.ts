@@ -2,7 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { sql } from "../db";
 import { upsertCustomer } from "./customers";
-import type { Order, OrderItem, OrderStatus } from "../types";
+import type { Order, OrderItem, OrderStatus, Courier } from "../types";
 import type { PricedLine, Pricing } from "../../storefront/checkout";
 
 export type OrderListRow = Order & { customer: string; email: string };
@@ -259,6 +259,11 @@ export async function fulfilOrderPaid(
           if (r.count === 0) {
             throw new Error(`Insufficient stock for ${it.product_slug} (size ${it.size ?? "—"}).`);
           }
+          // Sync oos_flag so admin UI reflects true state
+          await t.run(
+            "UPDATE inventory SET oos_flag = CASE WHEN stock <= 0 THEN 1 ELSE 0 END WHERE product_slug = ? AND size = ?",
+            [it.product_slug, it.size ?? ""],
+          );
         }
       }
 
@@ -294,6 +299,85 @@ export async function fulfilOrderPaid(
   } catch (err) {
     return { ok: false, error: (err as Error).message || "Could not fulfil order." };
   }
+}
+
+// ── Shipping / tracking ──────────────────────────────────────────────────────
+
+export async function listCouriers(): Promise<Courier[]> {
+  return sql.all<Courier>("SELECT code, name, url_pattern FROM couriers ORDER BY name", []);
+}
+
+/**
+ * Mark an order as shipped with courier tracking info.
+ * Validates: order exists, is in a shippable state, and tracking number is non-empty.
+ */
+export async function shipOrder(args: {
+  id: string;
+  courier_code: string;
+  tracking_number: string;
+  tracking_url_override?: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { id, courier_code, tracking_number, tracking_url_override } = args;
+
+  if (!tracking_number.trim()) {
+    return { ok: false, error: "Tracking number (AWB) is required." };
+  }
+
+  // Resolve courier name and tracking URL
+  const courier = await sql.get<Courier>(
+    "SELECT code, name, url_pattern FROM couriers WHERE code = ?", [courier_code],
+  );
+  if (!courier) {
+    return { ok: false, error: `Unknown courier: "${courier_code}".` };
+  }
+  let tracking_url = tracking_url_override?.trim() || "";
+  if (!tracking_url && courier.url_pattern) {
+    tracking_url = courier.url_pattern.replace("{awb}", encodeURIComponent(tracking_number.trim()));
+  }
+
+  // Atomic: only transitions if status is still shippable (prevents TOCTOU race)
+  const result = await sql.run(
+    `UPDATE orders SET
+       status = 'shipped',
+       courier_name = ?,
+       tracking_number = ?,
+       tracking_url = ?,
+       shipped_at = CURRENT_TIMESTAMP,
+       updated_at = CURRENT_TIMESTAMP
+     WHERE id = ? AND status IN ('confirmed', 'in_atelier')`,
+    [courier.name, tracking_number.trim(), tracking_url || null, id],
+  );
+
+  if (result.count === 0) {
+    const order = await sql.get<{ status: string }>("SELECT status FROM orders WHERE id = ?", [id]);
+    if (!order) return { ok: false, error: "Order not found." };
+    return { ok: false, error: `Cannot ship — order status is "${order.status}". Must be confirmed or in atelier.` };
+  }
+
+  return { ok: true };
+}
+
+/**
+ * Mark an order as delivered. Only valid from "shipped" status.
+ */
+export async function markDelivered(id: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  // Atomic: only transitions if status is still 'shipped' (prevents TOCTOU race)
+  const result = await sql.run(
+    `UPDATE orders SET
+       status = 'fulfilled',
+       delivered_at = CURRENT_TIMESTAMP,
+       updated_at = CURRENT_TIMESTAMP
+     WHERE id = ? AND status = 'shipped'`,
+    [id],
+  );
+
+  if (result.count === 0) {
+    const order = await sql.get<{ status: string }>("SELECT status FROM orders WHERE id = ?", [id]);
+    if (!order) return { ok: false, error: "Order not found." };
+    return { ok: false, error: `Cannot mark as delivered — order status is "${order.status}".` };
+  }
+
+  return { ok: true };
 }
 
 /**
