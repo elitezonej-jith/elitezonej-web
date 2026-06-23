@@ -303,23 +303,7 @@ export default function CollectionClient({
           ) : (
             paged.map((p, i) => (
               <Reveal as="div" key={p.slug} className="pcard qa-host" delay={(i % 4) as 0 | 1 | 2 | 3}>
-                <div className="plate">
-                  <Link href={`/products/${p.slug}`} aria-label={p.name}>
-                    <Image className="primary" src={p.thumbnail || p.images?.[0] || `/generated/${p.slug}/01-front.webp`} alt={`${p.name} front`} fill sizes="(max-width: 720px) 50vw, 33vw" priority={i === 0} loading={i === 0 ? "eager" : "lazy"} />
-                    <Image className="alt" src={p.images?.[1] || `/generated/${p.slug}/02-overview.webp`} alt={`${p.name} overview`} fill sizes="(max-width: 720px) 50vw, 33vw" loading="lazy" />
-                  </Link>
-                  {(p.badge || p.salePrice || p.isNewArrival || p.isFeatured || p.isTrending) && (
-                    <div className="badge-stack">
-                      {p.salePrice && <span className="badge badge-sale t-mono-xs">Sale</span>}
-                      {p.badge && p.badge !== "Sale" && <span className="badge badge-new t-mono-xs">{p.badge}</span>}
-                      {!p.badge && p.isNewArrival && <span className="badge badge-new t-mono-xs">New</span>}
-                      {!p.badge && !p.isNewArrival && p.isFeatured && <span className="badge badge-new t-mono-xs">Featured</span>}
-                      {!p.badge && !p.isNewArrival && !p.isFeatured && p.isTrending && <span className="badge badge-new t-mono-xs">Trending</span>}
-                    </div>
-                  )}
-                  <WishlistButton slug={p.slug} name={p.name} />
-                  <QuickAddButton product={p} />
-                </div>
+                <PlateWithLoad slug={p.slug} name={p.name} thumbnail={p.thumbnail} images={p.images} priority={i === 0} product={p} />
                 <Link href={`/products/${p.slug}`} className="meta-link">
                   <div className="meta">
                     <h3 className="name">{p.name}</h3>
@@ -348,6 +332,32 @@ export default function CollectionClient({
         )}
       </section>
     </>
+  );
+}
+
+function PlateWithLoad({ slug, name, thumbnail, images, priority, product }: { slug: string; name: string; thumbnail?: string | null; images?: string[]; priority: boolean; product: Product }) {
+  const [loaded, setLoaded] = useState(false);
+  const primary = thumbnail || images?.[0] || `/generated/${slug}/01-front.webp`;
+  const alt = images?.[1] || `/generated/${slug}/02-overview.webp`;
+  const p = product;
+  return (
+    <div className="plate" data-loaded={loaded || undefined}>
+      <Link href={`/products/${slug}`} aria-label={name}>
+        <Image className="primary" src={primary} alt={`${name} front`} fill sizes="(max-width: 720px) 50vw, 33vw" priority={priority} loading={priority ? "eager" : "lazy"} onLoad={() => setLoaded(true)} />
+        <Image className="alt" src={alt} alt={`${name} overview`} fill sizes="(max-width: 720px) 50vw, 33vw" loading="lazy" />
+      </Link>
+      {(p.badge || p.salePrice || p.isNewArrival || p.isFeatured || p.isTrending) && (
+        <div className="badge-stack">
+          {p.salePrice && <span className="badge badge-sale t-mono-xs">Sale</span>}
+          {p.badge && p.badge !== "Sale" && <span className="badge badge-new t-mono-xs">{p.badge}</span>}
+          {!p.badge && p.isNewArrival && <span className="badge badge-new t-mono-xs">New</span>}
+          {!p.badge && !p.isNewArrival && p.isFeatured && <span className="badge badge-new t-mono-xs">Featured</span>}
+          {!p.badge && !p.isNewArrival && !p.isFeatured && p.isTrending && <span className="badge badge-new t-mono-xs">Trending</span>}
+        </div>
+      )}
+      <WishlistButton slug={slug} name={name} />
+      <QuickAddButton product={p} />
+    </div>
   );
 }
 

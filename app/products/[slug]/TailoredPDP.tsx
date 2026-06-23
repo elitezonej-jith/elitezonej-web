@@ -300,22 +300,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
           <div className="grid">
             {others.map((p, i) => (
               <Reveal as="div" key={p.slug} className="pcard" delay={i as 0 | 1 | 2}>
-                <div className="plate" style={{ position: "relative" }}>
-                  <a
-                    href={`/products/${p.slug}`}
-                    aria-label={p.name}
-                    onClick={(e) => { e.preventDefault(); setCurrentSlug(p.slug); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                  >
-                    <Image
-                      src={p.thumbnail || p.images?.[0] || imgSrc(p.slug, "01-front")}
-                      alt={p.name}
-                      fill
-                      sizes="(max-width: 720px) 100vw, 33vw"
-                      loading="lazy"
-                    />
-                  </a>
-                  <WishlistButton slug={p.slug} name={p.name} />
-                </div>
+                <PdpPlate slug={p.slug} name={p.name} src={p.thumbnail || p.images?.[0] || imgSrc(p.slug, "01-front")} onNav={() => { setCurrentSlug(p.slug); window.scrollTo({ top: 0, behavior: "smooth" }); }} />
                 <a
                   href={`/products/${p.slug}`}
                   className="meta-link"
@@ -357,5 +342,17 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
         </button>
       </div>
     </>
+  );
+}
+
+function PdpPlate({ slug, name, src, onNav }: { slug: string; name: string; src: string; onNav: () => void }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="plate" data-loaded={loaded || undefined} style={{ position: "relative" }}>
+      <a href={`/products/${slug}`} aria-label={name} onClick={(e) => { e.preventDefault(); onNav(); }}>
+        <Image className="primary" src={src} alt={name} fill sizes="(max-width: 720px) 100vw, 33vw" loading="lazy" onLoad={() => setLoaded(true)} />
+      </a>
+      <WishlistButton slug={slug} name={name} />
+    </div>
   );
 }
