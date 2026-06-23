@@ -25,6 +25,7 @@ const SCHEMA_V5_PATH = path.resolve(process.cwd(), "lib/admin/schema-v5.sql");
 const SCHEMA_V6_PATH = path.resolve(process.cwd(), "lib/admin/schema-v6.sql");
 const SCHEMA_V7_PATH = path.resolve(process.cwd(), "lib/admin/schema-v7.sql");
 const SCHEMA_V8_PATH = path.resolve(process.cwd(), "lib/admin/schema-v8.sql");
+const SCHEMA_V9_PATH = path.resolve(process.cwd(), "lib/admin/schema-v9.sql");
 
 // Read schema files once at module load instead of on every open() — keeps
 // synchronous disk I/O off the request hot path on serverless cold starts.
@@ -45,6 +46,7 @@ const SCHEMA_V5_STATEMENTS = parseStatements(SCHEMA_V5_PATH);
 const SCHEMA_V6_STATEMENTS = parseStatements(SCHEMA_V6_PATH);
 const SCHEMA_V7_STATEMENTS = parseStatements(SCHEMA_V7_PATH);
 const SCHEMA_V8_STATEMENTS = parseStatements(SCHEMA_V8_PATH);
+const SCHEMA_V9_STATEMENTS = parseStatements(SCHEMA_V9_PATH);
 
 function hasColumn(db: Database.Database, table: string, column: string): boolean {
   try {
@@ -75,18 +77,30 @@ function applyAdditive(db: Database.Database, statements: string[], tag: string)
 }
 
 function ensureDefaultAdmin(db: Database.Database): void {
-  // Seed owner and staff accounts — only if they don't already exist.
-  const ownerPw = process.env.ADMIN_BOOTSTRAP_PASSWORD ?? "Admin@123";
-  const ownerHash = bcrypt.hashSync(ownerPw, 12).replace(/^\$2b\$/, "$2a$");
-  db.prepare(
-    `INSERT OR IGNORE INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'owner')`,
-  ).run(DEFAULT_ADMIN_EMAIL, ownerHash, DEFAULT_ADMIN_NAME);
+  // Skip entirely if both accounts already exist — avoids expensive bcrypt
+  // hashing (~750ms per hash at cost 12) on every DB open / hot-reload.
+  const existing = db.prepare(
+    `SELECT COUNT(*) as n FROM users WHERE email IN (?, ?)`,
+  ).get(DEFAULT_ADMIN_EMAIL, DEFAULT_STAFF_EMAIL) as { n: number };
+  if (existing.n >= 2) return;
 
-  const staffPw = process.env.STAFF_BOOTSTRAP_PASSWORD ?? "Studio@123";
-  const staffHash = bcrypt.hashSync(staffPw, 12).replace(/^\$2b\$/, "$2a$");
-  db.prepare(
-    `INSERT OR IGNORE INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'staff')`,
-  ).run(DEFAULT_STAFF_EMAIL, staffHash, DEFAULT_STAFF_NAME);
+  const ownerExists = db.prepare("SELECT 1 FROM users WHERE email = ?").get(DEFAULT_ADMIN_EMAIL);
+  if (!ownerExists) {
+    const ownerPw = process.env.ADMIN_BOOTSTRAP_PASSWORD ?? "Admin@123";
+    const ownerHash = bcrypt.hashSync(ownerPw, 12).replace(/^\$2b\$/, "$2a$");
+    db.prepare(
+      `INSERT OR IGNORE INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'owner')`,
+    ).run(DEFAULT_ADMIN_EMAIL, ownerHash, DEFAULT_ADMIN_NAME);
+  }
+
+  const staffExists = db.prepare("SELECT 1 FROM users WHERE email = ?").get(DEFAULT_STAFF_EMAIL);
+  if (!staffExists) {
+    const staffPw = process.env.STAFF_BOOTSTRAP_PASSWORD ?? "Studio@123";
+    const staffHash = bcrypt.hashSync(staffPw, 12).replace(/^\$2b\$/, "$2a$");
+    db.prepare(
+      `INSERT OR IGNORE INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'staff')`,
+    ).run(DEFAULT_STAFF_EMAIL, staffHash, DEFAULT_STAFF_NAME);
+  }
 }
 
 // Studio-defaults seed version tracking. The parity homepage seed lives in
@@ -192,6 +206,7 @@ function open(): Database.Database {
   applyAdditive(db, SCHEMA_V6_STATEMENTS, "schema-v6");
   applyAdditive(db, SCHEMA_V7_STATEMENTS, "schema-v7");
   applyAdditive(db, SCHEMA_V8_STATEMENTS, "schema-v8");
+  applyAdditive(db, SCHEMA_V9_STATEMENTS, "schema-v9");
 
   // Seed the static owner account if missing — runs before catalog seed so
   // the first /admin visit can log straight in without going through /setup.
@@ -381,21 +396,22 @@ export async function isDurablePersistence(): Promise<boolean> {
  * Idempotent — safe to call on every cold start.
  */
 export async function ensureDefaultUsersAsync(): Promise<void> {
-  const ownerPw = process.env.ADMIN_BOOTSTRAP_PASSWORD ?? "Admin@123";
-  const staffPw = process.env.STAFF_BOOTSTRAP_PASSWORD ?? "Studio@123";
-  const ownerHash = bcrypt.hashSync(ownerPw, 12).replace(/^\$2b\$/, "$2a$");
-  const staffHash = bcrypt.hashSync(staffPw, 12).replace(/^\$2b\$/, "$2a$");
-
-  // Only insert if missing — never overwrite an existing password
+  // Fast-path: skip if both accounts already exist (avoids ~1.5s of bcrypt).
   const existingOwner = await sql.get<{ id: number }>("SELECT id FROM users WHERE email = ?", [DEFAULT_ADMIN_EMAIL]);
+  const existingStaff = await sql.get<{ id: number }>("SELECT id FROM users WHERE email = ?", [DEFAULT_STAFF_EMAIL]);
+  if (existingOwner && existingStaff) return;
+
   if (!existingOwner) {
+    const ownerPw = process.env.ADMIN_BOOTSTRAP_PASSWORD ?? "Admin@123";
+    const ownerHash = bcrypt.hashSync(ownerPw, 12).replace(/^\$2b\$/, "$2a$");
     await sql.run(
       `INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'owner')`,
       [DEFAULT_ADMIN_EMAIL, ownerHash, DEFAULT_ADMIN_NAME],
     );
   }
-  const existingStaff = await sql.get<{ id: number }>("SELECT id FROM users WHERE email = ?", [DEFAULT_STAFF_EMAIL]);
   if (!existingStaff) {
+    const staffPw = process.env.STAFF_BOOTSTRAP_PASSWORD ?? "Studio@123";
+    const staffHash = bcrypt.hashSync(staffPw, 12).replace(/^\$2b\$/, "$2a$");
     await sql.run(
       `INSERT INTO users (email, password_hash, name, role) VALUES (?, ?, ?, 'staff')`,
       [DEFAULT_STAFF_EMAIL, staffHash, DEFAULT_STAFF_NAME],

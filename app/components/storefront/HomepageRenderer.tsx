@@ -10,19 +10,22 @@ import { listBlocks, type HomepageBlockResolved } from "../../../lib/admin/repos
 import { listFlashSales } from "../../../lib/admin/repos/flash-sales";
 import { listBanners } from "../../../lib/admin/repos/banners";
 import { getSiteSettings } from "../../../lib/storefront/site-settings";
+import { listProductsForPage } from "@/lib/storefront/catalogue";
+import type { Product as LegacyProduct } from "@/lib/products";
 
 // Cache the four homepage reads for 60s, keyed by the "homepage" tag.
 // Studio mutations call revalidateTag("homepage") (see app/studio/actions/homepage.ts)
 // so editor changes still appear on the next navigation.
 const getHomepageData = unstable_cache(
   async () => {
-    const [blocks, liveSales, banners, settings] = await Promise.all([
+    const [blocks, liveSales, banners, settings, products] = await Promise.all([
       listBlocks({ onlyEnabled: true }),
       listFlashSales({ onlyLive: true }),
       listBanners({ onlyPublished: true }),
       getSiteSettings(),
+      listProductsForPage(),
     ]);
-    return { blocks, liveSale: liveSales[0], banners, settings };
+    return { blocks, liveSale: liveSales[0], banners, settings, products };
   },
   ["homepage-data"],
   { revalidate: 60, tags: ["homepage"] },
@@ -47,7 +50,7 @@ import PromoModalBlock from "./blocks/PromoModalBlock";
 type RC = Record<string, unknown>;
 
 export default async function HomepageRenderer() {
-  const { blocks, liveSale, banners, settings } = await getHomepageData();
+  const { blocks, liveSale, banners, settings, products } = await getHomepageData();
   const { brandName } = settings;
 
   const announce = blocks.filter((b) => b.type === "announce_bar");
@@ -66,11 +69,11 @@ export default async function HomepageRenderer() {
     <>
       {liveSale && <FlashSaleBanner sale={liveSale} />}
       {announce.map((b) => (
-        <Block key={b.id} block={b} banners={banners} />
+        <Block key={b.id} block={b} banners={banners} products={products} />
       ))}
       <Header />
       {promos.map((b) => (
-        <Block key={b.id} block={b} banners={banners} />
+        <Block key={b.id} block={b} banners={banners} products={products} />
       ))}
       <main id="main-content">
         <h1
@@ -89,7 +92,7 @@ export default async function HomepageRenderer() {
           {brandName} — Bespoke tailoring &amp; ready-to-wear
         </h1>
         {rest.map((b) => (
-          <Block key={b.id} block={b} banners={banners} />
+          <Block key={b.id} block={b} banners={banners} products={products} />
         ))}
       </main>
       <Footer />
@@ -98,10 +101,11 @@ export default async function HomepageRenderer() {
 }
 
 function Block({
-  block, banners,
+  block, banners, products,
 }: {
   block: HomepageBlockResolved;
   banners: Awaited<ReturnType<typeof listBanners>>;
+  products: LegacyProduct[];
 }) {
   const cfg = block.config as RC;
   switch (block.type) {
@@ -130,6 +134,7 @@ function Block({
           category={f.category ? String(f.category) : undefined}
           premium={f.premium ? true : undefined}
           limit={Number(f.limit ?? 6)}
+          allProducts={products}
         />
       );
     }
@@ -148,6 +153,7 @@ function Block({
           gender={f.gender ? String(f.gender) : undefined}
           occasion={f.occasion ? String(f.occasion) : undefined}
           limit={Number(f.limit ?? 6)}
+          allProducts={products}
         />
       );
     }

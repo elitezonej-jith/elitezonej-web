@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getOrder, getOrderItems } from "../../../../lib/admin/repos/orders";
+import { getOrder, getOrderItems, listCouriers } from "../../../../lib/admin/repos/orders";
 import PageHead from "../../components/PageHead";
 import StatusTag from "../../components/StatusTag";
 import OrderControls from "./OrderControls";
@@ -17,6 +17,7 @@ export default async function OrderDetailPage({ params }: Params) {
   const order = await getOrder(id);
   if (!order) notFound();
   const items = await getOrderItems(id);
+  const couriers = await listCouriers();
   return (
     <div className="stu-page">
       <PageHead title={`Order #${order.id}`} sub={`${order.customer} · ${dateTime(order.created_at)}`}
@@ -63,6 +64,8 @@ export default async function OrderDetailPage({ params }: Params) {
             id={order.id}
             status={order.status}
             notes={order.notes ?? ""}
+            couriers={couriers.map(c => ({ code: c.code, name: c.name }))}
+            tracking={{ courier_name: order.courier_name, tracking_number: order.tracking_number, tracking_url: order.tracking_url, shipped_at: order.shipped_at }}
             items={items.map(it => ({ product_name: it.product_name ?? it.product_slug, size: it.size, qty: it.qty, unit_price: it.unit_price }))}
             orderSummary={`Order #${order.id}\n${order.customer} · ${order.email}\n${order.phone ?? ""}\n\nItems:\n${items.map(it => `• ${it.product_name ?? it.product_slug} (${it.size ?? "—"}) × ${it.qty} — ₹${it.unit_price * it.qty}`).join("\n")}\n\nTotal: ₹${order.total}\n\nShip to:\n${order.ship_name}\n${order.ship_line1}\n${order.ship_city}, ${order.ship_state} ${order.ship_pincode}`}
           />

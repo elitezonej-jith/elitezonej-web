@@ -98,6 +98,8 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
     };
   }, [p.slug]);
 
+  const [loaded, setLoaded] = useState(false);
+
   return (
     <div
       className="pcard qa-host"
@@ -105,7 +107,7 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
       data-active={active}
       onMouseEnter={() => setShowAlts(true)}
     >
-      <div className="plate">
+      <div className="plate" data-loaded={loaded || undefined}>
         <Link href={`/products/${p.slug}`} aria-label={p.name}>
           {VARIANTS.map((v, i) => {
             // Only the primary loads up front; alts render on hover/in-view.
@@ -120,6 +122,7 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
                 sizes="(max-width: 720px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 priority={priority && i === 0}
                 loading={priority && i === 0 ? "eager" : "lazy"}
+                onLoad={i === 0 ? () => setLoaded(true) : undefined}
               />
             );
           })}

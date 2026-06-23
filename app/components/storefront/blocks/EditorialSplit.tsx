@@ -1,10 +1,9 @@
 import EditorialSplitView from "../../EditorialSplit";
-import { listProductsForPage } from "@/lib/storefront/catalogue";
+import type { Product as LegacyProduct } from "@/lib/products";
 
-// Renders the real <EditorialSplit> (image one side, 6-up product grid the
-// other) from the LIVE DB catalogue (static-index ordered) with the same
-// gender/limit semantics as before.
-export default async function EditorialSplit({
+// Renders <EditorialSplit> using pre-fetched products passed from
+// HomepageRenderer (eliminates the N+1 — one fetch for the entire homepage).
+export default function EditorialSplit({
   title,
   ctaLabel,
   ctaHref,
@@ -16,6 +15,7 @@ export default async function EditorialSplit({
   occasion,
   category,
   limit,
+  allProducts,
 }: {
   title: string;
   ctaLabel: string;
@@ -28,8 +28,9 @@ export default async function EditorialSplit({
   occasion?: string;
   category?: string;
   limit?: number;
+  allProducts: LegacyProduct[];
 }) {
-  let products = await listProductsForPage();
+  let products = allProducts;
   if (gender) products = products.filter((p) => p.gender === gender);
   if (occasion) products = products.filter((p) => p.occasion === occasion);
   if (category) products = products.filter((p) => p.category === category);

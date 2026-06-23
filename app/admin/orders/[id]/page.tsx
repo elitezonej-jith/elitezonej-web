@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getOrder, getOrderItems } from "../../../../lib/admin/repos/orders";
+import { getOrder, getOrderItems, listCouriers } from "../../../../lib/admin/repos/orders";
 import PageHead from "../../components/PageHead";
 import EditorsNote from "../../components/EditorsNote";
 import StatusPill from "../../components/StatusPill";
@@ -19,6 +19,7 @@ export default async function OrderDetailPage({ params }: Params) {
   const order = await getOrder(id);
   if (!order) notFound();
   const items = await getOrderItems(id);
+  const couriers = await listCouriers();
 
   return (
     <div className="adm-page">
@@ -89,7 +90,10 @@ export default async function OrderDetailPage({ params }: Params) {
 
         <div className="adm-stack">
           <SectionRule kicker="Status" title="Atelier flow" />
-          <OrderControls id={order.id} status={order.status} notes={order.notes ?? ""} />
+          <OrderControls id={order.id} status={order.status} notes={order.notes ?? ""}
+            couriers={couriers.map(c => ({ code: c.code, name: c.name }))}
+            tracking={{ courier_name: order.courier_name, tracking_number: order.tracking_number, tracking_url: order.tracking_url, shipped_at: order.shipped_at }}
+          />
 
           <SectionRule kicker="Customer" title="On record" />
           <div className="adm-panel">

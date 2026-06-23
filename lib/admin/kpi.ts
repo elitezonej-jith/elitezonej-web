@@ -37,41 +37,41 @@ function isoDaysAgo(days: number): string {
 }
 
 export async function getKpis(): Promise<Kpis> {
-  const r30 = await sql.get<{ total: number | string; orders: number | string }>(
-    `SELECT COALESCE(SUM(total),0) as total, COUNT(*) as orders
-       FROM orders
-       WHERE status != 'cancelled' AND created_at >= ?`,
-    [isoDaysAgo(30)],
-  );
-
-  const r60 = await sql.get<{ total: number | string }>(
-    `SELECT COALESCE(SUM(total),0) as total
-       FROM orders
-       WHERE status != 'cancelled'
-         AND created_at >= ?
-         AND created_at <  ?`,
-    [isoDaysAgo(60), isoDaysAgo(30)],
-  );
-
-  const b30 = await sql.get<{ n: number | string }>(
-    `SELECT COUNT(*) as n FROM bookings WHERE created_at >= ?`,
-    [isoDaysAgo(30)],
-  );
-  const bNew = await sql.get<{ n: number | string }>(
-    `SELECT COUNT(*) as n FROM bookings WHERE status = 'new'`,
-  );
-
   const thrRow = await sql.get<{ value: string }>(
     "SELECT value FROM settings WHERE key = 'low_stock_threshold'",
   );
-  const thr = thrRow?.value ?? "3";
-  const lowStock = await sql.get<{ n: number | string }>(
-    `SELECT COUNT(*) as n FROM inventory WHERE stock <= ? AND oos_flag = 0`,
-    [Number(thr)],
-  );
-  const skus = await sql.get<{ n: number | string }>(
-    "SELECT COUNT(*) as n FROM products WHERE status='active'",
-  );
+  const thr = Number(thrRow?.value ?? "3");
+
+  const [r30, r60, b30, bNew, lowStock, skus] = await Promise.all([
+    sql.get<{ total: number | string; orders: number | string }>(
+      `SELECT COALESCE(SUM(total),0) as total, COUNT(*) as orders
+         FROM orders
+         WHERE status != 'cancelled' AND created_at >= ?`,
+      [isoDaysAgo(30)],
+    ),
+    sql.get<{ total: number | string }>(
+      `SELECT COALESCE(SUM(total),0) as total
+         FROM orders
+         WHERE status != 'cancelled'
+           AND created_at >= ?
+           AND created_at <  ?`,
+      [isoDaysAgo(60), isoDaysAgo(30)],
+    ),
+    sql.get<{ n: number | string }>(
+      `SELECT COUNT(*) as n FROM bookings WHERE created_at >= ?`,
+      [isoDaysAgo(30)],
+    ),
+    sql.get<{ n: number | string }>(
+      `SELECT COUNT(*) as n FROM bookings WHERE status = 'new'`,
+    ),
+    sql.get<{ n: number | string }>(
+      `SELECT COUNT(*) as n FROM inventory WHERE stock <= ? AND oos_flag = 0`,
+      [thr],
+    ),
+    sql.get<{ n: number | string }>(
+      "SELECT COUNT(*) as n FROM products WHERE status='active'",
+    ),
+  ]);
 
   const revenue30d = Number(r30?.total ?? 0);
   const orders30d = Number(r30?.orders ?? 0);

@@ -133,6 +133,18 @@ export type Order = {
   ship_state: string;
   ship_pincode: string;
   ship_country: string;
+  // Tracking (courier integration)
+  courier_name: string | null;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+};
+
+export type Courier = {
+  code: string;
+  name: string;
+  url_pattern: string;
 };
 
 export type Payment = {

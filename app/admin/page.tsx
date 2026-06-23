@@ -17,12 +17,14 @@ export const metadata = { title: "Atelier · Dashboard" };
 
 export default async function DashboardPage() {
   const me = await requireUser();
-  const kpis = await getKpis();
-  const sparkline = await getRevenueByDay(30);
-  const lowStock = await getLowStock(8);
-  const bookings = await getRecentBookings(5);
-  const top = await getTopSkus(30, 5);
-  const orders = await getRecentOrders(6);
+  const [kpis, sparkline, lowStock, bookings, top, orders] = await Promise.all([
+    getKpis(),
+    getRevenueByDay(30),
+    getLowStock(8),
+    getRecentBookings(5),
+    getTopSkus(30, 5),
+    getRecentOrders(6),
+  ]);
   const revDelta = deltaPct(kpis.revenue30d, kpis.revenue30dPrior);
   const noSalesYet = kpis.revenue30d === 0 && kpis.revenue30dPrior === 0;
 

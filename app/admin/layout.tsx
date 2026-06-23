@@ -33,12 +33,13 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     redirect("/studio");
   }
 
-  const counts = {
-    products: await countProducts({ kind: "tailored", status: "all" }),
-    fabrics: await countProducts({ kind: "fabric", status: "all" }),
-    bookingsNew: await countBookings({ status: "new" }),
-    orders: await countOrders(),
-  };
+  const [products, fabrics, bookingsNew, orders] = await Promise.all([
+    countProducts({ kind: "tailored", status: "all" }),
+    countProducts({ kind: "fabric", status: "all" }),
+    countBookings({ status: "new" }),
+    countOrders(),
+  ]);
+  const counts = { products, fabrics, bookingsNew, orders };
 
   return (
     <div className="adm-shell">

@@ -1,9 +1,9 @@
 import CarouselShowcase from "../../CarouselShowcase";
-import { listProductsForPage } from "@/lib/storefront/catalogue";
+import type { Product as LegacyProduct } from "@/lib/products";
 
-// Renders the real <CarouselShowcase> ("New In" / "Festive Edit" / "Premium" side-heading
-// product row) from the LIVE DB catalogue with gender/category/premium/limit semantics.
-export default async function ProductCarousel({
+// Renders <CarouselShowcase> using pre-fetched products passed from
+// HomepageRenderer (eliminates the N+1 — one fetch for the entire homepage).
+export default function ProductCarousel({
   title,
   ctaLabel,
   ctaHref,
@@ -12,6 +12,7 @@ export default async function ProductCarousel({
   category,
   premium,
   limit,
+  allProducts,
 }: {
   title: string;
   ctaLabel?: string;
@@ -21,8 +22,9 @@ export default async function ProductCarousel({
   category?: string;
   premium?: boolean;
   limit?: number;
+  allProducts: LegacyProduct[];
 }) {
-  let products = await listProductsForPage();
+  let products = allProducts;
   if (premium) products = products.filter((p) => p.isPremium);
   if (gender) products = products.filter((p) => p.gender === gender);
   if (category) products = products.filter((p) => p.category === category);

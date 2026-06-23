@@ -66,3 +66,64 @@
   font-family: var(--font-display); font-weight: 500; font-size: 16px; margin: 0 0 8px;
 }
 .od-shipping p { font-size: 14px; line-height: 1.6; color: var(--ink-2); margin: 0; }
+
+/* Order tracking timeline */
+.od-timeline {
+  display: flex; gap: 0; margin-bottom: 28px;
+  padding: 20px 0; border-bottom: 1px solid var(--paper-3);
+}
+.od-step {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  position: relative;
+}
+.od-step::before {
+  content: ""; position: absolute; top: 7px; left: -50%; right: 50%;
+  height: 2px; background: var(--paper-3);
+}
+.od-step:first-child::before { display: none; }
+.od-step--done::before { background: var(--accent, #1a1a1a); }
+.od-step__dot {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid var(--paper-3); background: var(--paper);
+  position: relative; z-index: 1;
+}
+.od-step--done .od-step__dot { border-color: var(--accent, #1a1a1a); background: var(--accent, #1a1a1a); }
+.od-step--active .od-step__dot { border-color: var(--accent, #1a1a1a); background: var(--paper); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #1a1a1a) 20%, transparent); }
+.od-step__label {
+  font-family: var(--font-mono); font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--ink-2); text-align: center;
+}
+.od-step--done .od-step__label,
+.od-step--active .od-step__label { color: var(--ink); }
+
+/* Tracking info card */
+.od-tracking {
+  padding: 16px 20px; margin-bottom: 24px;
+  border: 1px solid var(--paper-3); border-radius: 3px;
+  background: color-mix(in srgb, var(--accent, #1a1a1a) 3%, var(--paper));
+}
+.od-tracking h3 {
+  font-family: var(--font-display); font-weight: 500; font-size: 15px;
+  margin: 0 0 10px;
+}
+.od-tracking__details {
+  display: flex; flex-wrap: wrap; gap: 8px 20px;
+  font-size: 13px; margin-bottom: 12px;
+}
+.od-tracking__awb { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; }
+.od-tracking__date { font-size: 12px; color: var(--ink-2); }
+.od-tracking__btn {
+  display: inline-block; padding: 8px 16px;
+  font-family: var(--font-mono); font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  border: 1px solid var(--ink); color: var(--ink);
+  text-decoration: none; transition: all 0.15s;
+}
+.od-tracking__btn:hover { background: var(--ink); color: var(--paper); }
+
+@media (max-width: 480px) {
+  .od-timeline { gap: 4px; }
+  .od-step__label { font-size: 9px; letter-spacing: 0.04em; }
+  .od-tracking__details { flex-direction: column; gap: 4px; }
+}

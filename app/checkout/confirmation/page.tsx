@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { getOrder, getOrderItems } from "../../../lib/admin/repos/orders";
 import { saveAddressFromOrder } from "../../../lib/admin/repos/addresses";
 import { verifyOrderToken } from "../../../lib/storefront/checkout-token";
 import { getCurrentCustomer } from "../../../lib/storefront/session";
+import { CUSTOMER_SESSION_COOKIE, CUSTOMER_COOKIE_OPTIONS, startSession } from "../../../lib/storefront/auth";
 import { fmtINR } from "@/lib/format";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
@@ -26,6 +28,22 @@ export default async function ConfirmationPage({ searchParams }: Props) {
   const tokenOk = verifyOrderToken(o, t);
   const ownerOk = !!customer && order.customer_id === customer.id;
   if (!tokenOk && !ownerOk) notFound();
+
+  // Auto-session: if the visitor has a valid checkout token but no session,
+  // grant them a session now. They just paid — they own this email.
+  if (tokenOk && !customer && order.customer_id) {
+    try {
+      const h = await headers();
+      const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() || "local";
+      const ua = h.get("user-agent") || null;
+      const sess = await startSession(order.customer_id, ip, ua);
+      const c = await cookies();
+      c.set(CUSTOMER_SESSION_COOKIE, sess.id, {
+        ...CUSTOMER_COOKIE_OPTIONS,
+        expires: new Date(sess.expires_at),
+      });
+    } catch { /* non-critical: order is confirmed regardless */ }
+  }
 
   const items = await getOrderItems(o);
 
