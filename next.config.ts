@@ -12,18 +12,15 @@ const nextConfig: NextConfig = {
   // no longer OOMs the worker. Re-enabled to serve responsive variants
   // and modern formats per viewport.
   images: {
+    // Images are pre-compressed WebP (~83KB avg). Vercel Image Optimization
+    // quota is exceeded on Hobby plan — serve directly without transformation.
+    // Blob-hosted images bypass via the custom loader; local /generated images
+    // are already optimized at generation time.
+    unoptimized: true,
     formats: ["image/webp"],
-    deviceSizes: [640, 768, 1024, 1280, 1536, 1920],
-    imageSizes: [128, 256, 384],
-    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
-    // Allow next/image to optimise uploads served from Vercel Blob.
-    // Bucket subdomains follow `*.public.blob.vercel-storage.com`.
     remotePatterns: [
       { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
     ],
-    // Bypass the Image Optimization API for blob-hosted images (already
-    // WebP + compressed at upload time). This avoids consuming the Hobby
-    // plan's 5K/month transformation quota on pre-optimized files.
     loader: "custom",
     loaderFile: "./lib/image-loader.ts",
   },
