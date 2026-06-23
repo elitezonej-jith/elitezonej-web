@@ -21,7 +21,7 @@ type Cat = {
   image_path: string; enabled: number;
 };
 
-type Prod = { slug: string; name: string; category: string | null; sub: string | null };
+type Prod = { slug: string; name: string; category: string | null; sub: string | null; thumbnail: string | null };
 
 export default async function EditCategoryPage({ params, searchParams }: Params) {
   await requireUser("/studio/login");
@@ -41,14 +41,19 @@ export default async function EditCategoryPage({ params, searchParams }: Params)
 
   // Products mapped to this category (match on slug or sub)
   const mapped = await sql.all<Prod>(
-    "SELECT slug, name, category, sub FROM products WHERE LOWER(TRIM(sub)) = LOWER(?) OR (LOWER(TRIM(category)) = LOWER(?) AND (sub IS NULL OR TRIM(sub) = '' OR sub = '_'))",
+    `SELECT p.slug, p.name, p.category, p.sub,
+       (SELECT pi.image_path FROM product_images pi WHERE pi.product_slug = p.slug AND pi.is_thumbnail = 1 LIMIT 1) as thumbnail
+     FROM products p
+     WHERE LOWER(TRIM(p.sub)) = LOWER(?) OR (LOWER(TRIM(p.category)) = LOWER(?) AND (p.sub IS NULL OR TRIM(p.sub) = '' OR p.sub = '_'))`,
     [cat.slug, cat.slug],
   );
 
   // Products NOT in this category (available to assign)
   const mappedSlugs = mapped.map(p => p.slug);
   const available = await sql.all<Prod>(
-    "SELECT slug, name, category, sub FROM products WHERE status != 'archived' ORDER BY name ASC",
+    `SELECT p.slug, p.name, p.category, p.sub,
+       (SELECT pi.image_path FROM product_images pi WHERE pi.product_slug = p.slug AND pi.is_thumbnail = 1 LIMIT 1) as thumbnail
+     FROM products p WHERE p.status != 'archived' ORDER BY p.name ASC`,
   );
   const assignable = available.filter(p => !mappedSlugs.includes(p.slug));
 
