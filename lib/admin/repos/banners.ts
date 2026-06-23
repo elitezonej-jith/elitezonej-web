@@ -96,3 +96,10 @@ export async function reorderBanners(orderedIds: number[]): Promise<void> {
     }
   });
 }
+
+export async function countDraftBanners(): Promise<number> {
+  const r = await sql.get<{ n: number | string }>(
+    "SELECT COUNT(*) as n FROM banners WHERE status != 'published' OR enabled = 0",
+  );
+  return Number(r?.n ?? 0);
+}

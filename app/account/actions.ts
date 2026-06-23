@@ -18,6 +18,7 @@ import {
   destroyCustomerSession,
   purgeExpiredCustomerSessions,
 } from "../../lib/admin/repos/customer-auth";
+import { createAndSendOtp, verifyOtp } from "../../lib/storefront/otp";
 import { logAudit } from "../../lib/admin/repos/audit";
 import { sql } from "../../lib/admin/db";
 
@@ -190,4 +191,64 @@ export async function updateProfileAction(_prev: AuthState, fd: FormData): Promi
     entity_id: String(me.id),
   });
   return { ok: true };
+}
+
+// ── OTP (passwordless) login ──────────────────────────────────────────────
+
+export type OtpState = {
+  step: "email" | "code";
+  email?: string;
+  error?: string;
+};
+
+export async function sendOtpAction(_prev: OtpState, fd: FormData): Promise<OtpState> {
+  const email = String(fd.get("email") ?? "").trim().toLowerCase();
+  if (!email || !z.string().email().safeParse(email).success) {
+    return { step: "email", error: "Enter a valid email address." };
+  }
+
+  const { ip } = await reqMeta();
+  const rl = rateLimit(`otp:${ip}`, 6, 60 * 60 * 1000);
+  if (!rl.ok) return { step: "email", email, error: "Too many attempts. Try again later." };
+
+  const result = await createAndSendOtp(email);
+  if (!result.ok) return { step: "email", email, error: result.error };
+
+  return { step: "code", email };
+}
+
+export async function verifyOtpAction(_prev: OtpState, fd: FormData): Promise<OtpState> {
+  const email = String(fd.get("email") ?? "").trim().toLowerCase();
+  const code = String(fd.get("code") ?? "").trim();
+  const next = String(fd.get("next") ?? "");
+
+  if (!code || code.length !== 6) {
+    return { step: "code", email, error: "Enter the 6-digit code." };
+  }
+
+  const valid = await verifyOtp(email, code);
+  if (!valid) {
+    return { step: "code", email, error: "Invalid or expired code. Try again." };
+  }
+
+  // Find or create customer
+  let account = await getCustomerAuthByEmail(email);
+  if (!account) {
+    // Create a guest customer row (no password)
+    const r = await sql.run(
+      `INSERT INTO customers (email, first_name, last_name, phone) VALUES (?, '', '', NULL) RETURNING id`,
+      [email],
+    );
+    account = { id: Number(r.rows[0].id), email, first_name: "", last_name: "", phone: null, password_hash: null };
+  }
+
+  const { ip, ua } = await reqMeta();
+  await setSessionCookie(account.id, ip, ua);
+  await logAudit({
+    user_id: null,
+    action: "customer_otp_signin",
+    entity: "customer",
+    entity_id: String(account.id),
+  });
+  redirect(safeNextPath(next || "/account"));
 }

@@ -134,3 +134,25 @@ CREATE INDEX IF NOT EXISTS idx_media_folder ON media_assets(folder);
 
 -- Add original_image to products so the storefront can pick a default thumbnail
 ALTER TABLE products ADD COLUMN thumbnail_path TEXT NOT NULL DEFAULT '';
+
+-- Order tracking (courier integration)
+ALTER TABLE orders ADD COLUMN courier_name TEXT;
+ALTER TABLE orders ADD COLUMN tracking_number TEXT;
+ALTER TABLE orders ADD COLUMN tracking_url TEXT;
+ALTER TABLE orders ADD COLUMN shipped_at TEXT;
+ALTER TABLE orders ADD COLUMN delivered_at TEXT;
+
+-- Supported couriers lookup
+CREATE TABLE IF NOT EXISTS couriers (
+  code       TEXT PRIMARY KEY,
+  name       TEXT NOT NULL,
+  url_pattern TEXT NOT NULL  -- use {awb} as placeholder
+);
+INSERT OR IGNORE INTO couriers (code, name, url_pattern) VALUES ('delhivery', 'Delhivery', 'https://www.delhivery.com/track/package/{awb}');
+INSERT OR IGNORE INTO couriers (code, name, url_pattern) VALUES ('shiprocket', 'Shiprocket', 'https://shiprocket.co/tracking/{awb}');
+INSERT OR IGNORE INTO couriers (code, name, url_pattern) VALUES ('dtdc', 'DTDC', 'https://www.dtdc.in/tracking.asp?strCnno={awb}');
+INSERT OR IGNORE INTO couriers (code, name, url_pattern) VALUES ('bluedart', 'BlueDart', 'https://www.bluedart.com/tracking?handler=tnt&awb={awb}');
+INSERT OR IGNORE INTO couriers (code, name, url_pattern) VALUES ('indiapost', 'India Post', 'https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx');
+INSERT OR IGNORE INTO couriers (code, name, url_pattern) VALUES ('ecom', 'Ecom Express', 'https://www.ecomexpress.in/tracking/?awb_field={awb}');
+INSERT OR IGNORE INTO couriers (code, name, url_pattern) VALUES ('xpressbees', 'XpressBees', 'https://www.xpressbees.com/track?awb={awb}');
+INSERT OR IGNORE INTO couriers (code, name, url_pattern) VALUES ('other', 'Other', '');

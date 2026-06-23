@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { listProducts, countProducts } from "../../../lib/admin/repos/products";
-import { getThumbnail, fallbackImages } from "../../../lib/admin/repos/product-images";
-import { getMeta } from "../../../lib/admin/repos/product-meta";
+import { listImagesForSlugs, thumbnailFromImages, fallbackImages } from "../../../lib/admin/repos/product-images";
+import { getMetaForSlugs, emptyMeta } from "../../../lib/admin/repos/product-meta";
 import { sql } from "../../../lib/admin/db";
 import PageHead from "../components/PageHead";
 import StatusTag from "../components/StatusTag";
@@ -34,23 +34,34 @@ export default async function ProductsListPage({ searchParams }: SP) {
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
 
   const items = await listProducts({ q, status, kind, limit: PAGE, offset: (page - 1) * PAGE });
-  const total = await countProducts({ q, status, kind });
-  const rows = await Promise.all(
-    items.map(async (p) => {
-      const stockRows = await sql.all<{ stock: number }>(
-        "SELECT stock FROM inventory WHERE product_slug = ?", [p.slug]
-      );
-      const totalStock = stockRows.reduce((a, s) => a + Number(s.stock), 0);
-      const hasOos = stockRows.some(s => Number(s.stock) === 0);
-      return {
-        p,
-        thumb: (await getThumbnail(p.slug)) ?? fallbackImages(p.slug)[0] ?? "",
-        meta: await getMeta(p.slug),
-        totalStock,
-        hasOos,
-      };
-    }),
-  );
+  const slugs = items.map((p) => p.slug);
+  const [total, metaMap, imagesMap, stockRows] = await Promise.all([
+    countProducts({ q, status, kind }),
+    getMetaForSlugs(slugs),
+    listImagesForSlugs(slugs),
+    slugs.length > 0
+      ? sql.all<{ product_slug: string; stock: number }>(
+          `SELECT product_slug, stock FROM inventory WHERE product_slug IN (${slugs.map(() => "?").join(",")})`,
+          slugs,
+        )
+      : Promise.resolve([]),
+  ]);
+  // Group stock by slug
+  const stockBySlug = new Map<string, number[]>();
+  for (const r of stockRows) {
+    let arr = stockBySlug.get(r.product_slug);
+    if (!arr) { arr = []; stockBySlug.set(r.product_slug, arr); }
+    arr.push(Number(r.stock));
+  }
+  const rows = items.map((p) => {
+    const imgRows = imagesMap.get(p.slug) ?? [];
+    const thumb = thumbnailFromImages(imgRows) ?? fallbackImages(p.slug)[0] ?? "";
+    const meta = metaMap.get(p.slug) ?? emptyMeta(p.slug);
+    const stocks = stockBySlug.get(p.slug) ?? [];
+    const totalStock = stocks.reduce((a, s) => a + s, 0);
+    const hasOos = stocks.some((s) => s === 0);
+    return { p, thumb, meta, totalStock, hasOos };
+  });
   const pages = Math.max(1, Math.ceil(total / PAGE));
 
   const chips: Chip[] = [

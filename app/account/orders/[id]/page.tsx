@@ -13,12 +13,22 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: `Order ${id} — Elite Zone J` };
 }
 
+const STATUS_STEPS = ["confirmed", "in_atelier", "shipped", "fulfilled"] as const;
+const STATUS_LABELS: Record<string, string> = {
+  new: "Order placed",
+  confirmed: "Confirmed",
+  in_atelier: "In production",
+  shipped: "Shipped",
+  fulfilled: "Delivered",
+  cancelled: "Cancelled",
+};
+
 function statusLabel(s: string): string {
-  if (s === "new") return "Awaiting payment";
-  return s.charAt(0).toUpperCase() + s.slice(1);
+  return STATUS_LABELS[s] ?? s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function fmtDate(iso: string): string {
+function fmtDate(iso: string | null): string {
+  if (!iso) return "";
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
     ? ""
@@ -32,6 +42,8 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   if (!order || order.customer_id !== me.id) notFound();
 
   const items = await getOrderItems(id);
+  const isCancelled = order.status === "cancelled";
+  const currentStepIdx = STATUS_STEPS.indexOf(order.status as typeof STATUS_STEPS[number]);
 
   return (
     <>
@@ -46,6 +58,40 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
           <span>Placed {fmtDate(order.created_at)}</span>
           <span className="od-status">{statusLabel(order.status)}</span>
         </div>
+
+        {/* Progress timeline — only for non-cancelled orders that are past 'new' */}
+        {!isCancelled && order.status !== "new" && (
+          <section className="od-timeline">
+            {STATUS_STEPS.map((step, i) => {
+              const done = i <= currentStepIdx;
+              const active = i === currentStepIdx;
+              return (
+                <div key={step} className={`od-step${done ? " od-step--done" : ""}${active ? " od-step--active" : ""}`}>
+                  <div className="od-step__dot" />
+                  <span className="od-step__label">{STATUS_LABELS[step]}</span>
+                </div>
+              );
+            })}
+          </section>
+        )}
+
+        {/* Tracking info — visible when shipped or delivered */}
+        {order.courier_name && order.tracking_number && (
+          <section className="od-tracking">
+            <h3>Shipment tracking</h3>
+            <div className="od-tracking__details">
+              <span><strong>{order.courier_name}</strong></span>
+              <span className="od-tracking__awb">AWB: {order.tracking_number}</span>
+              {order.shipped_at && <span className="od-tracking__date">Shipped {fmtDate(order.shipped_at)}</span>}
+              {order.delivered_at && <span className="od-tracking__date">Delivered {fmtDate(order.delivered_at)}</span>}
+            </div>
+            {order.tracking_url && (
+              <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" className="od-tracking__btn">
+                Track package ↗
+              </a>
+            )}
+          </section>
+        )}
 
         <section className="od-items">
           {items.map((it) => (

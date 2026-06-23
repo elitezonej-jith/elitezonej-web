@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { getKpis, getRevenueByDay, getRecentBookings, getRecentOrders } from "../../lib/admin/kpi";
+import { getKpis, getRecentBookings, getRecentOrders } from "../../lib/admin/kpi";
 import { listProducts } from "../../lib/admin/repos/products";
 import { listBanners } from "../../lib/admin/repos/banners";
 import { listNotices } from "../../lib/admin/repos/notices";
 import { listPromotions } from "../../lib/admin/repos/promotions";
 import PageHead from "./components/PageHead";
 import StatusTag from "./components/StatusTag";
-import { rupees, rupeesShort, dateShort, deltaPct } from "../../lib/admin/format";
+import { rupees, dateShort, deltaPct } from "../../lib/admin/format";
 import {
   IconBag, IconCart, IconScissors, IconTag, IconImage, IconLayers, IconBell, IconSparkles, IconArrowRight, IconPlus,
 } from "./components/Icons";
@@ -18,18 +18,19 @@ export const metadata = { title: "Dashboard · Studio" };
 export default async function StudioDashboardPage() {
   const me = await requireUser("/studio/login");
   const isStaff = me.role === "staff";
-  const kpis = await getKpis();
+  const [kpis, recentProducts, banners, allNotices, allOffers, recentBookings, recentOrders] = await Promise.all([
+    getKpis(),
+    listProducts({ status: "all", limit: 6 }),
+    listBanners(),
+    listNotices(),
+    listPromotions(),
+    getRecentBookings(4),
+    getRecentOrders(4),
+  ]);
   const revDelta = deltaPct(kpis.revenue30d, kpis.revenue30dPrior);
   const noSalesYet = kpis.revenue30d === 0 && kpis.revenue30dPrior === 0;
-  const recentProducts = await listProducts({ status: "all", limit: 6 });
-  const banners = await listBanners();
-  const notices = (await listNotices()).slice(0, 3);
-  const offers = (await listPromotions()).slice(0, 3);
-  const recentBookings = await getRecentBookings(4);
-  const recentOrders = await getRecentOrders(4);
-  const sparkline = await getRevenueByDay(30);
-  const sparkSum = sparkline.reduce((a, p) => a + p.total, 0);
-  void sparkSum;
+  const notices = allNotices.slice(0, 3);
+  const offers = allOffers.slice(0, 3);
 
   return (
     <div className="stu-page">
@@ -229,5 +230,3 @@ function Row({ label, value, sub, href }: { label: string; value: string; sub: s
     </Link>
   );
 }
-
-void rupeesShort;
