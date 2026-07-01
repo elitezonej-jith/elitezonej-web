@@ -59,7 +59,7 @@ export default async function OrdersListPage({ searchParams }: SP) {
                       <td>{dateShort(o.created_at)}</td>
                       {!isStaff && <td className="stu-tbl__num">{rupees(o.total)}</td>}
                       <td><StatusTag status={o.status} /></td>
-                      <td><Link href={`/studio/orders/${o.id}`} className="stu-btn stu-btn--ghost stu-btn--sm">View</Link></td>
+                      <td><Link href={`/studio/orders/${o.id}`} className="stu-btn stu-btn--ghost stu-btn--sm">View</Link>{" "}<Link href={`/studio/orders/${o.id}/invoice`} className="stu-btn stu-btn--ghost stu-btn--sm" title="Download invoice">Invoice</Link></td>
                     </tr>
                   ))}
                 </tbody>
