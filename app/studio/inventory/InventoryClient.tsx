@@ -1,6 +1,7 @@
 "use client";
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import UndoToast, { type UndoEntry } from "./UndoToast";
+import KeyboardShortcutsModal from "./KeyboardShortcutsModal";
 import InventoryCard from "./InventoryCard";
 import StockCell from "./StockCell";
 import FabricCell from "./FabricCell";
@@ -61,6 +62,8 @@ export default function InventoryClient({
   const [density, setDensity] = useState<Density>("comfortable");
   const [page, setPage] = useState(1);
   const [undoEntry, setUndoEntry] = useState<UndoEntry | null>(null);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // Reset page when filters change
   useEffect(() => { setPage(1); }, [query, view, sort, kind]);
@@ -107,6 +110,55 @@ export default function InventoryClient({
   const from = (page - 1) * PAGE_SIZE + 1;
   const to = Math.min(page * PAGE_SIZE, filtered.length);
 
+  // ─── Global keyboard shortcuts ──────────────────────────────────────
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      const tag = (e.target as HTMLElement).tagName;
+      const isInput = ["INPUT", "TEXTAREA", "SELECT"].includes(tag);
+
+      // "/" focuses search (only when not in an input)
+      if (e.key === "/" && !isInput) {
+        e.preventDefault();
+        searchRef.current?.focus();
+        return;
+      }
+
+      // "?" shows shortcuts modal (only when not in an input)
+      if (e.key === "?" && !isInput) {
+        e.preventDefault();
+        setShowShortcuts(true);
+        return;
+      }
+
+      // Escape: if search is focused and has value → clear; else close modal
+      if (e.key === "Escape") {
+        if (showShortcuts) {
+          setShowShortcuts(false);
+          return;
+        }
+        if (document.activeElement === searchRef.current && query) {
+          e.preventDefault();
+          setQuery("");
+          searchRef.current?.blur();
+          return;
+        }
+      }
+
+      // ↑/↓ for page navigation (only when not in an input)
+      if (!isInput) {
+        if (e.key === "ArrowDown" && page < totalPages) {
+          e.preventDefault();
+          setPage(p => p + 1);
+        } else if (e.key === "ArrowUp" && page > 1) {
+          e.preventDefault();
+          setPage(p => p - 1);
+        }
+      }
+    }
+    document.addEventListener("keydown", handleKey);
+    return () => document.removeEventListener("keydown", handleKey);
+  }, [query, page, totalPages, showShortcuts]);
+
   const dismiss = useCallback(() => setUndoEntry(null), []);
 
   // ─── Density class ──────────────────────────────────────────────────
@@ -137,6 +189,7 @@ export default function InventoryClient({
         <div className="inv2-toolbar__search">
           <svg className="inv2-toolbar__search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
           <input
+            ref={searchRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -195,6 +248,9 @@ export default function InventoryClient({
           <span className="inv2-toolbar__pages-info">{filtered.length > 0 ? `${from}–${to} of ${filtered.length}` : "0 results"}</span>
           <button type="button" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="inv2-toolbar__page-btn" aria-label="Previous page">‹</button>
           <button type="button" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="inv2-toolbar__page-btn" aria-label="Next page">›</button>
+          <button type="button" onClick={() => setShowShortcuts(true)} className="inv2-toolbar__shortcuts-btn" title="Keyboard shortcuts (?)" aria-label="Show keyboard shortcuts">
+            <kbd>?</kbd>
+          </button>
         </div>
       </div>
 
@@ -202,14 +258,34 @@ export default function InventoryClient({
       <div className="inv2-list-wrap">
         {paged.length === 0 ? (
           <div className="inv2-empty">
-            <IconBox width={32} height={32} />
-            <p className="inv2-empty__title">
-              {query ? `No products match "${query}"` : "No products match your filters"}
-            </p>
-            <p className="inv2-empty__sub">Try adjusting your search or filter criteria</p>
+            {view === "oos" ? (
+              <>
+                <span className="inv2-empty__icon">🎉</span>
+                <p className="inv2-empty__title">No out-of-stock items</p>
+                <p className="inv2-empty__sub">Everything is stocked. Great job keeping inventory healthy!</p>
+              </>
+            ) : view === "low" ? (
+              <>
+                <span className="inv2-empty__icon">✅</span>
+                <p className="inv2-empty__title">No low-stock items</p>
+                <p className="inv2-empty__sub">All products are well-stocked right now.</p>
+              </>
+            ) : query ? (
+              <>
+                <IconBox width={32} height={32} />
+                <p className="inv2-empty__title">No results for &ldquo;{query}&rdquo;</p>
+                <p className="inv2-empty__sub">Try a different search term or check the spelling</p>
+              </>
+            ) : (
+              <>
+                <IconBox width={32} height={32} />
+                <p className="inv2-empty__title">No products match your filters</p>
+                <p className="inv2-empty__sub">Try adjusting your filter criteria</p>
+              </>
+            )}
             {(query || view !== "all" || kind) && (
               <button type="button" className="stu-btn stu-btn--ghost stu-btn--sm" onClick={() => { setQuery(""); setView("all"); setKind(""); }}>
-                Reset filters
+                Reset all filters
               </button>
             )}
           </div>
@@ -269,6 +345,7 @@ export default function InventoryClient({
       </div>
 
       <UndoToast entry={undoEntry} onDismiss={dismiss} />
+      <KeyboardShortcutsModal open={showShortcuts} onClose={() => setShowShortcuts(false)} />
     </div>
   );
 }

@@ -2165,3 +2165,104 @@ button:focus-visible,
 
 /* ── Disabled page button ────────────────────────────────────────── */
 .inv2-toolbar__page-btn:disabled { opacity: 0.3; pointer-events: none; }
+
+/* ── Phase 3: Keyboard Shortcuts Modal ───────────────────────────── */
+.inv2-shortcuts {
+  border: none;
+  border-radius: var(--stu-radius-lg);
+  padding: 0;
+  max-width: 420px;
+  width: 90vw;
+  box-shadow: var(--stu-shadow-lg);
+  background: var(--stu-surface);
+  color: var(--stu-text);
+}
+.inv2-shortcuts::backdrop { background: rgba(26,22,18,0.4); backdrop-filter: blur(2px); }
+.inv2-shortcuts__content { padding: 24px 28px; }
+.inv2-shortcuts__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.inv2-shortcuts__title { font-size: 16px; font-weight: 700; margin: 0; }
+.inv2-shortcuts__close { width: 28px; height: 28px; border-radius: 50%; border: none; background: var(--stu-surface-2); font-size: 16px; cursor: pointer; display: grid; place-items: center; color: var(--stu-text-3); }
+.inv2-shortcuts__close:hover { background: var(--stu-border); color: var(--stu-text); }
+.inv2-shortcuts__list { display: flex; flex-direction: column; gap: 10px; }
+.inv2-shortcuts__row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; }
+.inv2-shortcuts__keys { display: flex; align-items: center; gap: 4px; }
+.inv2-shortcuts__key {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: var(--stu-surface-2);
+  border: 1px solid var(--stu-border);
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--stu-text-2);
+  min-width: 24px;
+  text-align: center;
+}
+.inv2-shortcuts__plus { font-size: 11px; color: var(--stu-text-4); }
+.inv2-shortcuts__desc { font-size: 13px; color: var(--stu-text-2); }
+.inv2-shortcuts__hint { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--stu-border); font-size: 12px; color: var(--stu-text-3); text-align: center; }
+
+/* ── Shortcuts button in toolbar ─────────────────────────────────── */
+.inv2-toolbar__shortcuts-btn {
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  border-radius: var(--stu-radius-sm);
+  border: 1px solid var(--stu-border);
+  background: transparent;
+  cursor: pointer;
+  margin-left: 4px;
+  transition: all 120ms;
+}
+.inv2-toolbar__shortcuts-btn:hover { background: var(--stu-surface-2); border-color: var(--stu-border-strong); }
+.inv2-toolbar__shortcuts-btn kbd { font-family: ui-monospace, monospace; font-size: 11px; color: var(--stu-text-3); font-weight: 600; }
+
+/* ── Phase 3: Empty state icon ───────────────────────────────────── */
+.inv2-empty__icon { font-size: 36px; margin-bottom: 4px; }
+
+/* ── Phase 3: Microinteractions ──────────────────────────────────── */
+
+/* Card hover lift */
+.inv2-card { transition: transform 150ms var(--stu-ease), box-shadow 150ms var(--stu-ease), border-color 150ms var(--stu-ease); }
+.inv2-card:hover { transform: translateY(-2px); box-shadow: var(--stu-shadow); }
+
+/* Cell save pulse animation */
+@keyframes inv2-save-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(31,122,79,0.3); }
+  70% { box-shadow: 0 0 0 6px rgba(31,122,79,0); }
+  100% { box-shadow: 0 0 0 0 rgba(31,122,79,0); }
+}
+.inv2-cell__check { animation: inv2-pop 300ms ease, inv2-save-pulse 600ms ease; }
+
+/* Number transition on input value changes */
+.inv2-cell__input { transition: color 150ms ease; }
+
+/* Loading shimmer for cards while saving */
+@keyframes inv2-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.inv2-cell--saving {
+  background: linear-gradient(90deg, transparent 30%, rgba(255,255,255,0.4) 50%, transparent 70%);
+  background-size: 200% 100%;
+  animation: inv2-shimmer 1.2s ease-in-out infinite;
+}
+
+/* Hover elevation on cells */
+.inv2-cell { transition: transform 120ms var(--stu-ease), box-shadow 120ms var(--stu-ease), border-color 120ms var(--stu-ease); }
+
+/* KPI card hover */
+.inv2-kpi__card { transition: transform 180ms var(--stu-ease), box-shadow 180ms var(--stu-ease), border-color 180ms; }
+
+/* Filter pill press effect */
+.inv2-toolbar__pill { transition: all 100ms var(--stu-ease); }
+.inv2-toolbar__pill:active { transform: scale(0.96); }
+
+/* Reduced motion: disable all animations */
+@media (prefers-reduced-motion: reduce) {
+  .inv2-card, .inv2-cell, .inv2-kpi__card, .inv2-toolbar__pill { transition: none; transform: none; }
+  .inv2-card:hover { transform: none; }
+  .inv2-cell:hover { transform: none; }
+  .inv2-cell--saving { animation: none; background: transparent; }
+  .inv2-cell__check { animation: none; }
+}
