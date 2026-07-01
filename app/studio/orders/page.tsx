@@ -37,7 +37,9 @@ export default async function OrdersListPage({ searchParams }: SP) {
   ];
   return (
     <div className="stu-page">
-      <PageHead title="Orders" sub="Every customer purchase. Update status, add notes, see what's been bought." />
+      <PageHead title="Orders" sub="Every customer purchase. Update status, add notes, see what's been bought.">
+        <Link href="/studio/orders/new" className="stu-btn stu-btn--primary">+ Walk-in order</Link>
+      </PageHead>
       <FilterBar chips={chips} placeholder="Search by order id, name, email…" />
       <div className="stu-card">
         <div className="stu-card__body--flush">
