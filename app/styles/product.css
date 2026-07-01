@@ -172,6 +172,40 @@
   color: var(--ink-2);
   margin: 0;
 }
+
+/* Inline star rating row (TailoredPDP + FabricPDP) */
+.pdp-rating-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  margin: var(--s-2) 0;
+  text-decoration: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.pdp-rating-row:hover .pdp-rating-text {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pdp-rating-stars {
+  display: inline-flex;
+  gap: 1px;
+  font-size: 15px;
+  line-height: 1;
+}
+.pdp-star {
+  color: var(--rule);
+}
+.pdp-star.on {
+  color: var(--accent);
+}
+.pdp-rating-text {
+  font-family: var(--font-mono);
+  font-size: var(--t-mono-xs);
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+
 .price-row {
   display: flex;
   align-items: baseline;

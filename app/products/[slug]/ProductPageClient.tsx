@@ -43,8 +43,8 @@ export default function ProductPageClient({
       </div>
 
       {isFabric
-        ? <FabricPDP product={product} leadTimeDays={leadTimeDays} />
-        : <TailoredPDP product={product} setCurrentSlug={switchProduct} related={related} leadTimeDays={leadTimeDays} />}
+        ? <FabricPDP product={product} leadTimeDays={leadTimeDays} reviewAggregate={reviewAggregate} />
+        : <TailoredPDP product={product} setCurrentSlug={switchProduct} related={related} leadTimeDays={leadTimeDays} reviewAggregate={reviewAggregate} />}
 
       <div className="pdp-reviews-wrap">
         <ReviewsSection

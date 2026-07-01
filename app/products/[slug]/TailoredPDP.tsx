@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { Product } from "@/lib/products";
+import type { ReviewAggregate } from "@/lib/admin/repos/product-reviews";
 import { fmtINR } from "@/lib/format";
 import { ANGLES, ANGLE_LABELS, imgSrc } from "@/lib/images";
 import { useCart, lineId } from "../../components/CartProvider";
@@ -17,9 +18,10 @@ type Props = {
   setCurrentSlug: (slug: string) => void;
   related: Product[];
   leadTimeDays: number;
+  reviewAggregate: ReviewAggregate;
 };
 
-export default function TailoredPDP({ product, setCurrentSlug, related, leadTimeDays }: Props) {
+export default function TailoredPDP({ product, setCurrentSlug, related, leadTimeDays, reviewAggregate }: Props) {
   const deliveryRange = product.deliveryMinDays
     ? product.deliveryMaxDays
       ? `${product.deliveryMinDays}–${product.deliveryMaxDays} working days`
@@ -160,6 +162,19 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
             <WishlistButton slug={product.slug} name={product.name} size="md" onTopOfImage={false} />
           </div>
           <p className="editorial-line">{product.line}</p>
+
+          <a href="#reviews" className="pdp-rating-row" aria-label={reviewAggregate.count > 0 ? `Rated ${reviewAggregate.avg.toFixed(1)} out of 5, ${reviewAggregate.count} reviews` : "No reviews yet"}>
+            <span className="pdp-rating-stars" aria-hidden="true">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <span key={i} className={i <= Math.round(reviewAggregate.avg) ? "pdp-star on" : "pdp-star"}>★</span>
+              ))}
+            </span>
+            {reviewAggregate.count > 0 ? (
+              <span className="pdp-rating-text">{reviewAggregate.avg.toFixed(1)} ({reviewAggregate.count} review{reviewAggregate.count === 1 ? "" : "s"})</span>
+            ) : (
+              <span className="pdp-rating-text">No reviews yet</span>
+            )}
+          </a>
 
           <div className="price-row">
             {product.salePrice ? (

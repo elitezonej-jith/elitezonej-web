@@ -56,7 +56,7 @@ export default function ReviewsSection({
   const [rating, setRating] = useState(5);
 
   return (
-    <section className="rv">
+    <section className="rv" id="reviews">
       <header className="rv-head">
         <h3>Reviews</h3>
         {aggregate.count > 0 ? (
@@ -74,7 +74,10 @@ export default function ReviewsSection({
             </span>
           </div>
         ) : (
-          <p className="rv-empty">No reviews yet — be the first.</p>
+          <div className="rv-summary rv-summary--empty">
+            <Stars value={0} size={18} ariaLabel="No reviews yet — 0 out of 5 stars" />
+            <span className="rv-empty-text">No reviews yet — be the first to share your experience.</span>
+          </div>
         )}
       </header>
 
@@ -200,6 +203,15 @@ export default function ReviewsSection({
         }
         .rv-empty {
           margin: 0;
+          color: var(--ink-3);
+          font-style: italic;
+        }
+        .rv-summary--empty {
+          gap: var(--s-2);
+        }
+        .rv-empty-text {
+          font-family: var(--font-mono);
+          font-size: var(--t-mono-xs);
           color: var(--ink-3);
           font-style: italic;
         }
