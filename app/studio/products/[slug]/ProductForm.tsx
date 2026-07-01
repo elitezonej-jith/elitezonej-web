@@ -6,6 +6,7 @@ import ImageUploader from "../../components/ImageUploader";
 import { useFormGuard } from "../../components/useFormGuard";
 import CategoryPicker from "./CategoryPicker";
 import FilterAttributes from "./FilterAttributes";
+import SizeStockEditor, { type SizeStockRow } from "./SizeStockEditor";
 import type { Product } from "../../../../lib/admin/types";
 import type { ProductMeta } from "../../../../lib/admin/repos/product-meta";
 
@@ -16,20 +17,22 @@ const initial: ProductSaveState = {};
 
 export default function ProductForm({
   mode, product, meta, categories = [], filters = [],
+  inventory = [],
 }: {
   mode: "new" | "edit";
   product?: Product;
   meta?: ProductMeta;
   categories?: Cat[];
   filters?: FilterDef[];
+  inventory?: SizeStockRow[];
 }) {
   const [state, action, pending] = useActionState(saveProductAction, initial);
   const [name, setName] = useState(product?.name ?? "");
   const [seoOpen, setSeoOpen] = useState(false);
   const [images, setImages] = useState<string[]>([]);
+  const [sizeStockRows, setSizeStockRows] = useState<SizeStockRow[]>(inventory);
   const { formRef, markDirty } = useFormGuard();
   const slugDerived = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-  const sizes = product?.sizes?.join("\n") ?? "";
   const features = product?.features?.join("\n") ?? "";
   const spec = product?.spec?.map(([k, v]) => `${k}: ${v}`).join("\n") ?? "";
 
@@ -134,22 +137,30 @@ export default function ProductForm({
             </div>
           </section>
 
-          {/* Sizes & options */}
+          {/* Sizes & stock */}
           <section className="stu-card">
-            <header className="stu-card__head"><h3>Sizes & details</h3></header>
+            <header className="stu-card__head"><h3>Sizes &amp; stock</h3></header>
             <div className="stu-card__body">
-              <div className="stu-row">
-                <label className="stu-field">
-                  <span className="stu-field__label">Available sizes <span className="stu-field__hint">(one per line, add -oos for out of stock)</span></span>
-                  <textarea name="sizes" defaultValue={sizes} className="stu-textarea" rows={5}
-                            placeholder={"36\n38\n40\n42-oos\n44"} />
-                </label>
-                <label className="stu-field">
-                  <span className="stu-field__label">Highlights <span className="stu-field__hint">(bullet points, one per line)</span></span>
-                  <textarea name="features" defaultValue={features} className="stu-textarea" rows={5}
-                            placeholder={"Half-canvas construction\nHand-padded lapels\nSide adjusters"} />
-                </label>
-              </div>
+              {/* Hidden inputs: derived sizes (for products.sizes_json) and structured inventory */}
+              <input type="hidden" name="sizes" value={sizeStockRows.map(r => r.size).filter(Boolean).join("\n")} />
+              <input type="hidden" name="inventory_json" value={JSON.stringify(sizeStockRows.filter(r => r.size.trim()))} />
+
+              <SizeStockEditor
+                initial={inventory}
+                onChange={(rows) => { setSizeStockRows(rows); markDirty(); }}
+              />
+            </div>
+          </section>
+
+          {/* Highlights & specs */}
+          <section className="stu-card">
+            <header className="stu-card__head"><h3>Details</h3></header>
+            <div className="stu-card__body">
+              <label className="stu-field">
+                <span className="stu-field__label">Highlights <span className="stu-field__hint">(bullet points, one per line)</span></span>
+                <textarea name="features" defaultValue={features} className="stu-textarea" rows={5}
+                          placeholder={"Half-canvas construction\nHand-padded lapels\nSide adjusters"} />
+              </label>
               <label className="stu-field" style={{ marginTop: 16 }}>
                 <span className="stu-field__label">Specifications <span className="stu-field__hint">(one per line: Label: Value)</span></span>
                 <textarea name="spec" defaultValue={spec} className="stu-textarea" rows={5}

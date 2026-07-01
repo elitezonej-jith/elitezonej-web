@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getProduct } from "../../../../lib/admin/repos/products";
+import { getProduct, getInventory } from "../../../../lib/admin/repos/products";
 import { listImages, fallbackImages } from "../../../../lib/admin/repos/product-images";
 import { getMeta } from "../../../../lib/admin/repos/product-meta";
 import { listColours } from "../../../../lib/admin/repos/product-colours";
@@ -30,6 +30,7 @@ export default async function ProductEditorPage({ params, searchParams }: Params
   const images = await listImages(slug);
   const colours = await listColours(slug);
   const fallback = images.length === 0 ? fallbackImages(slug) : [];
+  const inventory = (await getInventory(slug)).map(r => ({ size: r.size, stock: r.stock }));
 
   // Load categories for picker
   const categories = await sql.all<{ id: number; name: string; slug: string; parent_id: number | null }>(
@@ -86,7 +87,7 @@ export default async function ProductEditorPage({ params, searchParams }: Params
 
       <div style={{ height: 32 }} />
 
-      <ProductForm mode="edit" product={product} meta={meta} categories={categories} filters={filterDefs} />
+      <ProductForm mode="edit" product={product} meta={meta} categories={categories} filters={filterDefs} inventory={inventory} />
 
       <div style={{ height: 32 }} />
 

@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { bustProducts } from "../../../lib/storefront/cache";
+import { bustProducts, bustInventory } from "../../../lib/storefront/cache";
 import { z } from "zod";
 import { requireUser } from "../../../lib/admin/session";
 import {
@@ -25,6 +25,7 @@ const ProductSchema = z.object({
   short_description: z.string().max(800).default(""),
   long_description: z.string().max(4000).default(""),
   sizes: z.string().default(""),
+  inventory_json: z.string().default("[]"),
   features: z.string().default(""),
   spec: z.string().default(""),
   fit: z.string().max(60).default(""),
@@ -103,8 +104,23 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
     og_image_path: v.og_image_path,
   });
 
+  // Always sync inventory from the structured size × stock editor
+  let inventoryRows: Array<{ size: string; stock: number }> = [];
+  try {
+    inventoryRows = JSON.parse(v.inventory_json);
+  } catch { /* malformed JSON — treat as empty */ }
+  const inventoryPayload = inventoryRows
+    .filter((r) => r.size && typeof r.size === "string" && r.size.trim() !== "")
+    .map((r) => ({
+      size: r.size.trim(),
+      stock: Math.max(0, Math.round(Number(r.stock) || 0)),
+      oos_flag: (Number(r.stock) || 0) <= 0 ? 1 : 0,
+    }));
+  if (inventoryPayload.length > 0) {
+    await setInventory(v.slug, inventoryPayload);
+  }
+
   if (!exists) {
-    await setInventory(v.slug, splitLines(v.sizes).map((s) => ({ size: s, stock: 6, oos_flag: 0 })));
     // Attach uploaded images (from the new product form)
     const imagePaths = fd.getAll("images").map(String).filter(Boolean);
     for (const imgPath of imagePaths) {
@@ -120,9 +136,11 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
 
   revalidatePath("/studio/products");
   revalidatePath(`/studio/products/${v.slug}`);
+  revalidatePath("/studio/inventory");
   revalidatePath("/");
   revalidatePath(`/products/${v.slug}`);
-  bustProducts(); // also busts the stock map (tagged "products")
+  bustProducts();
+  bustInventory();
   redirect(`/studio/products/${v.slug}?saved=1`);
 }
 
