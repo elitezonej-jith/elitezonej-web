@@ -1,9 +1,9 @@
 "use server";
 import { revalidatePath } from "next/cache";
-import { bustCategories } from "../../../lib/storefront/cache";
+import { bustCategories, bustProducts } from "../../../lib/storefront/cache";
 import { z } from "zod";
 import { requireUser } from "../../../lib/admin/session";
-import { createCategory, updateCategory, deleteCategory } from "../../../lib/admin/repos/categories";
+import { createCategory, updateCategory, deleteCategoryDeep, type DeleteMode } from "../../../lib/admin/repos/categories";
 import { logAudit } from "../../../lib/admin/repos/audit";
 
 const UpdateCategorySchema = z.object({
@@ -55,8 +55,18 @@ export async function deleteCategoryAction(fd: FormData): Promise<void> {
   const me = await requireUser();
   const id = Number(fd.get("id") ?? 0);
   if (!id) return;
-  await deleteCategory(id);
-  await logAudit({ user_id: me.id, action: "delete_category", entity: "category", entity_id: String(id) });
+  const mode = (String(fd.get("mode") ?? "delete_all")) as DeleteMode;
+  const result = await deleteCategoryDeep(id, mode);
+  await logAudit({
+    user_id: me.id,
+    action: "delete_category",
+    entity: "category",
+    entity_id: String(id),
+    payload: { mode, ...result },
+  });
   revalidatePath("/admin/categories");
+  revalidatePath("/admin/products");
+  revalidatePath("/");
   bustCategories();
+  bustProducts();
 }

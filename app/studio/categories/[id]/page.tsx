@@ -9,7 +9,8 @@ import FilterEditor from "./FilterEditor";
 import ProductMapper from "./ProductMapper";
 import { requireUser } from "../../../../lib/admin/session";
 import { listFiltersForCategory } from "../../../../lib/admin/repos/category-filters";
-import { getDescendantIds } from "../../../../lib/admin/repos/categories";
+import { getDescendantIds, getCategoryBlastRadius } from "../../../../lib/admin/repos/categories";
+import DeleteCategory from "./DeleteCategory";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,7 @@ export default async function EditCategoryPage({ params, searchParams }: Params)
   const availableParents = allCats.filter((c) => !excludeIds.includes(c.id));
 
   const filters = await listFiltersForCategory(cat.id);
+  const blastRadius = await getCategoryBlastRadius(cat.id);
 
   // Products mapped to this category (match on slug or sub)
   const mapped = await sql.all<Prod>(
@@ -68,6 +70,7 @@ export default async function EditCategoryPage({ params, searchParams }: Params)
       <div style={{ height: 24 }} />
       <FilterEditor categoryId={cat.id} filters={filters} />
       <ProductMapper categoryId={cat.id} categoryName={cat.name} mapped={mapped} available={assignable} />
+      <DeleteCategory categoryId={cat.id} categoryName={cat.name} blastRadius={blastRadius} />
     </div>
   );
 }

@@ -67,10 +67,10 @@ export default function CategoryEditor({
         open={open}
         onClose={() => setOpen(false)}
         title={`You are about to delete ${cat.name.toUpperCase()}.`}
-        body="This action removes the category and any of its children. Products tagged with this category will not be deleted but will lose the link."
+        body={`This permanently removes the category${childCount ? ` and its ${childCount} subcategor${childCount === 1 ? "y" : "ies"}` : ""}, all associated filters, and offer targeting rules. Products will not be deleted — they become uncategorized until reassigned.`}
         confirmLabel="Yes, delete"
         formAction={deleteCategoryAction}
-        hidden={{ id: String(cat.id) }}
+        hidden={{ id: String(cat.id), mode: "delete_all" }}
       />
     </tr>
   );

@@ -1,11 +1,11 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { bustCategories } from "../../../lib/storefront/cache";
+import { bustCategories, bustProducts } from "../../../lib/storefront/cache";
 import { z } from "zod";
 import { requireUser } from "../../../lib/admin/session";
 import { sql } from "../../../lib/admin/db";
-import { createCategory, updateCategory, getAncestorChain, getMaxDepth, renameCategory } from "../../../lib/admin/repos/categories";
+import { createCategory, updateCategory, getAncestorChain, getMaxDepth, renameCategory, deleteCategoryDeep, type DeleteMode } from "../../../lib/admin/repos/categories";
 import { upsertFilter, deleteFilter, upsertOption, deleteOption } from "../../../lib/admin/repos/category-filters";
 import { logAudit } from "../../../lib/admin/repos/audit";
 
@@ -114,6 +114,8 @@ export async function saveFilterAction(_prev: FilterSaveState, fd: FormData): Pr
   await upsertFilter(v.category_id, v.name, v.field_key, v.filter_type, v.sort_order);
   revalidatePath(`/studio/categories/${v.category_id}`);
   revalidatePath(`/studio/categories`);
+  revalidatePath("/collection");
+  bustCategories();
   return { success: true };
 }
 
@@ -122,6 +124,8 @@ export async function removeFilterAction(fd: FormData): Promise<void> {
   const filterId = Number(fd.get("filter_id") ?? 0);
   if (filterId) await deleteFilter(filterId);
   revalidatePath("/studio/categories", "layout");
+  revalidatePath("/collection");
+  bustCategories();
 }
 
 const OptionSchema = z.object({
@@ -141,6 +145,8 @@ export async function saveOptionAction(_prev: OptionSaveState, fd: FormData): Pr
   const v = parsed.data;
   await upsertOption(v.filter_id, v.value, v.label || null, v.color_hex || null, v.sort_order);
   revalidatePath("/studio/categories", "layout");
+  revalidatePath("/collection");
+  bustCategories();
   return { success: true };
 }
 
@@ -149,11 +155,29 @@ export async function removeOptionAction(fd: FormData): Promise<void> {
   const optionId = Number(fd.get("option_id") ?? 0);
   if (optionId) await deleteOption(optionId);
   revalidatePath("/studio/categories", "layout");
+  revalidatePath("/collection");
+  bustCategories();
 }
 
 export async function deleteCategoryAction(fd: FormData): Promise<void> {
-  // Kept but disabled — no delete allowed
-  void fd;
+  const me = await requireUser("/studio/login");
+  const id = Number(fd.get("id") ?? 0);
+  if (!id) return;
+  const mode = (String(fd.get("mode") ?? "delete_all")) as DeleteMode;
+  const result = await deleteCategoryDeep(id, mode);
+  await logAudit({
+    user_id: me.id,
+    action: "delete_category",
+    entity: "category",
+    entity_id: String(id),
+    payload: { mode, ...result },
+  });
+  revalidatePath("/studio/categories");
+  revalidatePath("/studio/products");
+  revalidatePath("/");
+  bustCategories();
+  bustProducts();
+  redirect("/studio/categories?flash=Category+deleted");
 }
 
 export async function assignProductsToCategoryAction(fd: FormData): Promise<void> {
