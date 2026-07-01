@@ -100,19 +100,23 @@ export default function CollectionClient({
     }
     if (sub) list = list.filter(p => p.sub === sub);
     if (!isFabricMode && hasDbFilters) {
-      // Dynamic filtering from DB-configured filters
       for (const f of dbFilters) {
         const selected = active[f.field_key];
         if (!selected || !selected.size) continue;
+        const selectedLower = new Set(Array.from(selected).map(s => s.toLowerCase()));
         if (f.field_key === "sizes_json") {
-          list = list.filter(p => p.sizes?.some(s => selected.has(s.replace("-oos", ""))));
+          list = list.filter(p => p.sizes?.some(s => selectedLower.has(s.replace("-oos", "").toLowerCase())));
         } else {
-          const selectedLower = new Set(Array.from(selected).map(s => s.toLowerCase()));
           list = list.filter(p => {
+            // Check product_filter_values tags first (multi-value)
+            const tags = p.filterTags?.[f.field_key];
+            if (tags && tags.length > 0) {
+              return tags.some(t => selectedLower.has(t));
+            }
+            // Fallback: legacy column matching for un-tagged products
             const val = (p as Record<string, unknown>)[f.field_key];
             if (typeof val !== "string" || !val) return false;
             const valLower = val.toLowerCase();
-            // Match if value equals option OR option starts with value OR value starts with option
             return selectedLower.has(valLower) || Array.from(selectedLower).some(s => valLower.includes(s) || s.includes(valLower));
           });
         }

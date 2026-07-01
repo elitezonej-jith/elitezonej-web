@@ -6,7 +6,6 @@ import { getMeta } from "../../../../lib/admin/repos/product-meta";
 import { listColours } from "../../../../lib/admin/repos/product-colours";
 import { getFabricMeta, listFabricColours } from "../../../../lib/admin/repos/fabrics";
 import { sql } from "../../../../lib/admin/db";
-import { getInheritedFilters } from "../../../../lib/admin/repos/category-filters";
 import PageHead from "../../components/PageHead";
 import StatusTag from "../../components/StatusTag";
 import { FlashToast } from "../../components/Toast";
@@ -46,22 +45,6 @@ export default async function ProductEditorPage({ params, searchParams }: Params
     "SELECT id, name, slug, parent_id FROM categories ORDER BY sort_order ASC, name ASC"
   );
 
-  // Load filters for the product's current category
-  let filterDefs: Array<{ name: string; field_key: string; options: string[] }> = [];
-  const catSlug = product.sub || product.category;
-  if (catSlug) {
-    const catRow = await sql.get<{ id: number }>(
-      "SELECT id FROM categories WHERE slug = ? OR LOWER(name) = LOWER(?)",
-      [catSlug, catSlug]
-    );
-    if (catRow) {
-      const inherited = await getInheritedFilters(catRow.id);
-      filterDefs = inherited
-        .filter(f => ["fit", "fabric", "occasion"].includes(f.field_key))
-        .map(f => ({ name: f.name, field_key: f.field_key, options: f.options.map(o => o.value) }));
-    }
-  }
-
   return (
     <div className="stu-page">
       <FlashToast flash={saved ? "Product saved" : flash} />
@@ -96,7 +79,7 @@ export default async function ProductEditorPage({ params, searchParams }: Params
 
       <div style={{ height: 32 }} />
 
-      <ProductForm mode="edit" product={product} meta={meta} categories={categories} filters={filterDefs} inventory={inventory} fabricMeta={fabricMeta} fabricColours={fabricColours} />
+      <ProductForm mode="edit" product={product} meta={meta} categories={categories} inventory={inventory} fabricMeta={fabricMeta} fabricColours={fabricColours} />
 
       <div style={{ height: 32 }} />
 

@@ -6,6 +6,7 @@ import "server-only";
 import { listProducts, type ListFilter } from "./products";
 import { adaptDbProduct } from "./product-for-page";
 import { getStockMap } from "./inventory";
+import { getTagsForProducts } from "../admin/repos/product-filter-values";
 import {
   PRODUCTS as STATIC_PRODUCTS,
   type Product as LegacyProduct,
@@ -33,6 +34,21 @@ export async function listProductsForPage(filter?: ListFilter): Promise<LegacyPr
     }
     return legacy;
   });
+  // Batch-load filter tags from product_filter_values
+  const slugs = out.map(p => p.slug);
+  const tagsMap = await getTagsForProducts(slugs);
+  for (const p of out) {
+    const tags = tagsMap.get(p.slug) || [];
+    if (tags.length) {
+      const grouped: Record<string, string[]> = {};
+      for (const t of tags) {
+        if (!grouped[t.field_key]) grouped[t.field_key] = [];
+        grouped[t.field_key].push(t.value.toLowerCase());
+      }
+      p.filterTags = grouped;
+    }
+  }
+
   out.sort((a, b) => {
     const ai = STATIC_INDEX.get(a.slug) ?? Number.MAX_SAFE_INTEGER;
     const bi = STATIC_INDEX.get(b.slug) ?? Number.MAX_SAFE_INTEGER;

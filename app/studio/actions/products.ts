@@ -8,6 +8,7 @@ import {
   upsertProduct, deleteProduct, setStatus, getProduct, setInventory,
   type ProductInput,
 } from "../../../lib/admin/repos/products";
+import { setTagsForProduct } from "../../../lib/admin/repos/product-filter-values";
 import { upsertFabricMeta, setFabricColours } from "../../../lib/admin/repos/fabrics";
 import {
   addImage, deleteImage as deleteProductImage, reorderImages, setThumbnail, setHover, updateAlt, assignImageColour,
@@ -54,6 +55,7 @@ const ProductSchema = z.object({
   size_guide: z.string().max(8000).default(""),
   delivery_min_days: z.union([z.literal(""), z.coerce.number().int().min(1).max(60)]).optional(),
   delivery_max_days: z.union([z.literal(""), z.coerce.number().int().min(1).max(60)]).optional(),
+  filter_tags_json: z.string().default("[]"),
 }).refine(
   (d) => {
     const min = d.delivery_min_days === "" || d.delivery_min_days === undefined ? null : d.delivery_min_days;
@@ -171,6 +173,11 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
       await setFabricColours(v.slug, cleanColours);
     }
   }
+
+  // Save filter attribute tags (from FilterAttributes component)
+  let filterTags: Array<{ filter_id: number; option_id: number }> = [];
+  try { filterTags = JSON.parse(v.filter_tags_json); } catch { /* malformed — treat as empty */ }
+  await setTagsForProduct(v.slug, filterTags);
 
   if (!exists) {
     // Attach uploaded images (from the new product form)

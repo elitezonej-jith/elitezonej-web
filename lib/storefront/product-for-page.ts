@@ -61,6 +61,7 @@ export function adaptDbProduct(p: StorefrontProduct): LegacyProduct {
     isPremium: p.meta?.is_premium === 1,
     deliveryMinDays: p.delivery_min_days ?? undefined,
     deliveryMaxDays: p.delivery_max_days ?? undefined,
+    filterTags: p.filterTags,
   };
 }
 

@@ -18,6 +18,7 @@ export type StorefrontProduct = Product & {
   meta: ProductMeta;
   images: string[];
   thumbnail: string | null;
+  filterTags?: Record<string, string[]>;
 };
 
 function isLocalProductUpload(src: string): boolean {

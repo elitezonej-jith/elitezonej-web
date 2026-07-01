@@ -26,6 +26,7 @@ const SCHEMA_V6_PATH = path.resolve(process.cwd(), "lib/admin/schema-v6.sql");
 const SCHEMA_V7_PATH = path.resolve(process.cwd(), "lib/admin/schema-v7.sql");
 const SCHEMA_V8_PATH = path.resolve(process.cwd(), "lib/admin/schema-v8.sql");
 const SCHEMA_V9_PATH = path.resolve(process.cwd(), "lib/admin/schema-v9.sql");
+const SCHEMA_V10_PATH = path.resolve(process.cwd(), "lib/admin/schema-v10.sql");
 
 // Read schema files once at module load instead of on every open() — keeps
 // synchronous disk I/O off the request hot path on serverless cold starts.
@@ -47,6 +48,7 @@ const SCHEMA_V6_STATEMENTS = parseStatements(SCHEMA_V6_PATH);
 const SCHEMA_V7_STATEMENTS = parseStatements(SCHEMA_V7_PATH);
 const SCHEMA_V8_STATEMENTS = parseStatements(SCHEMA_V8_PATH);
 const SCHEMA_V9_STATEMENTS = parseStatements(SCHEMA_V9_PATH);
+const SCHEMA_V10_STATEMENTS = parseStatements(SCHEMA_V10_PATH);
 
 function hasColumn(db: Database.Database, table: string, column: string): boolean {
   try {
@@ -240,6 +242,7 @@ function open(): Database.Database {
   applyAdditive(db, SCHEMA_V7_STATEMENTS, "schema-v7");
   applyAdditive(db, SCHEMA_V8_STATEMENTS, "schema-v8");
   applyAdditive(db, SCHEMA_V9_STATEMENTS, "schema-v9");
+  applyAdditive(db, SCHEMA_V10_STATEMENTS, "schema-v10");
 
   // Seed the static owner account if missing — runs before catalog seed so
   // the first /admin visit can log straight in without going through /setup.

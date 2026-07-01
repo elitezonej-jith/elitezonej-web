@@ -13,19 +13,17 @@ import type { Product } from "../../../../lib/admin/types";
 import type { ProductMeta } from "../../../../lib/admin/repos/product-meta";
 
 type Cat = { id: number; name: string; slug: string; parent_id: number | null };
-type FilterDef = { name: string; field_key: string; options: string[] };
 
 const initial: ProductSaveState = {};
 
 export default function ProductForm({
-  mode, product, meta, categories = [], filters = [],
+  mode, product, meta, categories = [],
   inventory = [], fabricMeta = null, fabricColours = [],
 }: {
   mode: "new" | "edit";
   product?: Product;
   meta?: ProductMeta;
   categories?: Cat[];
-  filters?: FilterDef[];
   inventory?: SizeStockRow[];
   fabricMeta?: { width_inches: number; gsm: number; composition: string; care: string; origin: string } | null;
   fabricColours?: ColourwayRow[];
@@ -238,12 +236,12 @@ export default function ProductForm({
             </>
           )}
 
-          {/* Filter Attributes - smart dropdowns */}
+          {/* Filter Attributes - multi-select checkboxes */}
           <FilterAttributes
-            filters={filters}
-            initialFit={product?.fit}
-            initialFabric={product?.fabric}
-            initialOccasion={product?.occasion}
+            categories={categories}
+            initialCategory={product?.category || undefined}
+            initialSub={product?.sub || undefined}
+            productSlug={product?.slug}
           />
 
           {/* SEO - collapsed by default */}

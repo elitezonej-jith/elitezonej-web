@@ -63,6 +63,8 @@ export type Product = {
   // Per-product delivery time override (nullable — undefined = use global fallback)
   deliveryMinDays?: number;
   deliveryMaxDays?: number;
+  // DB-driven filter tags: field_key → [option values] (from product_filter_values)
+  filterTags?: Record<string, string[]>;
 };
 
 export const PRODUCTS: Product[] = [

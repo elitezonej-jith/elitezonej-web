@@ -2382,3 +2382,57 @@ button:focus-visible,
 .pos-items-table__custom { background: var(--stu-info-soft); }
 .pos-items-table__custom-name { width: 100%; min-width: 180px; font-weight: 500; }
 .pos-add-buttons { display: flex; gap: 8px; margin-top: 12px; }
+
+/* ── FilterAttributes: tag chip multi-select ────────────────────── */
+.fa-group { margin-top: 16px; }
+.fa-group__title { font-size: 13px; font-weight: 600; margin: 0 0 8px; color: var(--stu-fg); }
+.fa-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.fa-chips--pills { gap: 6px; }
+.fa-loading { color: var(--stu-muted); font-size: 13px; margin-top: 12px; }
+.fa-empty { color: var(--stu-muted); font-size: 13px; font-style: italic; margin-top: 12px; }
+
+.fa-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--stu-border, #ddd);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  transition: border-color 0.15s, background 0.15s;
+  user-select: none;
+}
+.fa-chip:hover { border-color: var(--stu-accent, #333); }
+.fa-chip--on {
+  border-color: var(--stu-accent, #333);
+  background: var(--stu-accent-soft, #f0f0f0);
+  font-weight: 500;
+}
+.fa-chip__input { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; }
+.fa-chip__label { white-space: nowrap; }
+
+/* Color swatch variant */
+.fa-chip--color { padding-left: 8px; }
+.fa-chip__swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.15);
+  flex-shrink: 0;
+}
+.fa-chip__check { color: #fff; font-size: 11px; text-shadow: 0 0 2px rgba(0,0,0,0.5); }
+
+/* Size pill variant */
+.fa-chip--size {
+  padding: 5px 14px;
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 12px;
+  min-width: 40px;
+  justify-content: center;
+}
