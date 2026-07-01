@@ -4,6 +4,7 @@ import { getProduct, getInventory } from "../../../../lib/admin/repos/products";
 import { listImages, fallbackImages } from "../../../../lib/admin/repos/product-images";
 import { getMeta } from "../../../../lib/admin/repos/product-meta";
 import { listColours } from "../../../../lib/admin/repos/product-colours";
+import { getFabricMeta, listFabricColours } from "../../../../lib/admin/repos/fabrics";
 import { sql } from "../../../../lib/admin/db";
 import { getInheritedFilters } from "../../../../lib/admin/repos/category-filters";
 import PageHead from "../../components/PageHead";
@@ -31,6 +32,14 @@ export default async function ProductEditorPage({ params, searchParams }: Params
   const colours = await listColours(slug);
   const fallback = images.length === 0 ? fallbackImages(slug) : [];
   const inventory = (await getInventory(slug)).map(r => ({ size: r.size, stock: r.stock }));
+
+  // Fabric-specific data (only fetched for fabric products)
+  const fabricMeta = product.kind === "fabric" ? await getFabricMeta(slug) : null;
+  const fabricColours = product.kind === "fabric"
+    ? (await listFabricColours(slug)).map(c => ({
+        name: c.name, hex: c.hex, stock_meters: c.stock_meters, image_dir: c.image_dir ?? "",
+      }))
+    : [];
 
   // Load categories for picker
   const categories = await sql.all<{ id: number; name: string; slug: string; parent_id: number | null }>(
@@ -87,7 +96,7 @@ export default async function ProductEditorPage({ params, searchParams }: Params
 
       <div style={{ height: 32 }} />
 
-      <ProductForm mode="edit" product={product} meta={meta} categories={categories} filters={filterDefs} inventory={inventory} />
+      <ProductForm mode="edit" product={product} meta={meta} categories={categories} filters={filterDefs} inventory={inventory} fabricMeta={fabricMeta} fabricColours={fabricColours} />
 
       <div style={{ height: 32 }} />
 

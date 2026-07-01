@@ -7,6 +7,8 @@ import { useFormGuard } from "../../components/useFormGuard";
 import CategoryPicker from "./CategoryPicker";
 import FilterAttributes from "./FilterAttributes";
 import SizeStockEditor, { type SizeStockRow } from "./SizeStockEditor";
+import FabricStockEditor, { type ColourwayRow } from "./FabricStockEditor";
+import FabricMetaFields from "./FabricMetaFields";
 import type { Product } from "../../../../lib/admin/types";
 import type { ProductMeta } from "../../../../lib/admin/repos/product-meta";
 
@@ -17,7 +19,7 @@ const initial: ProductSaveState = {};
 
 export default function ProductForm({
   mode, product, meta, categories = [], filters = [],
-  inventory = [],
+  inventory = [], fabricMeta = null, fabricColours = [],
 }: {
   mode: "new" | "edit";
   product?: Product;
@@ -25,12 +27,16 @@ export default function ProductForm({
   categories?: Cat[];
   filters?: FilterDef[];
   inventory?: SizeStockRow[];
+  fabricMeta?: { width_inches: number; gsm: number; composition: string; care: string; origin: string } | null;
+  fabricColours?: ColourwayRow[];
 }) {
   const [state, action, pending] = useActionState(saveProductAction, initial);
   const [name, setName] = useState(product?.name ?? "");
+  const [kind, setKind] = useState<"tailored" | "fabric">(product?.kind ?? "tailored");
   const [seoOpen, setSeoOpen] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [sizeStockRows, setSizeStockRows] = useState<SizeStockRow[]>(inventory);
+  const [fabricColourRows, setFabricColourRows] = useState<ColourwayRow[]>(fabricColours);
   const { formRef, markDirty } = useFormGuard();
   const slugDerived = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const features = product?.features?.join("\n") ?? "";
@@ -137,42 +143,86 @@ export default function ProductForm({
             </div>
           </section>
 
-          {/* Sizes & stock */}
-          <section className="stu-card">
-            <header className="stu-card__head"><h3>Sizes &amp; stock</h3></header>
-            <div className="stu-card__body">
-              {/* Hidden inputs: derived sizes (for products.sizes_json) and structured inventory */}
-              <input type="hidden" name="sizes" value={sizeStockRows.map(r => r.size).filter(Boolean).join("\n")} />
-              <input type="hidden" name="inventory_json" value={JSON.stringify(sizeStockRows.filter(r => r.size.trim()))} />
+          {/* CONDITIONAL: Fabric vs Tailored stock management */}
+          {kind === "fabric" ? (
+            <>
+              {/* Fabric specifications */}
+              <FabricMetaFields meta={fabricMeta} />
 
-              <SizeStockEditor
-                initial={inventory}
-                onChange={(rows) => { setSizeStockRows(rows); markDirty(); }}
-              />
-            </div>
-          </section>
+              {/* Colourway stock */}
+              <section className="stu-card">
+                <header className="stu-card__head"><h3>Colourway stock</h3></header>
+                <div className="stu-card__body">
+                  <input type="hidden" name="fabric_colours_json" value={JSON.stringify(fabricColourRows.filter(r => r.name.trim()))} />
+                  <input type="hidden" name="sizes" value="" />
+                  <input type="hidden" name="inventory_json" value="[]" />
 
-          {/* Highlights & specs */}
-          <section className="stu-card">
-            <header className="stu-card__head"><h3>Details</h3></header>
-            <div className="stu-card__body">
-              <label className="stu-field">
-                <span className="stu-field__label">Highlights <span className="stu-field__hint">(bullet points, one per line)</span></span>
-                <textarea name="features" defaultValue={features} className="stu-textarea" rows={5}
-                          placeholder={"Half-canvas construction\nHand-padded lapels\nSide adjusters"} />
-              </label>
-              <label className="stu-field" style={{ marginTop: 16 }}>
-                <span className="stu-field__label">Specifications <span className="stu-field__hint">(one per line: Label: Value)</span></span>
-                <textarea name="spec" defaultValue={spec} className="stu-textarea" rows={5}
-                          placeholder={"Cloth: Super 120s pure wool\nWeight: 280 gsm\nMill: Vitale Barberis Canonico"} />
-              </label>
-              <label className="stu-field" style={{ marginTop: 16 }}>
-                <span className="stu-field__label">Size guide <span className="stu-field__hint">(leave blank to hide)</span></span>
-                <textarea name="size_guide" defaultValue={product?.size_guide ?? ""} className="stu-textarea" rows={4}
-                          placeholder={"Chest 38: 96 cm\nChest 40: 101 cm"} />
-              </label>
-            </div>
-          </section>
+                  <FabricStockEditor
+                    initial={fabricColours}
+                    slug={product?.slug ?? slugDerived}
+                    onChange={(rows) => { setFabricColourRows(rows); markDirty(); }}
+                  />
+                </div>
+              </section>
+
+              {/* Details (no size guide for fabrics) */}
+              <section className="stu-card">
+                <header className="stu-card__head"><h3>Details</h3></header>
+                <div className="stu-card__body">
+                  <label className="stu-field">
+                    <span className="stu-field__label">Highlights <span className="stu-field__hint">(bullet points, one per line)</span></span>
+                    <textarea name="features" defaultValue={features} className="stu-textarea" rows={5}
+                              placeholder={"Super 120s yarn count\nNatural stretch\nWrinkle-resistant finish"} />
+                  </label>
+                  <label className="stu-field" style={{ marginTop: 16 }}>
+                    <span className="stu-field__label">Specifications <span className="stu-field__hint">(one per line: Label: Value)</span></span>
+                    <textarea name="spec" defaultValue={spec} className="stu-textarea" rows={5}
+                              placeholder={"Weave: Twill\nFinish: Soft hand\nSuitable for: Suits, Blazers"} />
+                  </label>
+                  <input type="hidden" name="size_guide" value="" />
+                </div>
+              </section>
+            </>
+          ) : (
+            <>
+              {/* Sizes & stock (tailored products) */}
+              <section className="stu-card">
+                <header className="stu-card__head"><h3>Sizes &amp; stock</h3></header>
+                <div className="stu-card__body">
+                  <input type="hidden" name="sizes" value={sizeStockRows.map(r => r.size).filter(Boolean).join("\n")} />
+                  <input type="hidden" name="inventory_json" value={JSON.stringify(sizeStockRows.filter(r => r.size.trim()))} />
+                  <input type="hidden" name="fabric_colours_json" value="[]" />
+
+                  <SizeStockEditor
+                    initial={inventory}
+                    onChange={(rows) => { setSizeStockRows(rows); markDirty(); }}
+                  />
+                </div>
+              </section>
+
+              {/* Details (tailored) */}
+              <section className="stu-card">
+                <header className="stu-card__head"><h3>Details</h3></header>
+                <div className="stu-card__body">
+                  <label className="stu-field">
+                    <span className="stu-field__label">Highlights <span className="stu-field__hint">(bullet points, one per line)</span></span>
+                    <textarea name="features" defaultValue={features} className="stu-textarea" rows={5}
+                              placeholder={"Half-canvas construction\nHand-padded lapels\nSide adjusters"} />
+                  </label>
+                  <label className="stu-field" style={{ marginTop: 16 }}>
+                    <span className="stu-field__label">Specifications <span className="stu-field__hint">(one per line: Label: Value)</span></span>
+                    <textarea name="spec" defaultValue={spec} className="stu-textarea" rows={5}
+                              placeholder={"Cloth: Super 120s pure wool\nWeight: 280 gsm\nMill: Vitale Barberis Canonico"} />
+                  </label>
+                  <label className="stu-field" style={{ marginTop: 16 }}>
+                    <span className="stu-field__label">Size guide <span className="stu-field__hint">(leave blank to hide)</span></span>
+                    <textarea name="size_guide" defaultValue={product?.size_guide ?? ""} className="stu-textarea" rows={4}
+                              placeholder={"Chest 38: 96 cm\nChest 40: 101 cm"} />
+                  </label>
+                </div>
+              </section>
+            </>
+          )}
 
           {/* Filter Attributes - smart dropdowns */}
           <FilterAttributes
@@ -244,7 +294,7 @@ export default function ProductForm({
               />
               <label className="stu-field">
                 <span className="stu-field__label">Product type</span>
-                <select name="kind" defaultValue={product?.kind ?? "tailored"} className="stu-select">
+                <select name="kind" value={kind} onChange={(e) => { setKind(e.target.value as "tailored" | "fabric"); markDirty(); }} className="stu-select">
                   <option value="tailored">Clothing / Accessory</option>
                   <option value="fabric">Fabric (sold by the metre)</option>
                 </select>

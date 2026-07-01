@@ -8,6 +8,7 @@ import {
   upsertProduct, deleteProduct, setStatus, getProduct, setInventory,
   type ProductInput,
 } from "../../../lib/admin/repos/products";
+import { upsertFabricMeta, setFabricColours } from "../../../lib/admin/repos/fabrics";
 import {
   addImage, deleteImage as deleteProductImage, reorderImages, setThumbnail, setHover, updateAlt, assignImageColour,
 } from "../../../lib/admin/repos/product-images";
@@ -26,6 +27,12 @@ const ProductSchema = z.object({
   long_description: z.string().max(4000).default(""),
   sizes: z.string().default(""),
   inventory_json: z.string().default("[]"),
+  fabric_colours_json: z.string().default("[]"),
+  fabric_meta_width: z.coerce.number().int().min(0).max(120).default(58),
+  fabric_meta_gsm: z.coerce.number().int().min(0).max(2000).default(0),
+  fabric_meta_composition: z.string().max(200).default(""),
+  fabric_meta_care: z.string().max(200).default(""),
+  fabric_meta_origin: z.string().max(200).default(""),
   features: z.string().default(""),
   spec: z.string().default(""),
   fit: z.string().max(60).default(""),
@@ -118,6 +125,37 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
     }));
   if (inventoryPayload.length > 0) {
     await setInventory(v.slug, inventoryPayload);
+  }
+
+  // Fabric-specific saves (colourways + meta)
+  if (input.kind === "fabric") {
+    let fabricColours: Array<{ name: string; hex: string; stock_meters: number; image_dir: string }> = [];
+    try { fabricColours = JSON.parse(v.fabric_colours_json); } catch { /* malformed — treat as empty */ }
+
+    const cleanColours = fabricColours
+      .filter((c) => c.name && typeof c.name === "string" && c.name.trim())
+      .map((c) => ({
+        name: c.name.trim(),
+        hex: /^#[0-9a-fA-F]{6}$/.test(c.hex) ? c.hex : "#000000",
+        stock_meters: Math.max(0, Math.round(Number(c.stock_meters) || 0)),
+        image_dir: c.image_dir?.trim() || `${v.slug}/${c.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`,
+      }));
+
+    // Auto-compute total from per-colourway stock
+    const totalMeters = cleanColours.reduce((sum, c) => sum + c.stock_meters, 0);
+
+    await upsertFabricMeta(v.slug, {
+      width_inches: v.fabric_meta_width,
+      gsm: v.fabric_meta_gsm,
+      composition: v.fabric_meta_composition,
+      care: v.fabric_meta_care,
+      origin: v.fabric_meta_origin,
+      stock_meters_total: totalMeters,
+    });
+
+    if (cleanColours.length > 0) {
+      await setFabricColours(v.slug, cleanColours);
+    }
   }
 
   if (!exists) {
