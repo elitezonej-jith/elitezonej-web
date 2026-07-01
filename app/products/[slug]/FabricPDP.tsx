@@ -8,6 +8,7 @@ import { fmtINR, fmtMeters } from "@/lib/format";
 import { FABRIC_ANGLES, FABRIC_ANGLE_LABELS, FabricAngle, imgFabric } from "@/lib/images";
 import { useCart, lineId } from "../../components/CartProvider";
 import WishlistButton from "../../components/WishlistButton";
+import ShareButton from "../../components/ShareButton";
 import ZoomLens from "../../components/ZoomLens";
 import Lightbox from "./Lightbox";
 
@@ -151,6 +152,7 @@ export default function FabricPDP({ product, leadTimeDays, reviewAggregate }: Pr
           <div className="title-row">
             <h1>{product.name}</h1>
             <WishlistButton slug={product.slug} name={product.name} size="md" onTopOfImage={false} />
+            <ShareButton slug={product.slug} name={product.name} line={product.line} />
           </div>
 
           <a href="#reviews" className="pdp-rating-row" aria-label={reviewAggregate.count > 0 ? `Rated ${reviewAggregate.avg.toFixed(1)} out of 5, ${reviewAggregate.count} reviews` : "No reviews yet"}>

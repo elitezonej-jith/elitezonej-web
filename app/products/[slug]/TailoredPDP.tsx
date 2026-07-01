@@ -8,6 +8,7 @@ import { fmtINR } from "@/lib/format";
 import { ANGLES, ANGLE_LABELS, imgSrc } from "@/lib/images";
 import { useCart, lineId } from "../../components/CartProvider";
 import WishlistButton from "../../components/WishlistButton";
+import ShareButton from "../../components/ShareButton";
 import Reveal from "../../components/Reveal";
 import SectionHead from "../../components/SectionHead";
 import ZoomLens from "../../components/ZoomLens";
@@ -160,6 +161,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
           <div className="title-row">
             <h1>{product.name}</h1>
             <WishlistButton slug={product.slug} name={product.name} size="md" onTopOfImage={false} />
+            <ShareButton slug={product.slug} name={product.name} line={product.line} />
           </div>
           <p className="editorial-line">{product.line}</p>
 
