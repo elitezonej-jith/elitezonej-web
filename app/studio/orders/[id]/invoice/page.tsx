@@ -63,7 +63,7 @@ export default async function InvoicePage({ params }: Params) {
           <tbody>
             {items.map((it) => (
               <tr key={it.id}>
-                <td>{it.product_name ?? it.product_slug}</td>
+                <td>{it.product_name ?? (it.product_slug.startsWith("custom:") ? it.product_slug.slice(7) : it.product_slug)}</td>
                 <td>{it.size || it.colour || "—"}</td>
                 <td className="inv-doc__num">{it.qty}</td>
                 <td className="inv-doc__num">{rupees(it.unit_price)}</td>

@@ -2377,3 +2377,8 @@ button:focus-visible,
 
 /* Form layout overrides for POS page */
 .pos-form .stu-cols { align-items: flex-start; }
+
+/* ── POS: Custom item / Bespoke support ──────────────────────────── */
+.pos-items-table__custom { background: var(--stu-info-soft); }
+.pos-items-table__custom-name { width: 100%; min-width: 180px; font-weight: 500; }
+.pos-add-buttons { display: flex; gap: 8px; margin-top: 12px; }

@@ -1,5 +1,4 @@
 "use server";
-import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
@@ -31,7 +30,7 @@ const WalkInSchema = z.object({
   notes: z.string().optional(),
 });
 
-export type WalkInState = { error?: string };
+export type WalkInState = { error?: string; orderId?: string };
 
 export async function createWalkInOrderAction(_prev: WalkInState, fd: FormData): Promise<WalkInState> {
   const me = await requireUser("/studio/login");
@@ -130,9 +129,11 @@ export async function createWalkInOrderAction(_prev: WalkInState, fd: FormData):
   }
 
   // Deduct stock (best-effort for walk-in — don't block the sale)
+  // Skip custom/bespoke items (product_slug === "custom") — they have no inventory
   try {
     await sql.tx(async (t) => {
       for (const item of v.items) {
+        if (item.product_slug === "custom" || item.product_slug.startsWith("custom:")) continue; // bespoke service — no stock
         if (item.is_fabric) {
           if (item.colour) {
             await t.run(
@@ -177,6 +178,6 @@ export async function createWalkInOrderAction(_prev: WalkInState, fd: FormData):
   revalidatePath("/studio/orders");
   revalidatePath("/studio/inventory");
 
-  // Redirect to invoice with auto-print flag
-  redirect(`/studio/orders/${orderId}/invoice?print=1`);
+  // Return the order ID — client will navigate to invoice
+  return { orderId };
 }

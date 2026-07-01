@@ -1,5 +1,6 @@
 "use client";
-import { useActionState, useState, useMemo } from "react";
+import { useActionState, useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createWalkInOrderAction, type WalkInState } from "../../actions/walk-in";
 import ProductSearch from "./ProductSearch";
 
@@ -32,6 +33,14 @@ let nextItemId = 1;
 
 export default function WalkInOrderForm({ products }: Props) {
   const [state, action, pending] = useActionState(createWalkInOrderAction, initial);
+  const router = useRouter();
+
+  // Navigate to invoice when order is created successfully
+  useEffect(() => {
+    if (state.orderId) {
+      router.push(`/studio/orders/${state.orderId}/invoice?print=1`);
+    }
+  }, [state.orderId, router]);
 
   // Customer
   const [name, setName] = useState("");
@@ -82,6 +91,22 @@ export default function WalkInOrderForm({ products }: Props) {
     ]);
   }
 
+  function addCustomItem() {
+    setItems(prev => [
+      ...prev,
+      {
+        id: nextItemId++,
+        product_slug: "custom",
+        product_name: "",
+        size: null,
+        colour: null,
+        qty: 1,
+        unit_price: 0,
+        is_fabric: false,
+      },
+    ]);
+  }
+
   function updateItem(id: number, patch: Partial<OrderItem>) {
     setItems(prev => prev.map(it => it.id === id ? { ...it, ...patch } : it));
   }
@@ -96,7 +121,9 @@ export default function WalkInOrderForm({ products }: Props) {
     customer_phone: phone,
     customer_email: email || undefined,
     items: items.map(it => ({
-      product_slug: it.product_slug,
+      product_slug: it.product_slug === "custom"
+        ? `custom:${it.product_name}` // encode name in slug for invoice display
+        : it.product_slug,
       product_name: it.product_name,
       size: it.size,
       colour: it.colour,
@@ -151,7 +178,7 @@ export default function WalkInOrderForm({ products }: Props) {
                 <table className="pos-items-table">
                   <thead>
                     <tr>
-                      <th>Product</th>
+                      <th>Product / Service</th>
                       <th>Variant</th>
                       <th className="pos-items-table__num">Qty</th>
                       <th className="pos-items-table__num">Price</th>
@@ -161,14 +188,26 @@ export default function WalkInOrderForm({ products }: Props) {
                   </thead>
                   <tbody>
                     {items.map(item => (
-                      <tr key={item.id}>
-                        <td className="pos-items-table__name">{item.product_name}</td>
+                      <tr key={item.id} className={item.product_slug === "custom" ? "pos-items-table__custom" : ""}>
+                        <td className="pos-items-table__name">
+                          {item.product_slug === "custom" ? (
+                            <input
+                              value={item.product_name}
+                              onChange={e => updateItem(item.id, { product_name: e.target.value })}
+                              className="stu-input pos-items-table__custom-name"
+                              placeholder="Bespoke suit tailoring, Alterations, etc."
+                              autoFocus
+                            />
+                          ) : (
+                            item.product_name
+                          )}
+                        </td>
                         <td>
                           <input
                             value={item.size ?? item.colour ?? ""}
                             onChange={e => updateItem(item.id, item.is_fabric ? { colour: e.target.value } : { size: e.target.value })}
                             className="stu-input pos-items-table__variant"
-                            placeholder={item.is_fabric ? "Colour" : "Size"}
+                            placeholder={item.product_slug === "custom" ? "Details" : (item.is_fabric ? "Colour" : "Size")}
                           />
                         </td>
                         <td>
@@ -202,8 +241,14 @@ export default function WalkInOrderForm({ products }: Props) {
                 </table>
               )}
 
+              <div className="pos-add-buttons">
+                <button type="button" className="stu-btn stu-btn--ghost stu-btn--sm" onClick={addCustomItem}>
+                  + Custom item / Bespoke service
+                </button>
+              </div>
+
               {items.length === 0 && (
-                <p className="pos-empty-hint">Search and select products above to add them to this order.</p>
+                <p className="pos-empty-hint">Search products above or add a custom item for bespoke services.</p>
               )}
             </div>
           </section>
