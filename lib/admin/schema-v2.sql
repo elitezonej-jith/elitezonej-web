@@ -156,3 +156,7 @@ INSERT OR IGNORE INTO couriers (code, name, url_pattern) VALUES ('indiapost', 'I
 INSERT OR IGNORE INTO couriers (code, name, url_pattern) VALUES ('ecom', 'Ecom Express', 'https://www.ecomexpress.in/tracking/?awb_field={awb}');
 INSERT OR IGNORE INTO couriers (code, name, url_pattern) VALUES ('xpressbees', 'XpressBees', 'https://www.xpressbees.com/track?awb={awb}');
 INSERT OR IGNORE INTO couriers (code, name, url_pattern) VALUES ('other', 'Other', '');
+
+-- Per-product delivery time (nullable — NULL = use global lead_time_days setting)
+ALTER TABLE products ADD COLUMN delivery_min_days INTEGER;
+ALTER TABLE products ADD COLUMN delivery_max_days INTEGER;

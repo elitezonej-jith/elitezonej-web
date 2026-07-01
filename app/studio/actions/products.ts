@@ -52,7 +52,17 @@ const ProductSchema = z.object({
   meta_description: z.string().max(240).default(""),
   og_image_path: z.string().max(240).default(""),
   size_guide: z.string().max(8000).default(""),
-});
+  delivery_min_days: z.union([z.literal(""), z.coerce.number().int().min(1).max(60)]).optional(),
+  delivery_max_days: z.union([z.literal(""), z.coerce.number().int().min(1).max(60)]).optional(),
+}).refine(
+  (d) => {
+    const min = d.delivery_min_days === "" || d.delivery_min_days === undefined ? null : d.delivery_min_days;
+    const max = d.delivery_max_days === "" || d.delivery_max_days === undefined ? null : d.delivery_max_days;
+    if (min !== null && max !== null) return max >= min;
+    return true;
+  },
+  { message: "Max delivery days must be ≥ min delivery days", path: ["delivery_max_days"] },
+);
 
 function splitLines(raw: string): string[] {
   return raw.split(/\n+/).map((s) => s.trim()).filter(Boolean);
@@ -77,6 +87,8 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
   const v = parsed.data;
 
   const exists = !!(await getProduct(v.slug));
+  const deliveryMin = v.delivery_min_days === "" || v.delivery_min_days === undefined ? null : Number(v.delivery_min_days);
+  const deliveryMax = v.delivery_max_days === "" || v.delivery_max_days === undefined ? null : Number(v.delivery_max_days);
   const input: ProductInput = {
     slug: v.slug,
     name: v.name,
@@ -95,6 +107,8 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
     kind: v.kind, status: v.status,
     description: v.long_description || null,
     size_guide: v.size_guide,
+    delivery_min_days: deliveryMin,
+    delivery_max_days: deliveryMax,
   };
   await upsertProduct(input);
 
@@ -226,6 +240,8 @@ export async function duplicateProductAction(fd: FormData): Promise<void> {
     badge: src.badge, gender: src.gender, category: src.category, sub: src.sub,
     kind: src.kind, status: "draft", description: src.description,
     size_guide: src.size_guide,
+    delivery_min_days: src.delivery_min_days ?? null,
+    delivery_max_days: src.delivery_max_days ?? null,
   });
   const meta = await getMeta(slug);
   await upsertMeta({ ...meta, product_slug: newSlug });

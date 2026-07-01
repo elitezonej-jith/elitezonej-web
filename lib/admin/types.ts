@@ -46,6 +46,8 @@ export type ProductRow = {
   status: ProductStatus;
   description: string | null;
   size_guide: string;
+  delivery_min_days: number | null;
+  delivery_max_days: number | null;
   created_at: string;
   updated_at: string;
 };

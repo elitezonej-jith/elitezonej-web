@@ -20,9 +20,13 @@ type Props = {
 };
 
 export default function TailoredPDP({ product, setCurrentSlug, related, leadTimeDays }: Props) {
-  const deliveryRange = product.category === "accessories"
-    ? "7 to 10 working days"
-    : `${leadTimeDays}–${leadTimeDays + 2} working days`;
+  const deliveryRange = product.deliveryMinDays
+    ? product.deliveryMaxDays
+      ? `${product.deliveryMinDays}–${product.deliveryMaxDays} working days`
+      : `${product.deliveryMinDays}–${product.deliveryMinDays + 2} working days`
+    : product.category === "accessories"
+      ? "7 to 10 working days"
+      : `${leadTimeDays}–${leadTimeDays + 2} working days`;
   const { addItem } = useCart();
   const [angleIdx, setAngleIdx] = useState(0);
   const [sizeOn, setSizeOn] = useState("");

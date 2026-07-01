@@ -140,6 +140,20 @@ export default function ProductForm({
                   </select>
                 </label>
               </div>
+              <div className="stu-row--3" style={{ marginTop: 16 }}>
+                <label className="stu-field">
+                  <span className="stu-field__label">Delivery · min days</span>
+                  <input name="delivery_min_days" type="number" min={1} max={60} step={1} defaultValue={product?.delivery_min_days ?? ""} className="stu-input" placeholder="e.g. 5" />
+                </label>
+                <label className="stu-field">
+                  <span className="stu-field__label">Delivery · max days</span>
+                  <input name="delivery_max_days" type="number" min={1} max={60} step={1} defaultValue={product?.delivery_max_days ?? ""} className="stu-input" placeholder="e.g. 7" />
+                </label>
+                <div className="stu-field">
+                  <span className="stu-field__label">&nbsp;</span>
+                  <span className="stu-field__hint">Leave blank to use the global default from Settings.</span>
+                </div>
+              </div>
             </div>
           </section>
 

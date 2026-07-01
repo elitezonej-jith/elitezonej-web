@@ -33,7 +33,17 @@ const ProductSchema = z.object({
   kind: z.enum(["tailored", "fabric"]),
   status: z.enum(["active", "draft", "archived"]),
   description: z.string().max(2000).optional(),
-});
+  delivery_min_days: z.union([z.literal(""), z.coerce.number().int().min(1).max(60)]).optional(),
+  delivery_max_days: z.union([z.literal(""), z.coerce.number().int().min(1).max(60)]).optional(),
+}).refine(
+  (d) => {
+    const min = d.delivery_min_days === "" || d.delivery_min_days === undefined ? null : d.delivery_min_days;
+    const max = d.delivery_max_days === "" || d.delivery_max_days === undefined ? null : d.delivery_max_days;
+    if (min !== null && max !== null) return max >= min;
+    return true;
+  },
+  { message: "Max delivery days must be ≥ min delivery days", path: ["delivery_max_days"] },
+);
 
 function splitLines(raw: string): string[] {
   return raw
@@ -63,6 +73,9 @@ export async function saveProductAction(_prev: ActionState, fd: FormData): Promi
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   const v = parsed.data;
 
+  const deliveryMin = v.delivery_min_days === "" || v.delivery_min_days === undefined ? null : Number(v.delivery_min_days);
+  const deliveryMax = v.delivery_max_days === "" || v.delivery_max_days === undefined ? null : Number(v.delivery_max_days);
+
   const input: ProductInput = {
     slug: v.slug,
     name: v.name,
@@ -86,6 +99,8 @@ export async function saveProductAction(_prev: ActionState, fd: FormData): Promi
     status: v.status,
     description: v.description?.trim() || null,
     size_guide: "",
+    delivery_min_days: deliveryMin,
+    delivery_max_days: deliveryMax,
   };
 
   const exists = !!(await getProduct(v.slug));

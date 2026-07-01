@@ -60,6 +60,9 @@ export type Product = {
   productColours?: { id: number; name: string; hex: string; is_default: number }[];
   // Maps image_path → colour_id (null = shared/generic image).
   imageColourMap?: Record<string, number | null>;
+  // Per-product delivery time override (nullable — undefined = use global fallback)
+  deliveryMinDays?: number;
+  deliveryMaxDays?: number;
 };
 
 export const PRODUCTS: Product[] = [

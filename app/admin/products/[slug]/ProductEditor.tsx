@@ -66,6 +66,21 @@ export default function ProductEditor({ product }: { product: Product }) {
 
       <div className="adm-field__row--3">
         <label className="adm-field">
+          <span className="adm-field__label">Delivery · min days</span>
+          <input name="delivery_min_days" type="number" min={1} max={60} step={1} defaultValue={product.delivery_min_days ?? ""} className="adm-field__input" placeholder="e.g. 5" />
+        </label>
+        <label className="adm-field">
+          <span className="adm-field__label">Delivery · max days</span>
+          <input name="delivery_max_days" type="number" min={1} max={60} step={1} defaultValue={product.delivery_max_days ?? ""} className="adm-field__input" placeholder="e.g. 7" />
+        </label>
+        <div className="adm-field">
+          <span className="adm-field__label">&nbsp;</span>
+          <span className="adm-field__hint" style={{ paddingTop: 10 }}>Leave blank to use the global default.</span>
+        </div>
+      </div>
+
+      <div className="adm-field__row--3">
+        <label className="adm-field">
           <span className="adm-field__label">Kind</span>
           <select name="kind" defaultValue={product.kind} className="adm-field__select">
             <option value="tailored">Tailored</option>

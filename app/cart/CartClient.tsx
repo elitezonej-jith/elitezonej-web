@@ -11,8 +11,15 @@ import SectionHead from "../components/SectionHead";
 import ConfirmSheet from "../components/ConfirmSheet";
 import "../styles/cart.css";
 
+type DeliveryMap = Record<string, { min: number; max: number }>;
 
-export default function CartClient() {
+export default function CartClient({
+  deliveryMap = {},
+  globalLeadDays = 7,
+}: {
+  deliveryMap?: DeliveryMap;
+  globalLeadDays?: number;
+}) {
   const { items, count, subtotal, hydrated, removeItem, updateQty, clear } = useCart();
   const [confirmClear, setConfirmClear] = useState(false);
 
@@ -108,7 +115,22 @@ export default function CartClient() {
         <aside className="summary">
           <h2>Order summary</h2>
           <div className="row"><span>Subtotal</span><b>{fmtINR(subtotal)}</b></div>
-          <div className="row"><span>Estimated delivery</span><b>Free</b></div>
+          <div className="row"><span>Shipping</span><b>Free</b></div>
+          {hydrated && items.length > 0 && (() => {
+            // Compute the longest delivery window across all items in the bag
+            let maxMin = 0;
+            let maxMax = 0;
+            for (const it of items) {
+              const override = deliveryMap[it.slug];
+              const min = override ? override.min : globalLeadDays;
+              const max = override ? override.max : globalLeadDays + 2;
+              if (min > maxMin) maxMin = min;
+              if (max > maxMax) maxMax = max;
+            }
+            return (
+              <div className="row"><span>Estimated delivery</span><b>{maxMin}–{maxMax} working days</b></div>
+            );
+          })()}
           <div className="row"><span>Estimated tax</span><b>Inclusive</b></div>
 
           <div className="row total"><span>Total</span><b>{fmtINR(subtotal)}</b></div>

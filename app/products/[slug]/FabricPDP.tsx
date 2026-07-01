@@ -17,7 +17,11 @@ const QTY_PRESETS = [1, 2, 5, 10, 20];
 type Props = { product: Product; leadTimeDays: number };
 
 export default function FabricPDP({ product, leadTimeDays }: Props) {
-  const deliveryRange = `${leadTimeDays}–${leadTimeDays + 2} working days`;
+  const deliveryRange = product.deliveryMinDays
+    ? product.deliveryMaxDays
+      ? `${product.deliveryMinDays}–${product.deliveryMaxDays} working days`
+      : `${product.deliveryMinDays}–${product.deliveryMinDays + 2} working days`
+    : `${leadTimeDays}–${leadTimeDays + 2} working days`;
   const router = useRouter();
   const { addItem } = useCart();
   const [colourIdx, setColourIdx] = useState(0);
