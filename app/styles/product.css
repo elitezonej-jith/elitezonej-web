@@ -194,10 +194,10 @@
   line-height: 1;
 }
 .pdp-star {
-  color: var(--rule);
+  color: #ddd;
 }
 .pdp-star.on {
-  color: var(--accent);
+  color: #d4a853;
 }
 .pdp-rating-text {
   font-family: var(--font-mono);

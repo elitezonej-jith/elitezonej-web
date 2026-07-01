@@ -19,10 +19,10 @@ function Stars({
       className="rv-stars"
       role={ariaLabel ? "img" : undefined}
       aria-label={ariaLabel}
-      style={{ fontSize: size, lineHeight: 1 }}
+      style={{ fontSize: size, lineHeight: 1, display: "inline-flex", gap: 1 }}
     >
       {[1, 2, 3, 4, 5].map((i) => (
-        <span key={i} className={i <= full ? "rv-star is-on" : "rv-star"} aria-hidden="true">
+        <span key={i} className={i <= full ? "rv-star is-on" : "rv-star"} aria-hidden="true" style={{ color: i <= full ? "#d4a853" : "#ddd" }}>
           ★
         </span>
       ))}
@@ -220,10 +220,10 @@ export default function ReviewsSection({
           gap: 1px;
         }
         .rv-star {
-          color: var(--rule);
+          color: #ddd;
         }
         .rv-star.is-on {
-          color: var(--accent);
+          color: #d4a853;
         }
         .rv-form {
           margin-top: var(--s-5);
@@ -251,13 +251,13 @@ export default function ReviewsSection({
           border: 0;
           font-size: 24px;
           line-height: 1;
-          color: var(--rule);
+          color: #ddd;
           cursor: pointer;
           padding: 0;
         }
         .rv-rate-btn.is-on,
         .rv-rate-btn:hover {
-          color: var(--accent);
+          color: #d4a853;
         }
         .rv-input,
         .rv-textarea {
