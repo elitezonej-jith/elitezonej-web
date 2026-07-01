@@ -14,8 +14,6 @@ import Pagination from "../components/Pagination";
 import "../styles/collection.css";
 
 
-type FilterKey = "fit" | "fabric" | "occasion" | "size";
-
 type DbFilter = {
   name: string;
   field_key: string;
@@ -47,8 +45,6 @@ export default function CollectionClient({
     const init: Record<string, Set<string>> = {};
     if (hasDbFilters) {
       dbFilters.forEach((f) => { init[f.field_key] = new Set(); });
-    } else {
-      init.fit = new Set(); init.fabric = new Set(); init.occasion = new Set(); init.size = new Set();
     }
     return init;
   });
@@ -103,32 +99,22 @@ export default function CollectionClient({
       else if (cat !== "all") list = list.filter(p => p.category === cat);
     }
     if (sub) list = list.filter(p => p.sub === sub);
-    if (!isFabricMode) {
-      if (hasDbFilters) {
-        // Dynamic filtering from DB-configured filters
-        for (const f of dbFilters) {
-          const selected = active[f.field_key];
-          if (!selected || !selected.size) continue;
-          if (f.field_key === "sizes_json") {
-            list = list.filter(p => p.sizes?.some(s => selected.has(s.replace("-oos", ""))));
-          } else {
-            const selectedLower = new Set(Array.from(selected).map(s => s.toLowerCase()));
-            list = list.filter(p => {
-              const val = (p as Record<string, unknown>)[f.field_key];
-              if (typeof val !== "string" || !val) return false;
-              const valLower = val.toLowerCase();
-              // Match if value equals option OR option starts with value OR value starts with option
-              return selectedLower.has(valLower) || Array.from(selectedLower).some(s => valLower.includes(s) || s.includes(valLower));
-            });
-          }
-        }
-      } else {
-        // Legacy hardcoded filters
-        if (active.fit?.size) list = list.filter(p => active.fit.has(p.fit));
-        if (active.fabric?.size) list = list.filter(p => active.fabric.has(p.fabric));
-        if (active.occasion?.size) list = list.filter(p => active.occasion.has(p.occasion));
-        if (active.size?.size) {
-          list = list.filter(p => p.sizes?.some(s => active.size.has(s.replace("-oos", ""))));
+    if (!isFabricMode && hasDbFilters) {
+      // Dynamic filtering from DB-configured filters
+      for (const f of dbFilters) {
+        const selected = active[f.field_key];
+        if (!selected || !selected.size) continue;
+        if (f.field_key === "sizes_json") {
+          list = list.filter(p => p.sizes?.some(s => selected.has(s.replace("-oos", ""))));
+        } else {
+          const selectedLower = new Set(Array.from(selected).map(s => s.toLowerCase()));
+          list = list.filter(p => {
+            const val = (p as Record<string, unknown>)[f.field_key];
+            if (typeof val !== "string" || !val) return false;
+            const valLower = val.toLowerCase();
+            // Match if value equals option OR option starts with value OR value starts with option
+            return selectedLower.has(valLower) || Array.from(selectedLower).some(s => valLower.includes(s) || s.includes(valLower));
+          });
         }
       }
     }
@@ -196,7 +182,7 @@ export default function CollectionClient({
       <div className="toolbar">
         <span className="count t-mono-xs">{filtered.length} piece{filtered.length === 1 ? "" : "s"}</span>
         <div className="toolbar-actions">
-          {!isFabricMode && (
+          {!isFabricMode && hasDbFilters && (
             <button type="button" className="filter-toggle t-mono-xs" onClick={() => setFilterOpen(v => !v)}>
               Filter{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
             </button>
@@ -212,29 +198,18 @@ export default function CollectionClient({
         </div>
       </div>
 
-      <section className={`plp${isFabricMode ? " plp-fabric" : ""}`}>
-        {!isFabricMode && (
+      <section className={`plp${isFabricMode ? " plp-fabric" : ""}${!hasDbFilters && !isFabricMode ? " plp-no-filters" : ""}`}>
+        {!isFabricMode && hasDbFilters && (
           <aside className="filters" data-open={filterOpen}>
-            {hasDbFilters ? (
-              <>
-                {dbFilters.filter(f => f.filter_type !== "range").map((f) => (
-                  f.filter_type === "color" ? (
-                    <ColorFilterGroup key={f.name} name={f.name} options={f.options} active={active[f.field_key] || new Set()} onToggle={v => toggle(f.field_key, v)} />
-                  ) : f.filter_type === "size" ? (
-                    <SizeFilterGroup key={f.name} name={f.name} options={f.options} active={active[f.field_key] || new Set()} onToggle={v => toggle(f.field_key, v)} />
-                  ) : (
-                    <FilterGroup key={f.name} name={f.name} values={f.options.map(o => o.value)} active={active[f.field_key] || new Set()} onToggle={v => toggle(f.field_key, v)} />
-                  )
-                ))}
-              </>
-            ) : (
-              <>
-                <FilterGroup name="Fit" values={["Slim","Tailored","Regular","Relaxed"]} active={active.fit || new Set()} onToggle={v => toggle("fit", v)} />
-                <FilterGroup name="Fabric" values={["Wool","Linen","Cotton","Silk","Velvet"]} active={active.fabric || new Set()} onToggle={v => toggle("fabric", v)} />
-                <FilterGroup name="Occasion" values={["Wedding","Boardroom","Black Tie","Festive","Casual"]} active={active.occasion || new Set()} onToggle={v => toggle("occasion", v)} />
-                <FilterGroup name="Size" values={["36","38","40","42","44","46","XS","S","M","L","XL","XXL"]} active={active.size || new Set()} onToggle={v => toggle("size", v)} />
-              </>
-            )}
+            {dbFilters.filter(f => f.filter_type !== "range").map((f) => (
+              f.filter_type === "color" ? (
+                <ColorFilterGroup key={f.name} name={f.name} options={f.options} active={active[f.field_key] || new Set()} onToggle={v => toggle(f.field_key, v)} />
+              ) : f.filter_type === "size" ? (
+                <SizeFilterGroup key={f.name} name={f.name} options={f.options} active={active[f.field_key] || new Set()} onToggle={v => toggle(f.field_key, v)} />
+              ) : (
+                <FilterGroup key={f.name} name={f.name} values={f.options.map(o => o.value)} active={active[f.field_key] || new Set()} onToggle={v => toggle(f.field_key, v)} />
+              )
+            ))}
             <div className="filter-group">
               <h4>Price (₹)</h4>
               <div className="price-row">

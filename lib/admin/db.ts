@@ -76,6 +76,34 @@ function applyAdditive(db: Database.Database, statements: string[], tag: string)
   }
 }
 
+/**
+ * One-time repair: schema-v7 originally used BIGSERIAL (Postgres syntax) for
+ * the category_filters/filter_options tables. SQLite silently accepts the type
+ * name but does NOT auto-generate IDs — every row gets id=NULL, breaking FK
+ * relationships. If we detect the broken schema (table exists but the id
+ * column type is not "INTEGER"), drop both tables so schema-v7 can recreate
+ * them correctly. Data loss is zero because any rows written under the broken
+ * schema have NULL PKs and NULL FK references — they were never usable.
+ */
+function repairBrokenFilterTables(db: Database.Database): void {
+  try {
+    const cols = db.prepare("PRAGMA table_info(category_filters)").all() as Array<{
+      name: string; type: string; pk: number;
+    }>;
+    if (!cols.length) return; // table doesn't exist yet — nothing to repair
+    const idCol = cols.find((c) => c.name === "id");
+    // SQLite only auto-generates rowid when the type is exactly "INTEGER".
+    // If it's "BIGSERIAL" or anything else, the table is broken.
+    if (idCol && idCol.type.toUpperCase() === "INTEGER") return; // already fixed
+    // eslint-disable-next-line no-console
+    console.warn("[db] Repairing broken category_filters/filter_options tables (BIGSERIAL → INTEGER)");
+    db.exec("DROP TABLE IF EXISTS filter_options");
+    db.exec("DROP TABLE IF EXISTS category_filters");
+  } catch {
+    // Table doesn't exist or can't be inspected — schema-v7 will create it.
+  }
+}
+
 function ensureDefaultAdmin(db: Database.Database): void {
   // Skip entirely if both accounts already exist — avoids expensive bcrypt
   // hashing (~750ms per hash at cost 12) on every DB open / hot-reload.
@@ -204,6 +232,11 @@ function open(): Database.Database {
   applyAdditive(db, SCHEMA_V4_STATEMENTS, "schema-v4");
   applyAdditive(db, SCHEMA_V5_STATEMENTS, "schema-v5");
   applyAdditive(db, SCHEMA_V6_STATEMENTS, "schema-v6");
+  // Repair: if category_filters exists with a broken schema (BIGSERIAL instead
+  // of INTEGER PRIMARY KEY AUTOINCREMENT), the id column won't auto-generate.
+  // Drop and let schema-v7 recreate. Any data under the old schema is unusable
+  // (NULL PKs), so the drop is non-destructive.
+  repairBrokenFilterTables(db);
   applyAdditive(db, SCHEMA_V7_STATEMENTS, "schema-v7");
   applyAdditive(db, SCHEMA_V8_STATEMENTS, "schema-v8");
   applyAdditive(db, SCHEMA_V9_STATEMENTS, "schema-v9");

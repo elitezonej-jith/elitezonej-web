@@ -7,7 +7,7 @@ import { listProductsForPage } from "../../lib/storefront/catalogue";
 import { getCategoryMeta } from "../../lib/storefront/nav";
 import { CAT_DATA, SUBCATS } from "@/lib/subcats";
 import { sql } from "@/lib/admin/db";
-import { getInheritedFilters } from "@/lib/admin/repos/category-filters";
+import { getAggregatedFilters } from "@/lib/admin/repos/category-filters";
 
 // Temporarily force-dynamic: Vercel build can't reach Neon to prerender ISR.
 export const dynamic = "force-dynamic";
@@ -46,13 +46,13 @@ export default async function CollectionPage({
 
   const products = await listProductsForPage();
 
-  // Load category-aware filters from DB
+  // Load category-aware filters from DB (bubble-down: self + descendants)
   let dbFilters: Array<{ name: string; field_key: string; filter_type: string; options: Array<{ value: string; label: string | null; color_hex: string | null }> }> = [];
   const slug = sub || cat;
   const catRow = await sql.get<{ id: number }>("SELECT id FROM categories WHERE slug = ?", [slug]);
   if (catRow) {
-    const inherited = await getInheritedFilters(catRow.id);
-    dbFilters = inherited.map((f) => ({
+    const aggregated = await getAggregatedFilters(catRow.id);
+    dbFilters = aggregated.map((f) => ({
       name: f.name,
       field_key: f.field_key,
       filter_type: f.filter_type,

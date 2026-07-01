@@ -7,7 +7,7 @@ import type Database from "better-sqlite3";
 // content-identical the moment it reads from the DB. Bump SEED_VERSION whenever
 // this parity set changes — lib/admin/db.ts refreshes existing dev DBs on a
 // version bump (see reseedStudioIfStale).
-export const SEED_VERSION = 5;
+export const SEED_VERSION = 6;
 
 export function seedStudioDefaults(db: Database.Database): void {
   const insertBlock = db.prepare(`
@@ -224,4 +224,44 @@ export function seedStudioDefaults(db: Database.Database): void {
             'Free shipping over ₹15,000 · Made-to-measure in seven days · Lifetime mending on tailoring',
             '/bespoke', 'Begin a fitting', 100, 0, 1, '*')
   `).run();
+
+  // ── Category filters for Men ─────────────────────────────────────────────
+  // Seed default filters so the Men collection shows a functional sidebar on
+  // first boot. Other categories (Women, Accessories) intentionally have NO
+  // filters — the sidebar won't appear until an operator configures them.
+  const menCat = db.prepare("SELECT id FROM categories WHERE slug = 'men' AND parent_id IS NULL").get() as { id: number } | undefined;
+  if (menCat) {
+    const insertFilter = db.prepare(
+      `INSERT OR IGNORE INTO category_filters (category_id, name, field_key, filter_type, sort_order)
+       VALUES (?, ?, ?, ?, ?)`,
+    );
+    const insertOption = db.prepare(
+      `INSERT OR IGNORE INTO filter_options (filter_id, value, label, color_hex, sort_order)
+       VALUES (?, ?, ?, ?, ?)`,
+    );
+
+    // Fit filter
+    insertFilter.run(menCat.id, "Fit", "fit", "checkbox", 0);
+    const fitId = (db.prepare("SELECT id FROM category_filters WHERE category_id = ? AND name = 'Fit'").get(menCat.id) as { id: number }).id;
+    const fitOptions = ["Slim", "Tailored", "Regular", "Relaxed"];
+    fitOptions.forEach((v, i) => insertOption.run(fitId, v, null, null, i));
+
+    // Fabric filter
+    insertFilter.run(menCat.id, "Fabric", "fabric", "checkbox", 1);
+    const fabricId = (db.prepare("SELECT id FROM category_filters WHERE category_id = ? AND name = 'Fabric'").get(menCat.id) as { id: number }).id;
+    const fabricOptions = ["Wool", "Linen", "Cotton", "Silk", "Velvet"];
+    fabricOptions.forEach((v, i) => insertOption.run(fabricId, v, null, null, i));
+
+    // Occasion filter
+    insertFilter.run(menCat.id, "Occasion", "occasion", "checkbox", 2);
+    const occasionId = (db.prepare("SELECT id FROM category_filters WHERE category_id = ? AND name = 'Occasion'").get(menCat.id) as { id: number }).id;
+    const occasionOptions = ["Wedding", "Boardroom", "Black Tie", "Festive", "Casual"];
+    occasionOptions.forEach((v, i) => insertOption.run(occasionId, v, null, null, i));
+
+    // Size filter
+    insertFilter.run(menCat.id, "Size", "sizes_json", "size", 3);
+    const sizeId = (db.prepare("SELECT id FROM category_filters WHERE category_id = ? AND name = 'Size'").get(menCat.id) as { id: number }).id;
+    const sizeOptions = ["36", "38", "40", "42", "44", "46", "XS", "S", "M", "L", "XL", "XXL"];
+    sizeOptions.forEach((v, i) => insertOption.run(sizeId, v, null, null, i));
+  }
 }

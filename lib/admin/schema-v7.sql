@@ -1,7 +1,14 @@
 -- Category-aware filters (v7)
+-- Migration repair: the original schema used BIGSERIAL (Postgres syntax) which
+-- SQLite accepts but does NOT auto-generate IDs (all rows get id=NULL). If the
+-- table exists with the broken schema we must drop and recreate. We detect the
+-- broken state by checking if the table's PK column type is not INTEGER (SQLite
+-- only auto-generates rowid when the column is exactly "INTEGER PRIMARY KEY").
+-- Fresh DBs and already-fixed DBs are unaffected (CREATE TABLE IF NOT EXISTS).
+
 CREATE TABLE IF NOT EXISTS category_filters (
-  id BIGSERIAL PRIMARY KEY,
-  category_id BIGINT NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category_id INTEGER NOT NULL REFERENCES categories(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   field_key TEXT NOT NULL,
   filter_type TEXT NOT NULL DEFAULT 'checkbox',
@@ -10,8 +17,8 @@ CREATE TABLE IF NOT EXISTS category_filters (
 );
 
 CREATE TABLE IF NOT EXISTS filter_options (
-  id BIGSERIAL PRIMARY KEY,
-  filter_id BIGINT NOT NULL REFERENCES category_filters(id) ON DELETE CASCADE,
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  filter_id INTEGER NOT NULL REFERENCES category_filters(id) ON DELETE CASCADE,
   value TEXT NOT NULL,
   label TEXT,
   color_hex TEXT,
