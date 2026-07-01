@@ -69,7 +69,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
       qty: 1,
       size: sizeOn,
       colour: selectedColour?.name,
-      imageSrc: finalGallerySrcs[0] ?? imgSrc(product.slug, "01-front"),
+      imageSrc: finalGallerySrcs[0] ?? product.thumbnail ?? product.images?.[0] ?? imgSrc(product.slug, "01-front"),
     });
   };
 

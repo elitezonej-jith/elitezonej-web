@@ -85,7 +85,7 @@ export default function FabricPDP({ product, leadTimeDays, reviewAggregate }: Pr
     unitPrice: product.price,
     qty: qtyMeters,
     colour: activeColour?.name ?? "",
-    imageSrc: uploadedImages[0] ?? (activeColour ? imgFabric(product.slug, activeColour.name, "front") : ""),
+    imageSrc: uploadedImages[0] ?? product.thumbnail ?? (activeColour ? imgFabric(product.slug, activeColour.name, "front") : ""),
     isFabric: true as const,
   });
 

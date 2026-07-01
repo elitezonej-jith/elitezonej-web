@@ -64,7 +64,7 @@ export default function QuickAddButton({
             unitPrice: product.salePrice ?? product.price,
             qty: 1,
             colour: colour.name,
-            imageSrc: imgFabric(product.slug, colour.name, "front"),
+            imageSrc: product.thumbnail ?? product.images?.[0] ?? imgFabric(product.slug, colour.name, "front"),
             isFabric: true,
           });
         }}
@@ -123,7 +123,7 @@ export default function QuickAddButton({
                   unitPrice: product.salePrice ?? product.price,
                   qty: 1,
                   size: s,
-                  imageSrc: imgSrc(product.slug, "01-front"),
+                  imageSrc: product.thumbnail ?? product.images?.[0] ?? imgSrc(product.slug, "01-front"),
                 });
                 setShowSizes(false);
               }}
