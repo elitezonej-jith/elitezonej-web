@@ -5,6 +5,7 @@ import { FlashToast } from "../components/Toast";
 import { IconBox, IconBag } from "../components/Icons";
 import { requireUser } from "../../../lib/admin/session";
 import StockEditor from "./StockEditor";
+import FabricStockCell from "./FabricStockCell";
 import StartTracking from "./StartTracking";
 
 export const dynamic = "force-dynamic";
@@ -72,6 +73,46 @@ export default async function InventoryPage({ searchParams }: SP) {
      ORDER BY kind ASC, name ASC LIMIT 50`
   );
 
+  // Fabric products with colourway stock
+  type FabricColourInv = { id: number; product_slug: string; name: string; hex: string; stock_meters: number };
+  const fabricProducts = await sql.all<{ slug: string; name: string; status: string; stock_meters_total: number }>(
+    `SELECT p.slug, p.name, p.status, COALESCE(fm.stock_meters_total, 0) as stock_meters_total
+     FROM products p
+     LEFT JOIN fabric_meta fm ON fm.product_slug = p.slug
+     WHERE p.kind = 'fabric' AND p.status != 'archived'
+     AND p.slug IN (SELECT DISTINCT product_slug FROM fabric_colours)
+     ORDER BY p.name ASC`
+  );
+  const allFabricColours = await sql.all<FabricColourInv>(
+    "SELECT id, product_slug, name, hex, stock_meters FROM fabric_colours ORDER BY sort_order ASC, name ASC"
+  );
+  const fabricColourMap: Record<string, FabricColourInv[]> = {};
+  for (const c of allFabricColours) {
+    if (!fabricColourMap[c.product_slug]) fabricColourMap[c.product_slug] = [];
+    fabricColourMap[c.product_slug].push(c);
+  }
+
+  const FABRIC_LOW = 5;
+  const fabricRows = fabricProducts.map(p => {
+    const colours = fabricColourMap[p.slug] || [];
+    const total = colours.reduce((a, c) => a + Number(c.stock_meters), 0);
+    const hasLow = colours.some(c => c.stock_meters > 0 && c.stock_meters <= FABRIC_LOW);
+    const hasOos = colours.some(c => c.stock_meters === 0);
+    return { ...p, colours, total, hasLow, hasOos };
+  });
+
+  // Apply search filter to fabric rows too
+  let fabricFiltered = fabricRows;
+  if (sp.q) {
+    const q = sp.q.toLowerCase();
+    fabricFiltered = fabricFiltered.filter(r => r.name.toLowerCase().includes(q));
+  }
+  if (view === "low") fabricFiltered = fabricFiltered.filter(r => r.hasLow);
+  else if (view === "oos") fabricFiltered = fabricFiltered.filter(r => r.hasOos);
+
+  const fabricLowCount = fabricRows.filter(r => r.hasLow).length;
+  const fabricOosCount = fabricRows.filter(r => r.hasOos).length;
+
   function href(params: Record<string, string | undefined>) {
     const u = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) if (v && v !== "all" && v !== "name") u.set(k, v);
@@ -81,28 +122,28 @@ export default async function InventoryPage({ searchParams }: SP) {
   return (
     <div className="stu-page">
       <FlashToast flash={sp.flash} />
-      <PageHead title="Inventory" sub={`${tracked.length} products tracked · Low stock alert: ≤ ${threshold} units`} />
+      <PageHead title="Inventory" sub={`${tracked.length} clothing + ${fabricRows.length} fabrics tracked · Low stock alert: ≤ ${threshold} units / ≤ ${FABRIC_LOW}m`} />
 
       {/* Summary cards */}
       <div className="inv-summary">
         <a href={href({ view: undefined })} className={`inv-card ${view === "all" ? "inv-card--active" : ""}`}>
           <div className="inv-card__icon"><IconBox width={20} height={20} /></div>
           <div className="inv-card__body">
-            <div className="inv-card__num">{rows.length}</div>
+            <div className="inv-card__num">{rows.length + fabricRows.length}</div>
             <div className="inv-card__label">Tracked</div>
           </div>
         </a>
         <a href={href({ view: "low" })} className={`inv-card inv-card--warn ${view === "low" ? "inv-card--active" : ""}`}>
           <div className="inv-card__icon inv-card__icon--warn"><IconBag width={20} height={20} /></div>
           <div className="inv-card__body">
-            <div className="inv-card__num">{lowCount}</div>
+            <div className="inv-card__num">{lowCount + fabricLowCount}</div>
             <div className="inv-card__label">Running low</div>
           </div>
         </a>
         <a href={href({ view: "oos" })} className={`inv-card inv-card--danger ${view === "oos" ? "inv-card--active" : ""}`}>
           <div className="inv-card__icon inv-card__icon--danger"><IconBag width={20} height={20} /></div>
           <div className="inv-card__body">
-            <div className="inv-card__num">{oosCount}</div>
+            <div className="inv-card__num">{oosCount + fabricOosCount}</div>
             <div className="inv-card__label">Out of stock</div>
           </div>
         </a>
@@ -171,6 +212,55 @@ export default async function InventoryPage({ searchParams }: SP) {
           <span className="inv-pages__text">Page {page} of {totalPages}</span>
           {page < totalPages && <a href={href({ view: sp.view, q: sp.q, sort: sp.sort, page: String(page + 1) })} className="stu-btn stu-btn--ghost stu-btn--sm">Next →</a>}
         </div>
+      )}
+
+      {/* Fabric stock by colourway */}
+      {fabricFiltered.length > 0 && (
+        <section className="inv-fabrics">
+          <div className="inv-fabrics__head">
+            <h3 className="inv-fabrics__title">Fabrics — stock by colourway</h3>
+            <span className="inv-fabrics__sub">{fabricFiltered.length} fabric{fabricFiltered.length !== 1 ? "s" : ""} · {fabricFiltered.reduce((a, r) => a + r.total, 0)}m total</span>
+          </div>
+
+          <div className="inv-hint" style={{ marginTop: 8 }}>
+            <span className="inv-hint__label">COLOUR</span>
+            <span className="inv-hint__arrow">→</span>
+            <span className="inv-hint__label">METRES</span>
+            <span className="inv-hint__note">Click any number to edit. Changes save automatically.</span>
+          </div>
+
+          <div className="inv-list">
+            {fabricFiltered.map(row => (
+              <div key={row.slug} className={`inv-item ${row.hasOos ? "inv-item--oos" : row.hasLow ? "inv-item--low" : ""}`}>
+                <div className="inv-item__head">
+                  <div className="inv-item__info">
+                    <Link href={`/studio/products/${row.slug}`} className="inv-item__name">{row.name}</Link>
+                    <span className="inv-item__meta">
+                      Fabric · {row.colours.length} colourway{row.colours.length !== 1 ? "s" : ""}
+                      {" · "}
+                      <Link href={`/products/${row.slug}`} target="_blank" className="inv-item__store-link">View on store ↗</Link>
+                    </span>
+                  </div>
+                  <span className={`inv-item__status inv-item__status--${row.total === 0 ? "oos" : row.hasLow ? "low" : "ok"}`}>
+                    {row.total === 0 ? "Out of stock" : row.hasLow ? `${row.total}m · Restock soon` : `${row.total}m`}
+                  </span>
+                </div>
+                <div className="inv-item__sizes">
+                  {row.colours.map(c => (
+                    <FabricStockCell
+                      key={c.id}
+                      slug={row.slug}
+                      colourId={c.id}
+                      colourName={c.name}
+                      hex={c.hex}
+                      stockMeters={c.stock_meters}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Start tracking section */}

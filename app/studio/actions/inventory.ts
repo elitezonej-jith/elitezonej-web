@@ -47,3 +47,29 @@ export async function startTrackingAction(fd: FormData): Promise<void> {
   revalidatePath("/studio/inventory");
   redirect("/studio/inventory?flash=Stock+tracking+started");
 }
+
+export async function updateFabricStockAction(fd: FormData): Promise<void> {
+  await requireUser("/studio/login");
+  const slug = String(fd.get("slug") ?? "");
+  const colourId = Number(fd.get("colour_id") ?? 0);
+  const stockMeters = Math.max(0, Math.round(Number(fd.get("stock_meters") ?? 0)));
+  if (!slug || !colourId) return;
+
+  await sql.run(
+    "UPDATE fabric_colours SET stock_meters = ? WHERE id = ? AND product_slug = ?",
+    [stockMeters, colourId, slug],
+  );
+
+  // Sync the aggregate total in fabric_meta
+  const sum = await sql.get<{ total: number }>(
+    "SELECT COALESCE(SUM(stock_meters), 0) as total FROM fabric_colours WHERE product_slug = ?",
+    [slug],
+  );
+  await sql.run(
+    "UPDATE fabric_meta SET stock_meters_total = ? WHERE product_slug = ?",
+    [sum?.total ?? 0, slug],
+  );
+
+  bustInventory();
+  revalidatePath("/studio/inventory");
+}
