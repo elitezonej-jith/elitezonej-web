@@ -43,12 +43,17 @@ export default async function OrdersPage() {
         ) : (
           <div className="orders-list">
             {orders.map((o) => (
-              <Link key={o.id} href={`/account/orders/${o.id}`} className="orders-card">
-                <span className="orders-card-id">{o.id}</span>
-                <span className="orders-card-date">{orderDate(o.created_at)}</span>
-                <span className="orders-card-status">{statusLabel(o.status)}</span>
-                <span className="orders-card-total">{fmtINR(o.total)}</span>
-              </Link>
+              <div key={o.id} className="orders-card">
+                <Link href={`/account/orders/${o.id}`} className="orders-card-main">
+                  <span className="orders-card-id">{o.id}</span>
+                  <span className="orders-card-date">{orderDate(o.created_at)}</span>
+                  <span className="orders-card-status">{statusLabel(o.status)}</span>
+                  <span className="orders-card-total">{fmtINR(o.total)}</span>
+                </Link>
+                <Link href={`/account/orders/${o.id}/invoice`} className="orders-card-invoice" title="Download invoice">
+                  Invoice ↓
+                </Link>
+              </div>
             ))}
           </div>
         )}

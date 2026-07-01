@@ -51,7 +51,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       <main className="account-shell">
         <div className="orders-head">
           <h1>Order {order.id}</h1>
-          <Link href="/account/orders" className="orders-back">← All orders</Link>
+          <div className="orders-head__actions">
+            <Link href={`/account/orders/${order.id}/invoice`} className="orders-invoice-btn">Download Invoice</Link>
+            <Link href="/account/orders" className="orders-back">← All orders</Link>
+          </div>
         </div>
 
         <div className="od-meta">
