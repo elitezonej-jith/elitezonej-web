@@ -344,6 +344,15 @@ export default function InventoryClient({
         )}
       </div>
 
+      {/* Bottom pagination */}
+      {totalPages > 1 && (
+        <div className="inv2-bottom-pages">
+          <button type="button" disabled={page <= 1} onClick={() => setPage(p => p - 1)} className="inv2-bottom-pages__btn">← Previous</button>
+          <span className="inv2-bottom-pages__info">Page {page} of {totalPages}</span>
+          <button type="button" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)} className="inv2-bottom-pages__btn">Next →</button>
+        </div>
+      )}
+
       <UndoToast entry={undoEntry} onDismiss={dismiss} />
       <KeyboardShortcutsModal open={showShortcuts} onClose={() => setShowShortcuts(false)} />
     </div>

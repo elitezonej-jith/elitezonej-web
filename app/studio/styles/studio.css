@@ -2266,3 +2266,27 @@ button:focus-visible,
   .inv2-cell--saving { animation: none; background: transparent; }
   .inv2-cell__check { animation: none; }
 }
+
+/* ── Bottom Pagination ───────────────────────────────────────────── */
+.inv2-bottom-pages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  padding: 16px 0;
+}
+.inv2-bottom-pages__info { font-size: 13px; color: var(--stu-text-3); font-weight: 500; }
+.inv2-bottom-pages__btn {
+  padding: 8px 16px;
+  border-radius: var(--stu-radius-sm);
+  border: 1px solid var(--stu-border);
+  background: var(--stu-surface);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--stu-text-2);
+  cursor: pointer;
+  transition: all 120ms var(--stu-ease);
+}
+.inv2-bottom-pages__btn:hover:not(:disabled) { border-color: var(--stu-border-strong); background: var(--stu-surface-2); }
+.inv2-bottom-pages__btn:disabled { opacity: 0.35; cursor: not-allowed; }
