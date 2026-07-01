@@ -73,3 +73,39 @@ export async function updateFabricStockAction(fd: FormData): Promise<void> {
   bustInventory();
   revalidatePath("/studio/inventory");
 }
+
+/**
+ * Ensures every non-archived tailored product has inventory tracking rows.
+ * Products get a row per size (from sizes_json) with stock=0.
+ * Idempotent — uses ON CONFLICT DO NOTHING.
+ */
+export async function ensureAllProductsTracked(): Promise<number> {
+  const untracked = await sql.all<{ slug: string; sizes_json: string; kind: string }>(
+    `SELECT slug, sizes_json, kind FROM products
+     WHERE status != 'archived' AND kind = 'tailored'
+       AND slug NOT IN (SELECT DISTINCT product_slug FROM inventory)`
+  );
+  if (untracked.length === 0) return 0;
+
+  await sql.tx(async (t) => {
+    for (const product of untracked) {
+      let sizes: string[] = [];
+      try { sizes = JSON.parse(product.sizes_json); } catch { /* skip */ }
+      if (!Array.isArray(sizes) || sizes.length === 0) {
+        sizes = ["Free"]; // default for products with no sizes defined
+      }
+      for (const size of sizes) {
+        const cleanSize = size.replace(/-oos$/, "").trim();
+        if (!cleanSize) continue;
+        await t.run(
+          `INSERT INTO inventory (product_slug, size, stock, oos_flag)
+           VALUES (?, ?, 0, 1)
+           ON CONFLICT (product_slug, size) DO NOTHING`,
+          [product.slug, cleanSize],
+        );
+      }
+    }
+  });
+
+  return untracked.length;
+}
