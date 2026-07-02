@@ -7,6 +7,7 @@ import { WHATSAPP_DISPLAY } from "@/lib/contact";
 import { useCart } from "../components/CartProvider";
 import { startCheckout, confirmPayment, previewPricing, type CheckoutStartState, type PreviewState } from "./actions";
 import MockPaymentSheet from "./MockPaymentSheet";
+import PhoneVerification from "./PhoneVerification";
 import type { Address } from "../../lib/admin/repos/addresses";
 import "../styles/cart.css";
 import "../styles/addresses.css";
@@ -188,6 +189,7 @@ export default function CheckoutClient({
   const [promo, setPromo] = useState("");
   const [preview, setPreview] = useState<PreviewState | null>(null);
   const [previewPending, setPreviewPending] = useState(false);
+  const [phoneToken, setPhoneToken] = useState("");
 
   // Stable per-checkout key so a double-submit / retry resumes the same order
   // server-side instead of creating a duplicate.
@@ -424,6 +426,19 @@ export default function CheckoutClient({
                 {preview.promoApplied ? "✓ " : ""}{preview.promoMessage}
               </p>
             )}
+
+            {/* Phone verification required for first-order promos */}
+            {preview?.requiresPhoneVerification && !phoneToken && (
+              <PhoneVerification
+                phone={(typeof document !== "undefined" ? (document.querySelector<HTMLInputElement>('input[name="phone"]')?.value ?? "") : "")}
+                onVerified={(token) => setPhoneToken(token)}
+                onCancel={() => { setPromo(""); setPreview(null); }}
+              />
+            )}
+            {phoneToken && preview?.requiresPhoneVerification && (
+              <p className="t-mono-xs" style={{ color: "var(--success)" }}>✓ Phone verified</p>
+            )}
+            <input type="hidden" name="phone_token" value={phoneToken} />
 
             <div style={{ marginTop: 8, display: "grid", gap: 6 }}>
               <div className="row">

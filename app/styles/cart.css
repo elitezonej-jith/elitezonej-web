@@ -218,3 +218,32 @@
 }
 .worn-with .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s-5); }
 @media (max-width: 720px) { .worn-with .grid { grid-template-columns: 1fr; } }
+
+/* ── Phone Verification (checkout) ───────────────────────────────── */
+.phone-verify {
+  margin: 12px 0;
+  padding: 16px;
+  border: 1px solid var(--paper-3);
+  border-radius: 6px;
+  background: var(--paper-2, #fafafa);
+}
+.phone-verify__header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+.phone-verify__icon { font-size: 20px; line-height: 1; }
+.phone-verify__title { margin: 0; font-size: 13px; font-weight: 600; color: var(--ink); }
+.phone-verify__sub { margin: 2px 0 0; font-size: 12px; color: var(--ink-2); }
+.phone-verify__actions { display: flex; align-items: center; gap: 12px; }
+.phone-verify__cancel { font-size: 12px; color: var(--ink-2); background: none; border: none; cursor: pointer; text-decoration: underline; }
+.phone-verify__cancel:hover { color: var(--ink); }
+.phone-verify__status { font-size: 12px; color: var(--ink-2); margin: 0; }
+.phone-verify__code-form { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.phone-verify__code-input {
+  width: 140px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-align: center;
+  font-family: ui-monospace, monospace;
+}
+.phone-verify__resend { font-size: 11px; color: var(--ink-2); background: none; border: none; cursor: pointer; text-decoration: underline; }
+.phone-verify__error { margin: 8px 0 0; font-size: 12px; color: var(--error, #c62828); }
+.phone-verify__error-state { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }

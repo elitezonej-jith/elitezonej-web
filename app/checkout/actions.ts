@@ -154,7 +154,20 @@ export async function startCheckout(
     }
   }
 
-  const priced = await priceCart(linesParsed.data as CartLineInput[], form.data.promo_code, form.data.email, form.data.phone);
+  // If a Firebase phone token is provided (for first-order promo verification),
+  // verify it server-side and use the trusted phone number for promo validation.
+  const phoneToken = String(fd.get("phone_token") ?? "").trim();
+  let verifiedPhone = form.data.phone; // default: use form-entered phone
+  if (phoneToken) {
+    const { verifyPhoneToken } = await import("../../lib/firebase/admin");
+    const firebasePhone = await verifyPhoneToken(phoneToken);
+    if (firebasePhone) {
+      verifiedPhone = firebasePhone; // trusted, verified by Firebase
+    }
+    // If verification fails, still proceed with form phone (non-verified path)
+  }
+
+  const priced = await priceCart(linesParsed.data as CartLineInput[], form.data.promo_code, form.data.email, verifiedPhone);
   if (!priced.ok) return { error: priced.error };
 
   const orderId = await createPendingOrder({
@@ -241,6 +254,7 @@ export type PreviewState = {
   error?: string;
   promoApplied?: boolean;
   promoMessage?: string;
+  requiresPhoneVerification?: boolean;
   pricing?: { subtotal: number; discount: number; shipping: number; tax: number; total: number; promo_code: string | null };
 };
 
@@ -291,6 +305,7 @@ export async function previewPricing(
     ok: true,
     promoApplied: applied,
     promoMessage: applied ? `Code ${withPromo.pricing.promo_code} applied.` : undefined,
+    requiresPhoneVerification: applied && !!withPromo.pricing.isFirstOrder,
     pricing: {
       subtotal: withPromo.pricing.subtotal,
       discount: withPromo.pricing.discount,
