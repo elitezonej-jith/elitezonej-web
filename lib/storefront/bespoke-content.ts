@@ -11,12 +11,14 @@ export type BespokeService = {
   price: string;
   features: string[];
   cta_text: string;
+  image_path: string;
 };
 
 export type ProcessStep = {
   id: string;
   title: string;
   description: string;
+  image_path: string;
 };
 
 export type Testimonial = {
@@ -32,6 +34,7 @@ export type BespokeContent = {
     headline: string;
     subtitle: string;
     lead_time_days: number;
+    image_path: string;
   };
   services: BespokeService[];
   process_steps: ProcessStep[];
@@ -46,6 +49,7 @@ const DEFAULT_CONTENT: BespokeContent = {
     headline: "A suit cut to your figure.\nDelivered in {leadTime}.",
     subtitle: "Twelve in-house designers and twenty-six master tailors. Visit us by appointment, or book a home fitting at your address.",
     lead_time_days: 14,
+    image_path: "/generated/_sections/service-bespoke.webp",
   },
   services: [
     {
@@ -60,6 +64,7 @@ const DEFAULT_CONTENT: BespokeContent = {
         "Lifetime mending",
       ],
       cta_text: "Begin your suit",
+      image_path: "/generated/_sections/service-bespoke.webp",
     },
     {
       id: "svc-2",
@@ -73,6 +78,7 @@ const DEFAULT_CONTENT: BespokeContent = {
         "Festive-ready in {leadTime}",
       ],
       cta_text: "Configure yours",
+      image_path: "/generated/_sections/service-sherwani.webp",
     },
     {
       id: "svc-3",
@@ -86,13 +92,14 @@ const DEFAULT_CONTENT: BespokeContent = {
         "Pickup & return across India",
       ],
       cta_text: "Book alterations",
+      image_path: "/generated/_sections/service-shirts.webp",
     },
   ],
   process_steps: [
-    { id: "step-1", title: "Choose your cloth", description: "Browse our cloth library — wools from Vitale Barberis Canonico and Reda 1865, Egyptian poplins from Thomas Mason, handwoven Indian silks. Order swatches free of charge." },
-    { id: "step-2", title: "Get measured", description: "Book a home fitting at your address. Fourteen measurements, taken by our master tailors. Forty minutes, complimentary refreshment." },
-    { id: "step-3", title: "We cut and stitch", description: "Cut by hand from your paper pattern, basted for the first fitting, then constructed with hand-padded canvas and hand-stitched lapels." },
-    { id: "step-4", title: "Receive in {leadTime}", description: "Delivered free across India in a hand-stitched garment bag. Lifetime mending." },
+    { id: "step-1", title: "Choose your cloth", description: "Browse our cloth library — wools from Vitale Barberis Canonico and Reda 1865, Egyptian poplins from Thomas Mason, handwoven Indian silks. Order swatches free of charge.", image_path: "/generated/_sections/process-cloth.webp" },
+    { id: "step-2", title: "Get measured", description: "Book a home fitting at your address. Fourteen measurements, taken by our master tailors. Forty minutes, complimentary refreshment.", image_path: "/generated/_sections/service-bespoke.webp" },
+    { id: "step-3", title: "We cut and stitch", description: "Cut by hand from your paper pattern, basted for the first fitting, then constructed with hand-padded canvas and hand-stitched lapels.", image_path: "/generated/_sections/process-measure.webp" },
+    { id: "step-4", title: "Receive in {leadTime}", description: "Delivered free across India in a hand-stitched garment bag. Lifetime mending.", image_path: "/generated/_sections/process-finish.webp" },
   ],
   testimonials: [
     { id: "q-1", quote: "I've worn one of Aman's three-piece suits for every wedding I've attended in the last four years. They've taken it in twice for free and it still drapes like the day I bought it.", author: "Rohan Mehra", title: "Investment Manager" },

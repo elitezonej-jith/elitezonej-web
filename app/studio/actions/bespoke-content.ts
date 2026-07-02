@@ -12,12 +12,14 @@ const ServiceSchema = z.object({
   price: z.string().min(1),
   features: z.array(z.string()),
   cta_text: z.string().min(1),
+  image_path: z.string().default(""),
 });
 
 const StepSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
   description: z.string().min(1),
+  image_path: z.string().default(""),
 });
 
 const TestimonialSchema = z.object({
@@ -33,6 +35,7 @@ const ContentSchema = z.object({
     headline: z.string().min(1),
     subtitle: z.string().min(1),
     lead_time_days: z.number().int().min(1).max(365),
+    image_path: z.string().default(""),
   }),
   services: z.array(ServiceSchema).min(1),
   process_steps: z.array(StepSchema).min(1),

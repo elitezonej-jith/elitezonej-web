@@ -2,6 +2,7 @@
 import { useActionState, useState } from "react";
 import { saveBespokeContentAction, type BespokeContentState } from "../../actions/bespoke-content";
 import type { BespokeContent, BespokeService, ProcessStep, Testimonial } from "../../../../lib/storefront/bespoke-content";
+import ImageUploader from "../../components/ImageUploader";
 
 type Props = { initial: BespokeContent };
 const initialState: BespokeContentState = {};
@@ -16,6 +17,7 @@ export default function BespokeContentEditor({ initial }: Props) {
   const [headline, setHeadline] = useState(initial.hero.headline);
   const [subtitle, setSubtitle] = useState(initial.hero.subtitle);
   const [leadTime, setLeadTime] = useState(initial.hero.lead_time_days);
+  const [heroImage, setHeroImage] = useState(initial.hero.image_path);
 
   // ─── Services state ─────────────────────────────────────────────────
   const [services, setServices] = useState<BespokeService[]>(initial.services);
@@ -31,7 +33,7 @@ export default function BespokeContentEditor({ initial }: Props) {
 
   // ─── Payload ────────────────────────────────────────────────────────
   const payload = JSON.stringify({
-    hero: { eyebrow, headline, subtitle, lead_time_days: leadTime },
+    hero: { eyebrow, headline, subtitle, lead_time_days: leadTime, image_path: heroImage },
     services,
     process_steps: steps,
     testimonials,
@@ -44,7 +46,7 @@ export default function BespokeContentEditor({ initial }: Props) {
   }
   function removeService(id: string) { setServices(prev => prev.filter(s => s.id !== id)); }
   function addService() {
-    setServices(prev => [...prev, { id: genId(), category: "", title: "", price: "", features: [""], cta_text: "Learn more" }]);
+    setServices(prev => [...prev, { id: genId(), category: "", title: "", price: "", features: [""], cta_text: "Learn more", image_path: "" }]);
   }
 
   // ─── Step helpers ───────────────────────────────────────────────────
@@ -52,7 +54,7 @@ export default function BespokeContentEditor({ initial }: Props) {
     setSteps(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
   }
   function removeStep(id: string) { setSteps(prev => prev.filter(s => s.id !== id)); }
-  function addStep() { setSteps(prev => [...prev, { id: genId(), title: "", description: "" }]); }
+  function addStep() { setSteps(prev => [...prev, { id: genId(), title: "", description: "", image_path: "" }]); }
 
   // ─── Testimonial helpers ────────────────────────────────────────────
   function updateTestimonial(id: string, patch: Partial<Testimonial>) {
@@ -88,6 +90,17 @@ export default function BespokeContentEditor({ initial }: Props) {
             <span className="stu-field__label">Lead time (days)</span>
             <input type="number" min={1} max={365} value={leadTime} onChange={e => setLeadTime(Math.max(1, Number(e.target.value) || 14))} className="stu-input" style={{ width: 100 }} />
           </label>
+          <div className="stu-field" style={{ marginTop: 12 }}>
+            <span className="stu-field__label">Hero image</span>
+            {heroImage && (
+              <div className="bce-img-preview">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={heroImage} alt="" className="bce-img-preview__img" />
+                <span className="bce-img-preview__path">{heroImage}</span>
+              </div>
+            )}
+            <ImageUploader folder="bespoke" multiple={false} onUploaded={({ path }) => setHeroImage(path)} hint="Hero background image (landscape, 1600×900 ideal)" />
+          </div>
         </div>
       </section>
 
@@ -126,6 +139,16 @@ export default function BespokeContentEditor({ initial }: Props) {
                 <span className="stu-field__label">CTA button text</span>
                 <input value={svc.cta_text} onChange={e => updateService(svc.id, { cta_text: e.target.value })} className="stu-input" placeholder="Begin your suit" style={{ width: 200 }} />
               </label>
+              <div className="stu-field" style={{ marginTop: 8 }}>
+                <span className="stu-field__label">Service image</span>
+                {svc.image_path && (
+                  <div className="bce-img-preview bce-img-preview--sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={svc.image_path} alt="" className="bce-img-preview__img" />
+                  </div>
+                )}
+                <ImageUploader folder="bespoke" multiple={false} onUploaded={({ path }) => updateService(svc.id, { image_path: path })} hint="4:3 ratio, 800×600 ideal" />
+              </div>
             </div>
           ))}
           <button type="button" className="stu-btn stu-btn--ghost stu-btn--sm" onClick={addService}>+ Add service</button>
@@ -153,6 +176,16 @@ export default function BespokeContentEditor({ initial }: Props) {
                 <span className="stu-field__label">Description</span>
                 <textarea value={step.description} onChange={e => updateStep(step.id, { description: e.target.value })} className="stu-textarea" rows={3} />
               </label>
+              <div className="stu-field" style={{ marginTop: 8 }}>
+                <span className="stu-field__label">Step image</span>
+                {step.image_path && (
+                  <div className="bce-img-preview bce-img-preview--sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={step.image_path} alt="" className="bce-img-preview__img" />
+                  </div>
+                )}
+                <ImageUploader folder="bespoke" multiple={false} onUploaded={({ path }) => updateStep(step.id, { image_path: path })} hint="Square or landscape, 600×400 ideal" />
+              </div>
             </div>
           ))}
           <button type="button" className="stu-btn stu-btn--ghost stu-btn--sm" onClick={addStep}>+ Add step</button>

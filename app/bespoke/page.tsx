@@ -50,7 +50,7 @@ export default async function BespokePage() {
           </div>
         </div>
         <Parallax className="b-hero-img" intensity={0.12} direction="-y">
-          <div className="img" role="img" aria-label="Master tailor measuring a client at our atelier"></div>
+          <div className="img" role="img" aria-label="Master tailor measuring a client at our atelier" style={content.hero.image_path ? { background: `url("${content.hero.image_path}") center/cover no-repeat` } : undefined}></div>
         </Parallax>
       </section>
 
@@ -69,7 +69,7 @@ export default async function BespokePage() {
           <div className="grid svc-grid">
             {content.services.map((svc, i) => (
               <Reveal key={svc.id} as="div" className={`svc svc-${i + 1}`} delay={Math.min(i, 4) as 0 | 1 | 2 | 3 | 4}>
-                <div className="photo"></div>
+                <div className="photo" style={svc.image_path ? { backgroundImage: `url("${svc.image_path}")` } : undefined}></div>
                 <span className="svc-numeral" aria-hidden="true">{["I.", "II.", "III.", "IV.", "V."][i] ?? `${i + 1}.`}</span>
                 <div className="body">
                   <span className="ix t-mono-xs">{svc.category}</span>
@@ -100,7 +100,7 @@ export default async function BespokePage() {
         <div className="steps">
           {content.process_steps.map((step, i) => (
             <Reveal key={step.id} as="div" className={`step step-${i + 1}`} delay={Math.min(i, 4) as 0 | 1 | 2 | 3 | 4}>
-              <div className="photo"></div>
+              <div className="photo" style={step.image_path ? { backgroundImage: `url("${step.image_path}")` } : undefined}></div>
               <div className="num">{String(i + 1).padStart(2, "0")}</div>
               <h4>{replaceLead(step.title, leadLabel)}</h4>
               <p className="t-body">{replaceLead(step.description, leadLabel)}</p>
