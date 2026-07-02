@@ -36,7 +36,9 @@ export default async function BespokePage({ searchParams }: SP) {
   ];
   return (
     <div className="stu-page">
-      <PageHead title="Bespoke leads" sub="Customers who submitted the bespoke form. Move each through the funnel." />
+      <PageHead title="Bespoke leads" sub="Customers who submitted the bespoke form. Move each through the funnel.">
+        <Link href="/studio/bespoke/content" className="stu-btn stu-btn--ghost">Edit page content</Link>
+      </PageHead>
       <FilterBar chips={chips} placeholder="Search by name, phone, email…" />
       <div className="stu-card">
         <div className="stu-card__body--flush">
