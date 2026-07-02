@@ -7,15 +7,22 @@ import Parallax from "../components/Parallax";
 import SectionHead from "../components/SectionHead";
 import BookingForm from "./BookingForm";
 import { WHATSAPP_LINK, WHATSAPP_DISPLAY } from "@/lib/contact";
-import { getSiteSettings } from "@/lib/storefront/site-settings";
+import { getBespokeContent } from "@/lib/storefront/bespoke-content";
 import "../styles/bespoke.css";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Bespoke & Made-to-Measure — Elite Zone J" };
 
+function replaceLead(text: string, leadLabel: string): string {
+  return text.replace(/\{leadTime\}/g, leadLabel);
+}
+
 export default async function BespokePage() {
-  const { leadTimeDays } = await getSiteSettings();
-  const leadLabel = `${leadTimeDays} day${leadTimeDays === 1 ? "" : "s"}`;
+  const content = await getBespokeContent();
+  const leadLabel = `${content.hero.lead_time_days} day${content.hero.lead_time_days === 1 ? "" : "s"}`;
+
+  const headlineParts = replaceLead(content.hero.headline, leadLabel).split("\n");
+
   return (
     <>
       <Header />
@@ -23,10 +30,20 @@ export default async function BespokePage() {
       <main>
       <section className="b-hero">
         <div className="copy">
-          <div className="ix t-mono-xs">Bespoke · Made-to-Measure · Alterations</div>
-          <h1>A suit cut to <em>your</em> figure.<br />Delivered in {leadLabel}.</h1>
-          <p>Twelve in-house designers and twenty-six master tailors.
-            Visit us by appointment, or book a home fitting at your address.</p>
+          <div className="ix t-mono-xs">{content.hero.eyebrow}</div>
+          <h1>
+            {headlineParts.map((part, i) => (
+              <span key={i}>
+                {i > 0 && <br />}
+                {part.includes("your") ? (
+                  <>{part.replace(/your/, "")}<em>your</em></>
+                ) : (
+                  part
+                )}
+              </span>
+            ))}
+          </h1>
+          <p>{replaceLead(content.hero.subtitle, leadLabel)}</p>
           <div className="ctas">
             <Link className="btn btn-primary btn-lg" href="#book">Book a fitting</Link>
             <Link className="btn btn-secondary btn-lg" href="#process">How it works</Link>
@@ -37,85 +54,62 @@ export default async function BespokePage() {
         </Parallax>
       </section>
 
+      {/* Services */}
       <section className="services">
         <div className="row">
           <SectionHead
             numeral={1}
             eyebrow="Three ways to be tailored"
             title="Pick the path that fits your time."
-            meta="From ₹3,500"
+            meta={`From ₹${Math.min(...content.services.map(s => {
+              const match = s.price.match(/[\d,]+/);
+              return match ? Number(match[0].replace(/,/g, "")) : 99999;
+            })).toLocaleString()}`}
           />
           <div className="grid svc-grid">
-            <Reveal as="div" className="svc svc-1" delay={0}>
-              <div className="photo"></div>
-              <span className="svc-numeral" aria-hidden="true">I.</span>
-              <div className="body">
-                <span className="ix t-mono-xs">Bespoke</span>
-                <h3>The Bespoke Suit</h3>
-                <span className="svc-rule" aria-hidden="true" />
-                <div className="price">From ₹45,000 · 4 to 6 weeks</div>
-                <ul>
-                  <li>Drafted to a paper pattern unique to your figure</li>
-                  <li>Three fittings — basted, forward, finish</li>
-                  <li>Hand-padded canvas, hand-stitched buttonholes</li>
-                  <li>Lifetime mending</li>
-                </ul>
-                <div className="cta"><Link className="btn btn-primary btn-block" href="#book">Begin your suit</Link></div>
-              </div>
-            </Reveal>
-            <Reveal as="div" className="svc svc-2" delay={1}>
-              <div className="photo"></div>
-              <span className="svc-numeral" aria-hidden="true">II.</span>
-              <div className="body">
-                <span className="ix t-mono-xs">Made-to-Measure</span>
-                <h3>Custom Sherwani</h3>
-                <span className="svc-rule" aria-hidden="true" />
-                <div className="price">From ₹28,000 · {leadLabel}</div>
-                <ul>
-                  <li>Built on our base block, adjusted to your fourteen measurements</li>
-                  <li>Choose cloth, lining, collar, length, and embroidery</li>
-                  <li>One fitting included</li>
-                  <li>Festive-ready in {leadLabel}</li>
-                </ul>
-                <div className="cta"><Link className="btn btn-primary btn-block" href="#book">Configure yours</Link></div>
-              </div>
-            </Reveal>
-            <Reveal as="div" className="svc svc-3" delay={2}>
-              <div className="photo"></div>
-              <span className="svc-numeral" aria-hidden="true">III.</span>
-              <div className="body">
-                <span className="ix t-mono-xs">Alterations</span>
-                <h3>Alterations &amp; Fit Correction</h3>
-                <span className="svc-rule" aria-hidden="true" />
-                <div className="price">From ₹3,500 · 5 to 7 days</div>
-                <ul>
-                  <li>Bring in a piece you love; we&apos;ll re-cut it to fit</li>
-                  <li>Trousers, jackets, shirts, sherwanis</li>
-                  <li>Free for any Elite Zone J piece in its first year</li>
-                  <li>Pickup &amp; return across India</li>
-                </ul>
-                <div className="cta"><Link className="btn btn-primary btn-block" href="#book">Book alterations</Link></div>
-              </div>
-            </Reveal>
+            {content.services.map((svc, i) => (
+              <Reveal key={svc.id} as="div" className={`svc svc-${i + 1}`} delay={Math.min(i, 4) as 0 | 1 | 2 | 3 | 4}>
+                <div className="photo"></div>
+                <span className="svc-numeral" aria-hidden="true">{["I.", "II.", "III.", "IV.", "V."][i] ?? `${i + 1}.`}</span>
+                <div className="body">
+                  <span className="ix t-mono-xs">{svc.category}</span>
+                  <h3>{svc.title}</h3>
+                  <span className="svc-rule" aria-hidden="true" />
+                  <div className="price">{replaceLead(svc.price, leadLabel)}</div>
+                  <ul>
+                    {svc.features.filter(Boolean).map((f, fi) => (
+                      <li key={fi}>{replaceLead(f, leadLabel)}</li>
+                    ))}
+                  </ul>
+                  <div className="cta"><Link className="btn btn-primary btn-block" href="#book">{svc.cta_text}</Link></div>
+                </div>
+              </Reveal>
+            ))}
           </div>
         </div>
       </section>
 
+      {/* Process */}
       <section className="process" id="process">
         <SectionHead
           numeral={2}
           eyebrow="The process"
           title="How it's made."
-          meta={`Four steps · ${leadLabel}`}
+          meta={`${content.process_steps.length} steps · ${leadLabel}`}
         />
         <div className="steps">
-          <Reveal as="div" className="step step-1" delay={0}><div className="photo"></div><div className="num">01</div><h4>Choose your cloth</h4><p className="t-body">Browse our cloth library — wools from Vitale Barberis Canonico and Reda 1865, Egyptian poplins from Thomas Mason, handwoven Indian silks. Order swatches free of charge.</p></Reveal>
-          <Reveal as="div" className="step step-2" delay={1}><div className="photo"></div><div className="num">02</div><h4>Get measured</h4><p className="t-body">Book a home fitting at your address. Fourteen measurements, taken by our master tailors. Forty minutes, complimentary refreshment.</p></Reveal>
-          <Reveal as="div" className="step step-3" delay={2}><div className="photo"></div><div className="num">03</div><h4>We cut and stitch</h4><p className="t-body">Cut by hand from your paper pattern, basted for the first fitting, then constructed with hand-padded canvas and hand-stitched lapels.</p></Reveal>
-          <Reveal as="div" className="step step-4" delay={3}><div className="photo"></div><div className="num">04</div><h4>Receive in {leadLabel}</h4><p className="t-body">Delivered free across India in a hand-stitched garment bag. Lifetime mending.</p></Reveal>
+          {content.process_steps.map((step, i) => (
+            <Reveal key={step.id} as="div" className={`step step-${i + 1}`} delay={Math.min(i, 4) as 0 | 1 | 2 | 3 | 4}>
+              <div className="photo"></div>
+              <div className="num">{String(i + 1).padStart(2, "0")}</div>
+              <h4>{replaceLead(step.title, leadLabel)}</h4>
+              <p className="t-body">{replaceLead(step.description, leadLabel)}</p>
+            </Reveal>
+          ))}
         </div>
       </section>
 
+      {/* Booking form */}
       <section className="book" id="book">
         <div className="row">
           <div>
@@ -126,27 +120,28 @@ export default async function BespokePage() {
               Or message us on WhatsApp: <a href={WHATSAPP_LINK} target="_blank" rel="noopener noreferrer">{WHATSAPP_DISPLAY}</a>
             </div>
           </div>
-          <BookingForm />
+          <BookingForm services={content.booking_services} />
         </div>
       </section>
 
-      <section className="quotes">
-        <SectionHead
-          numeral={5}
-          eyebrow="Customer voices"
-          title="What our customers say."
-        />
-        <div className="grid">
-          <Reveal as="div" className="quote" delay={0}>
-            <q>&ldquo;I&apos;ve worn one of Aman&apos;s three-piece suits for every wedding I&apos;ve attended in the last four years. They&apos;ve taken it in twice for free and it still drapes like the day I bought it.&rdquo;</q>
-            <div className="by t-mono-xs">— <b>Rohan Mehra</b> · Investment Manager</div>
-          </Reveal>
-          <Reveal as="div" className="quote" delay={1}>
-            <q>&ldquo;The home fitting was the deciding factor. The tailor came to my apartment, took fourteen measurements, asked questions a Savile Row cutter would ask. The sherwani arrived right on schedule.&rdquo;</q>
-            <div className="by t-mono-xs">— <b>Arjun Shah</b> · Architect</div>
-          </Reveal>
-        </div>
-      </section>
+      {/* Testimonials */}
+      {content.testimonials.length > 0 && (
+        <section className="quotes">
+          <SectionHead
+            numeral={5}
+            eyebrow="Customer voices"
+            title="What our customers say."
+          />
+          <div className="grid">
+            {content.testimonials.map((t, i) => (
+              <Reveal key={t.id} as="div" className="quote" delay={Math.min(i, 4) as 0 | 1 | 2 | 3 | 4}>
+                <q>&ldquo;{t.quote}&rdquo;</q>
+                <div className="by t-mono-xs">— <b>{t.author}</b>{t.title ? ` · ${t.title}` : ""}</div>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      )}
 
       </main>
       <TrustStrip />

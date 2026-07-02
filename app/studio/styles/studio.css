@@ -2436,3 +2436,15 @@ button:focus-visible,
   min-width: 40px;
   justify-content: center;
 }
+
+/* ── Bespoke Content Editor ──────────────────────────────────────── */
+.bce-service, .bce-step, .bce-testimonial {
+  padding: 16px;
+  border: 1px solid var(--stu-border);
+  border-radius: var(--stu-radius-sm);
+  margin-bottom: 12px;
+}
+.bce-service__head, .bce-step__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.bce-service__num, .bce-step__num { font-size: 12px; font-weight: 700; color: var(--stu-text-3); }
+.bce-testimonial { margin-bottom: 12px; }
+.stu-toast--success { padding: 12px 16px; border-radius: var(--stu-radius-sm); background: var(--stu-success-soft); color: var(--stu-success); font-size: 13px; font-weight: 500; margin-bottom: 16px; }

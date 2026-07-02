@@ -21,8 +21,16 @@ const TEXT_FIELDS: Field[] = [
 
 const initial: PublicBookingState = {};
 
-export default function BookingForm() {
+export default function BookingForm({ services }: { services?: string[] }) {
   const [state, action, pending] = useActionState(submitBespokeBooking, initial);
+
+  const serviceOptions = services ?? [
+    "Bespoke Suit",
+    "Custom Sherwani",
+    "Tailored Shirts",
+    "Alterations",
+    "Just exploring",
+  ];
 
   if (state.ok) {
     return (
@@ -59,13 +67,7 @@ export default function BookingForm() {
         name="service"
         label="Service"
         placeholder="Select a service"
-        options={[
-          "Bespoke Suit",
-          "Custom Sherwani",
-          "Tailored Shirts",
-          "Alterations",
-          "Just exploring",
-        ]}
+        options={serviceOptions}
       />
       {state.error && (
         <p id="booking-error" style={{ margin: 0, color: "var(--accent)", fontStyle: "italic" }} role="alert">
