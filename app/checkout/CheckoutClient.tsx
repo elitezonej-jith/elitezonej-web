@@ -291,6 +291,9 @@ export default function CheckoutClient({
       const fd = new FormData();
       fd.set("cart", cartPayload);
       fd.set("promo_code", promo);
+      // Include email so first-order promos can validate the customer
+      const emailInput = document.querySelector<HTMLInputElement>('input[name="email"]');
+      if (emailInput?.value) fd.set("email", emailInput.value);
       const res = await previewPricing({}, fd);
       setPreview(res);
     } catch {
