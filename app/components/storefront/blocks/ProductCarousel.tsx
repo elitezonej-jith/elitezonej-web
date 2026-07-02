@@ -12,6 +12,7 @@ export default function ProductCarousel({
   category,
   premium,
   limit,
+  pinnedSlugs,
   allProducts,
 }: {
   title: string;
@@ -22,13 +23,29 @@ export default function ProductCarousel({
   category?: string;
   premium?: boolean;
   limit?: number;
+  pinnedSlugs?: string[];
   allProducts: LegacyProduct[];
 }) {
-  let products = allProducts;
-  if (premium) products = products.filter((p) => p.isPremium);
-  if (gender) products = products.filter((p) => p.gender === gender);
-  if (category) products = products.filter((p) => p.category === category);
-  const sliced = products.slice(0, limit ?? 6);
+  const max = limit ?? 6;
+
+  let filtered = allProducts;
+  if (premium) filtered = filtered.filter((p) => p.isPremium);
+  if (gender) filtered = filtered.filter((p) => p.gender === gender);
+  if (category) filtered = filtered.filter((p) => p.category === category);
+
+  let sliced: LegacyProduct[];
+  if (pinnedSlugs?.length) {
+    // Resolve pinned slugs in order, skip missing
+    const pinned = pinnedSlugs
+      .map((s) => allProducts.find((p) => p.slug === s))
+      .filter((p): p is LegacyProduct => !!p);
+    const pinnedSet = new Set(pinnedSlugs);
+    const backfill = filtered.filter((p) => !pinnedSet.has(p.slug));
+    sliced = [...pinned, ...backfill].slice(0, max);
+  } else {
+    sliced = filtered.slice(0, max);
+  }
+
   if (!sliced.length) return null;
   return (
     <CarouselShowcase

@@ -3,11 +3,13 @@ import { useEffect, useRef, useState } from "react";
 import { saveBlockConfigAction } from "../../actions/homepage";
 import ImageUploader from "../../components/ImageUploader";
 import { IconPlus, IconTrash } from "../../components/Icons";
+import ProductPicker from "./ProductPicker";
+import type { PickerProduct } from "./ProductPicker";
 import type { HomepageBlockResolved } from "../../../../lib/admin/repos/homepage";
 
 type RC = Record<string, unknown>;
 
-export default function BlockEditor({ block }: { block: HomepageBlockResolved }) {
+export default function BlockEditor({ block, products }: { block: HomepageBlockResolved; products?: PickerProduct[] }) {
   const [title, setTitle] = useState(block.title);
   const [kicker, setKicker] = useState(block.kicker);
   const [config, setConfig] = useState<RC>(block.config as RC);
@@ -54,7 +56,7 @@ export default function BlockEditor({ block }: { block: HomepageBlockResolved })
         </div>
       </section>
 
-      <Editor type={block.type} config={config} update={update} updateWithSave={updateWithSave} />
+      <Editor type={block.type} config={config} update={update} updateWithSave={updateWithSave} products={products} />
 
       <div className="stu-btn-row" style={{ justifyContent: "flex-end" }}>
         <button type="submit" className="stu-btn stu-btn--primary stu-btn--lg">Save section</button>
@@ -63,7 +65,7 @@ export default function BlockEditor({ block }: { block: HomepageBlockResolved })
   );
 }
 
-function Editor({ type, config, update, updateWithSave }: { type: string; config: RC; update: (n: RC) => void; updateWithSave: (n: RC) => void }) {
+function Editor({ type, config, update, updateWithSave, products }: { type: string; config: RC; update: (n: RC) => void; updateWithSave: (n: RC) => void; products?: PickerProduct[] }) {
   switch (type) {
     case "announce_bar":
       return <AnnounceBarEditor config={config} update={update} />;
@@ -103,9 +105,9 @@ function Editor({ type, config, update, updateWithSave }: { type: string; config
     case "wedding_editorial":
       return <WeddingEditorialEditor config={config} update={update} />;
     case "editorial_split":
-      return <EditorialSplitEditor config={config} update={update} onImageChange={updateWithSave} />;
+      return <EditorialSplitEditor config={config} update={update} onImageChange={updateWithSave} products={products} />;
     case "product_carousel":
-      return <ProductCarouselEditor config={config} update={update} />;
+      return <ProductCarouselEditor config={config} update={update} products={products} />;
     case "bespoke_teaser":
       return <BespokeTeaserEditor config={config} update={update} onImageChange={updateWithSave} />;
     case "category_grid":
@@ -336,8 +338,22 @@ function WeddingEditorialEditor({ config, update }: { config: RC; update: (n: RC
   );
 }
 
-function EditorialSplitEditor({ config, update, onImageChange }: { config: RC; update: (n: RC) => void; onImageChange?: (n: RC) => void }) {
+function EditorialSplitEditor({ config, update, onImageChange, products }: { config: RC; update: (n: RC) => void; onImageChange?: (n: RC) => void; products?: PickerProduct[] }) {
   const filter = (config.filter as RC) ?? {};
+  const pinnedSlugs = Array.isArray(config.pinned_slugs) ? (config.pinned_slugs as string[]) : [];
+  const isManual = pinnedSlugs.length > 0 || config._mode === "manual";
+  const limit = Number(filter.limit ?? 6);
+
+  const setMode = (manual: boolean) => {
+    if (manual) {
+      update({ ...config, _mode: "manual" });
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { pinned_slugs: _removed, _mode: _m, ...rest } = config;
+      update(rest);
+    }
+  };
+
   return (
     <section className="stu-card">
       <header className="stu-card__head"><h3>Editorial split</h3></header>
@@ -372,13 +388,44 @@ function EditorialSplitEditor({ config, update, onImageChange }: { config: RC; u
           <Text label="Category (optional)" value={String(filter.category ?? "")} onChange={(v) => update({ ...config, filter: { ...filter, category: v } })} />
           <Text label="Products: limit" value={String(filter.limit ?? 6)} onChange={(v) => update({ ...config, filter: { ...filter, limit: Number(v) || 6 } })} />
         </div>
+
+        <div className="stu-picker__mode">
+          <span className="stu-field__label">Product selection</span>
+          <div className="stu-toggle-row">
+            <button type="button" className={`stu-toggle-btn ${!isManual ? "stu-toggle-btn--active" : ""}`} onClick={() => setMode(false)}>Auto (filter)</button>
+            <button type="button" className={`stu-toggle-btn ${isManual ? "stu-toggle-btn--active" : ""}`} onClick={() => setMode(true)}>Manual (pinned)</button>
+          </div>
+        </div>
+
+        {isManual && products && (
+          <ProductPicker
+            slugs={pinnedSlugs}
+            onChange={(next) => update({ ...config, pinned_slugs: next })}
+            products={products}
+            limit={limit}
+          />
+        )}
       </div>
     </section>
   );
 }
 
-function ProductCarouselEditor({ config, update }: { config: RC; update: (n: RC) => void }) {
+function ProductCarouselEditor({ config, update, products }: { config: RC; update: (n: RC) => void; products?: PickerProduct[] }) {
   const filter = (config.filter as RC) ?? {};
+  const pinnedSlugs = Array.isArray(config.pinned_slugs) ? (config.pinned_slugs as string[]) : [];
+  const isManual = pinnedSlugs.length > 0 || config._mode === "manual";
+  const limit = Number(filter.limit ?? 6);
+
+  const setMode = (manual: boolean) => {
+    if (manual) {
+      update({ ...config, _mode: "manual" });
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { pinned_slugs: _removed, _mode: _m, ...rest } = config;
+      update(rest);
+    }
+  };
+
   return (
     <section className="stu-card">
       <header className="stu-card__head"><h3>Product carousel</h3></header>
@@ -410,6 +457,23 @@ function ProductCarouselEditor({ config, update }: { config: RC; update: (n: RC)
             </select>
           </label>
         </div>
+
+        <div className="stu-picker__mode">
+          <span className="stu-field__label">Product selection</span>
+          <div className="stu-toggle-row">
+            <button type="button" className={`stu-toggle-btn ${!isManual ? "stu-toggle-btn--active" : ""}`} onClick={() => setMode(false)}>Auto (filter)</button>
+            <button type="button" className={`stu-toggle-btn ${isManual ? "stu-toggle-btn--active" : ""}`} onClick={() => setMode(true)}>Manual (pinned)</button>
+          </div>
+        </div>
+
+        {isManual && products && (
+          <ProductPicker
+            slugs={pinnedSlugs}
+            onChange={(next) => update({ ...config, pinned_slugs: next })}
+            products={products}
+            limit={limit}
+          />
+        )}
       </div>
     </section>
   );

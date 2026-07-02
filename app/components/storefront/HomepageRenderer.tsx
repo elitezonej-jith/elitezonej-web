@@ -124,6 +124,7 @@ function Block({
       const f = (cfg.filter as RC) ?? {};
       const cta = (cfg.cta as RC) ?? {};
       const ctaHref = sectionCtaHref(cfg, cta, f);
+      const pinnedSlugs = Array.isArray(cfg.pinned_slugs) ? (cfg.pinned_slugs as string[]) : undefined;
       return (
         <ProductCarousel
           title={block.title}
@@ -134,6 +135,7 @@ function Block({
           category={f.category ? String(f.category) : undefined}
           premium={f.premium ? true : undefined}
           limit={Number(f.limit ?? 6)}
+          pinnedSlugs={pinnedSlugs}
           allProducts={products}
         />
       );
@@ -141,6 +143,7 @@ function Block({
     case "editorial_split": {
       const f = (cfg.filter as RC) ?? {};
       const cta = (cfg.cta as RC) ?? {};
+      const pinnedSlugs = Array.isArray(cfg.pinned_slugs) ? (cfg.pinned_slugs as string[]) : undefined;
       return (
         <EditorialSplit
           title={String(cfg.title ?? block.title)}
@@ -153,6 +156,7 @@ function Block({
           gender={f.gender ? String(f.gender) : undefined}
           occasion={f.occasion ? String(f.occasion) : undefined}
           limit={Number(f.limit ?? 6)}
+          pinnedSlugs={pinnedSlugs}
           allProducts={products}
         />
       );

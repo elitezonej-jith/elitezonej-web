@@ -15,6 +15,7 @@ export default function EditorialSplit({
   occasion,
   category,
   limit,
+  pinnedSlugs,
   allProducts,
 }: {
   title: string;
@@ -28,13 +29,28 @@ export default function EditorialSplit({
   occasion?: string;
   category?: string;
   limit?: number;
+  pinnedSlugs?: string[];
   allProducts: LegacyProduct[];
 }) {
-  let products = allProducts;
-  if (gender) products = products.filter((p) => p.gender === gender);
-  if (occasion) products = products.filter((p) => p.occasion === occasion);
-  if (category) products = products.filter((p) => p.category === category);
-  const sliced = products.slice(0, limit ?? 6);
+  const max = limit ?? 6;
+
+  let filtered = allProducts;
+  if (gender) filtered = filtered.filter((p) => p.gender === gender);
+  if (occasion) filtered = filtered.filter((p) => p.occasion === occasion);
+  if (category) filtered = filtered.filter((p) => p.category === category);
+
+  let sliced: LegacyProduct[];
+  if (pinnedSlugs?.length) {
+    const pinned = pinnedSlugs
+      .map((s) => allProducts.find((p) => p.slug === s))
+      .filter((p): p is LegacyProduct => !!p);
+    const pinnedSet = new Set(pinnedSlugs);
+    const backfill = filtered.filter((p) => !pinnedSet.has(p.slug));
+    sliced = [...pinned, ...backfill].slice(0, max);
+  } else {
+    sliced = filtered.slice(0, max);
+  }
+
   return (
     <EditorialSplitView
       title={title}
