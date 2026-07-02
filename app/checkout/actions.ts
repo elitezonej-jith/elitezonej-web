@@ -154,7 +154,7 @@ export async function startCheckout(
     }
   }
 
-  const priced = await priceCart(linesParsed.data as CartLineInput[], form.data.promo_code, form.data.email);
+  const priced = await priceCart(linesParsed.data as CartLineInput[], form.data.promo_code, form.data.email, form.data.phone);
   if (!priced.ok) return { error: priced.error };
 
   const orderId = await createPendingOrder({

@@ -1,5 +1,6 @@
 import "server-only";
 import { sql } from "../admin/db";
+import { normalisePhone } from "./phone";
 
 // ── Tunables ────────────────────────────────────────────────────────────────
 // Elite Zone J ships complimentary; tax is price-inclusive. Both are overridable
@@ -80,6 +81,7 @@ export async function priceCart(
   lines: CartLineInput[],
   promoCode?: string | null,
   customerEmail?: string | null,
+  customerPhone?: string | null,
 ): Promise<PriceResult> {
   if (!Array.isArray(lines) || lines.length === 0) {
     return { ok: false, error: "Your bag is empty." };
@@ -151,7 +153,7 @@ export async function priceCart(
   let waiveShipping = false;
   let isFirstOrder = false;
   if (promoCode && promoCode.trim()) {
-    const v = await validatePromo(promoCode.trim(), priced, subtotal, customerEmail ?? null);
+    const v = await validatePromo(promoCode.trim(), priced, subtotal, customerEmail ?? null, customerPhone ?? null);
     if (!v.ok) return { ok: false, error: v.error };
     discount = v.discount;
     waiveShipping = v.waiveShipping;
@@ -195,6 +197,7 @@ export async function validatePromo(
   lines: PricedLine[],
   subtotal: number,
   customerEmail?: string | null,
+  customerPhone?: string | null,
 ): Promise<PromoCheck> {
   const promoRow = await sql.get<PromoRow>(
     "SELECT * FROM promotions WHERE code = ?",
@@ -235,6 +238,30 @@ export async function validatePromo(
       );
       if (existingClaim) {
         return { ok: false, error: "You already have an order in progress with this discount." };
+      }
+    }
+
+    // Phone-based check: catches multi-email abuse (same phone, different email)
+    if (customerPhone) {
+      const normPhone = normalisePhone(customerPhone);
+      if (normPhone) {
+        const byPhone = await sql.get<{ id: number | string; total_orders: number | string }>(
+          "SELECT id, total_orders FROM customers WHERE phone = ? AND total_orders > 0",
+          [normPhone],
+        );
+        if (byPhone) {
+          return { ok: false, error: "This code is valid for first orders only." };
+        }
+        // Also check pending claims by phone
+        const pendingByPhone = await sql.get<{ id: number | string }>(
+          `SELECT fc.id FROM first_order_claims fc
+           JOIN customers c ON c.id = fc.customer_id
+           WHERE c.phone = ? AND fc.status = 'pending'`,
+          [normPhone],
+        );
+        if (pendingByPhone) {
+          return { ok: false, error: "You already have an order in progress with this discount." };
+        }
       }
     }
   }
