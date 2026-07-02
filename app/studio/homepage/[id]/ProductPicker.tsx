@@ -1,18 +1,33 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 
-export type PickerProduct = { slug: string; name: string; thumbnail: string | null };
+export type PickerProduct = {
+  slug: string;
+  name: string;
+  thumbnail: string | null;
+  gender: string;
+  category: string;
+  isPremium: boolean;
+};
+
+export type PickerFilter = {
+  gender?: string;
+  category?: string;
+  premium?: boolean;
+};
 
 type Props = {
   slugs: string[];
   onChange: (slugs: string[]) => void;
   products: PickerProduct[];
   limit: number;
+  filter?: PickerFilter;
 };
 
-export default function ProductPicker({ slugs, onChange, products, limit }: Props) {
+export default function ProductPicker({ slugs, onChange, products, limit, filter }: Props) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on outside click
@@ -27,10 +42,32 @@ export default function ProductPicker({ slugs, onChange, products, limit }: Prop
     return () => document.removeEventListener("mousedown", handleClick);
   }, [dropdownOpen]);
 
+  // Pre-filter products based on section context
+  const contextProducts = useMemo(() => {
+    if (showAll || !filter) return products;
+    let filtered = products;
+    if (filter.gender) filtered = filtered.filter((p) => p.gender === filter.gender);
+    if (filter.category) filtered = filtered.filter((p) => p.category === filter.category);
+    if (filter.premium) filtered = filtered.filter((p) => p.isPremium);
+    // If filter produces nothing, show all (graceful fallback)
+    return filtered.length > 0 ? filtered : products;
+  }, [products, filter, showAll]);
+
+  const hasActiveFilter = !!(filter?.gender || filter?.category || filter?.premium);
+  const filterLabel = filter?.premium
+    ? "premium"
+    : filter?.category
+      ? filter.category
+      : filter?.gender
+        ? `${filter.gender}'s`
+        : "";
+
   const pickedSet = new Set(slugs);
-  const available = products.filter(
+  const available = contextProducts.filter(
     (p) => !pickedSet.has(p.slug) && p.name.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const CAP = 50;
 
   const remove = (slug: string) => onChange(slugs.filter((s) => s !== slug));
   const add = (slug: string) => {
@@ -92,16 +129,26 @@ export default function ProductPicker({ slugs, onChange, products, limit }: Prop
               <input
                 type="text"
                 className="stu-input stu-picker__search"
-                placeholder="Search products…"
+                placeholder={hasActiveFilter && !showAll ? `Search ${filterLabel} products…` : "Search all products…"}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 autoFocus
               />
+              {hasActiveFilter && (
+                <div className="stu-picker__filter-bar">
+                  <span className="stu-picker__filter-label">
+                    {showAll ? `All products (${available.length})` : `Showing ${filterLabel} products (${available.length})`}
+                  </span>
+                  <button type="button" className="stu-picker__filter-toggle" onClick={() => setShowAll(!showAll)}>
+                    {showAll ? "Show only relevant" : "Show all"}
+                  </button>
+                </div>
+              )}
               <ul className="stu-picker__dropdown-list">
                 {available.length === 0 && (
                   <li className="stu-picker__dropdown-empty">No matching products</li>
                 )}
-                {available.slice(0, 20).map((p) => (
+                {available.slice(0, CAP).map((p) => (
                   <li key={p.slug}>
                     <button type="button" className="stu-picker__dropdown-item" onClick={() => { add(p.slug); setDropdownOpen(false); }}>
                       {p.thumbnail ? (
@@ -114,6 +161,11 @@ export default function ProductPicker({ slugs, onChange, products, limit }: Prop
                     </button>
                   </li>
                 ))}
+                {available.length > CAP && (
+                  <li className="stu-picker__dropdown-empty">
+                    Showing {CAP} of {available.length} — type to narrow
+                  </li>
+                )}
               </ul>
             </div>
           )}

@@ -17,11 +17,20 @@ type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ saved?:
 async function getSlimProducts() {
   const all = await listProducts({ status: "active", limit: 500 });
   const slugs = all.map((p) => p.slug);
-  const imageMap = await listImagesForSlugs(slugs);
+  const [imageMap, metaMap] = await Promise.all([
+    listImagesForSlugs(slugs),
+    (async () => {
+      const { getMetaForSlugs } = await import("../../../../lib/admin/repos/product-meta");
+      return getMetaForSlugs(slugs);
+    })(),
+  ]);
   return all.map((p) => ({
     slug: p.slug,
     name: p.name,
     thumbnail: thumbnailFromImages(imageMap.get(p.slug) ?? []),
+    gender: p.gender,
+    category: p.category,
+    isPremium: (metaMap.get(p.slug)?.is_premium ?? 0) === 1,
   }));
 }
 

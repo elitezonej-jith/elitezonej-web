@@ -2504,6 +2504,17 @@ button:focus-visible,
 }
 .stu-picker__dropdown-item:hover { background: var(--stu-bg); }
 .stu-picker__dropdown-empty { padding: 12px 10px; font-size: 12.5px; color: var(--stu-text-3); }
+.stu-picker__filter-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px; border-bottom: 1px solid var(--stu-border);
+  font-size: 11.5px; color: var(--stu-text-3);
+}
+.stu-picker__filter-label { font-weight: 500; }
+.stu-picker__filter-toggle {
+  appearance: none; border: none; background: none;
+  font-size: 11.5px; color: var(--stu-accent, #2563eb); cursor: pointer;
+  text-decoration: underline; text-underline-offset: 2px; padding: 0;
+}
 .stu-picker__mode { display: flex; flex-direction: column; gap: 6px; }
 
 /* ── Toggle button row ───────────────────────────────────────────────── */

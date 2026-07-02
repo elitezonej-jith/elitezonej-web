@@ -4,7 +4,7 @@ import { saveBlockConfigAction } from "../../actions/homepage";
 import ImageUploader from "../../components/ImageUploader";
 import { IconPlus, IconTrash } from "../../components/Icons";
 import ProductPicker from "./ProductPicker";
-import type { PickerProduct } from "./ProductPicker";
+import type { PickerProduct, PickerFilter } from "./ProductPicker";
 import type { HomepageBlockResolved } from "../../../../lib/admin/repos/homepage";
 
 type RC = Record<string, unknown>;
@@ -403,6 +403,7 @@ function EditorialSplitEditor({ config, update, onImageChange, products }: { con
             onChange={(next) => update({ ...config, pinned_slugs: next })}
             products={products}
             limit={limit}
+            filter={{ gender: filter.gender as string | undefined, category: filter.category as string | undefined } as PickerFilter}
           />
         )}
       </div>
@@ -472,6 +473,7 @@ function ProductCarouselEditor({ config, update, products }: { config: RC; updat
             onChange={(next) => update({ ...config, pinned_slugs: next })}
             products={products}
             limit={limit}
+            filter={{ gender: filter.gender as string | undefined, category: filter.category as string | undefined, premium: filter.premium ? true : undefined } as PickerFilter}
           />
         )}
       </div>
