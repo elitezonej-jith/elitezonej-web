@@ -83,7 +83,7 @@ export default async function InvoicePage({ params }: Params) {
         {/* Footer */}
         <div className="inv-doc__footer">
           <p>Thank you for choosing Elite Zone J.</p>
-          <p>Questions? WhatsApp: +91 89398 88593 · hello@elitezonej.com</p>
+          <p>Questions? WhatsApp: +91 89398 88594 · hello@elitezonej.com</p>
         </div>
       </div>
     </div>

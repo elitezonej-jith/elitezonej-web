@@ -403,7 +403,7 @@ export default function FabricPDP({ product, leadTimeDays, reviewAggregate }: Pr
           </div>
           <a
             className="btn btn-lg"
-            href="https://wa.me/919800000000?text=Hi%20Elite%20Zone%20J%20—%20I%27d%20like%20a%20bulk%20cloth%20quote."
+            href="https://wa.me/918939888594?text=Hi%20Elite%20Zone%20J%20—%20I%27d%20like%20a%20bulk%20cloth%20quote."
             target="_blank"
             rel="noreferrer"
           >
