@@ -6,6 +6,7 @@ import SearchToggle from "./SearchToggle";
 import WishlistHeaderLink from "./WishlistHeaderLink";
 import { getStorefrontNav } from "../../lib/storefront/nav";
 import { getSiteSettings } from "../../lib/storefront/site-settings";
+import { getSearchIndex } from "../../lib/storefront/products";
 
 // Filled-outline icons in the FontAwesome Pro Light visual family —
 // the same icon set Disturbia uses on its header. These are common
@@ -60,6 +61,7 @@ export function BagIcon() {
 export default async function Header() {
   const nav = await getStorefrontNav();
   const s = await getSiteSettings();
+  const searchIndex = await getSearchIndex();
   return (
     <header className="site">
       {/* Row 1 — utility row */}
@@ -96,7 +98,7 @@ export default async function Header() {
         </div>
 
         <div className="header-right">
-          <SearchToggle />
+          <SearchToggle searchIndex={searchIndex} />
           <WishlistHeaderLink />
           <CartDrawer />
         </div>

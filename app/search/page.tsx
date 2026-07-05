@@ -5,7 +5,7 @@ import Footer from "../components/Footer";
 import TrustStrip from "../components/TrustStrip";
 import CollectionClient from "../collection/CollectionClient";
 import { listProductsForPage } from "@/lib/storefront/catalogue";
-import type { Product } from "@/lib/products";
+import { scoreProduct, tokenize, type SearchableFields } from "@/lib/search";
 
 export const dynamic = "force-dynamic";
 
@@ -20,55 +20,45 @@ export async function generateMetadata({
   };
 }
 
-// Basic stemming: strip common suffixes for loose matching
-function stem(word: string): string {
-  if (word.length < 4) return word;
-  if (word.endsWith("ies")) return word.slice(0, -3) + "y";
-  if (word.endsWith("es")) return word.slice(0, -2);
-  if (word.endsWith("s")) return word.slice(0, -1);
-  if (word.endsWith("ing")) return word.slice(0, -3);
-  if (word.endsWith("ed") && word.length > 4) return word.slice(0, -2);
-  return word;
-}
-
-function scoreProduct(p: Product, tokens: string[]): number {
-  const name = p.name.toLowerCase();
-  const cat = `${p.cat} ${p.category} ${p.sub ?? ""}`.toLowerCase();
-  const rest = `${p.fabric} ${p.occasion} ${p.line} ${p.gender} ${p.fit} ${p.colour ?? ""} ${p.badge ?? ""} ${p.description ?? ""} ${p.shortDescription ?? ""} ${(p.features || []).join(" ")}`.toLowerCase();
-
-  let score = 0;
-  for (const t of tokens) {
-    const st = stem(t);
-    // Name match (highest weight)
-    if (name.includes(t) || name.includes(st)) score += 10;
-    // Category match
-    else if (cat.includes(t) || cat.includes(st)) score += 5;
-    // Other fields match
-    else if (rest.includes(t) || rest.includes(st)) score += 2;
-    // No match at all — penalize heavily to filter out
-    else return 0;
-  }
-  return score;
-}
-
 export default async function SearchPage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
   const { q } = await searchParams;
-  const query = (q ?? "").trim().toLowerCase();
-  const tokens = query.split(/\s+/).filter(Boolean);
+  const query = (q ?? "").trim();
+  const tokens = tokenize(query);
 
   let products = await listProductsForPage();
 
-  // Score and rank
+  // Score and rank using the shared engine with full field coverage
   if (tokens.length > 0) {
     const scored = products
-      .map(p => ({ p, score: scoreProduct(p, tokens) }))
-      .filter(x => x.score > 0)
+      .map((p) => {
+        const fields: SearchableFields = {
+          name: p.name,
+          cat: p.cat,
+          category: p.category,
+          sub: p.sub,
+          gender: p.gender,
+          fit: p.fit,
+          fabric: p.fabric,
+          occasion: p.occasion,
+          line: p.line,
+          colour: p.colour,
+          badge: p.badge,
+          description: p.description,
+          shortDescription: p.shortDescription,
+          note: p.note,
+          features: p.features,
+          spec: p.spec?.map(([, v]) => v),
+          filterTags: p.filterTags,
+        };
+        return { p, score: scoreProduct(fields, tokens) };
+      })
+      .filter((x) => x.score > 0)
       .sort((a, b) => b.score - a.score);
-    products = scored.map(x => x.p);
+    products = scored.map((x) => x.p);
   }
 
   const count = products.length;
