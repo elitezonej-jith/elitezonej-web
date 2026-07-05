@@ -83,7 +83,7 @@ export default function TrustStrip() {
             <span className="trust-label--full">Free Delivery</span>
             <span className="trust-label--short">Free&nbsp;delivery</span>
           </div>
-          <div className="trust-sub">On orders over ₹15,000</div>
+          <div className="trust-sub">On orders over ₹5,000</div>
         </div>
         <div className="trust-item">
           <CraftedIcon />

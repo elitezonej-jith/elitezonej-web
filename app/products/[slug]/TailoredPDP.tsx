@@ -263,7 +263,7 @@ export default function TailoredPDP({ product, setCurrentSlug, related, leadTime
             <div className="pin" aria-hidden="true">110001</div>
             <div className="text">
               Delivery in <b>{deliveryRange}</b>
-              {product.price >= 15000 && <> · Free shipping</>}
+              {product.price >= 5000 && <> · Free shipping</>}
             </div>
           </div>
           <div className="returns-line t-mono-xs">3-day returns · Free reverse pickup</div>

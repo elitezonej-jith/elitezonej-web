@@ -317,7 +317,7 @@ export default function FabricPDP({ product, leadTimeDays, reviewAggregate }: Pr
 
           <div className="delivery">
             <div className="pin">110001</div>
-            <div className="text">Delivery in <b>{deliveryRange}</b>{product.price >= 15000 && <> · Free shipping across India</>}</div>
+            <div className="text">Delivery in <b>{deliveryRange}</b>{product.price >= 5000 && <> · Free shipping across India</>}</div>
           </div>
 
           <div className="disclaimer">
