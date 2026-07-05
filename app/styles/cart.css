@@ -247,3 +247,65 @@
 .phone-verify__resend { font-size: 11px; color: var(--ink-2); background: none; border: none; cursor: pointer; text-decoration: underline; }
 .phone-verify__error { margin: 8px 0 0; font-size: 12px; color: var(--error, #c62828); }
 .phone-verify__error-state { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+
+/* ── State Select (searchable dropdown) ────────────────────────── */
+.state-select {
+  position: relative;
+}
+.state-select__list {
+  position: absolute;
+  top: calc(100% - 1em - 4px); /* Account for the error span below input */
+  left: 0;
+  right: 0;
+  z-index: 100;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+.state-select__option {
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 100ms;
+}
+.state-select__option:hover,
+.state-select__option[data-active] {
+  background: var(--paper-2, #f5f5f5);
+}
+.state-select__option[data-selected] {
+  font-weight: 500;
+  color: var(--ink);
+}
+.state-select__option[data-active][data-selected] {
+  background: var(--paper-3, #eee);
+}
+.state-select__empty {
+  position: absolute;
+  top: calc(100% - 1em - 4px);
+  left: 0;
+  right: 0;
+  z-index: 100;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--ink-3);
+  background: var(--paper);
+  border: 1px solid var(--paper-3);
+}
+
+/* Responsive: on small screens, make the dropdown larger tap target */
+@media (max-width: 600px) {
+  .state-select__list {
+    max-height: 180px;
+  }
+  .state-select__option {
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+}

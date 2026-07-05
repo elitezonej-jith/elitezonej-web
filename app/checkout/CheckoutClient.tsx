@@ -11,6 +11,7 @@ import PhoneVerification from "./PhoneVerification";
 import type { Address } from "../../lib/admin/repos/addresses";
 import "../styles/cart.css";
 import "../styles/addresses.css";
+import StateSelect from "./StateSelect";
 
 declare global {
   interface Window {
@@ -399,7 +400,7 @@ export default function CheckoutClient({
             <Field key={`ship_line2-${prefillKey}`} name="ship_line2" autoComplete="address-line2" placeholder="Address line 2 (optional)" aria-label="Address line 2" defaultValue={prefill?.ship_line2 ?? ""} err={state.fieldErrors?.ship_line2} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <Field key={`ship_city-${prefillKey}`} name="ship_city" autoComplete="address-level2" placeholder="City" required aria-label="City" defaultValue={prefill?.ship_city ?? customerPrefill?.city ?? ""} onBlur={(e) => validateField("ship_city", e.target.value)} err={clientErrors.ship_city ?? state.fieldErrors?.ship_city} />
-              <Field key={`ship_state-${prefillKey}`} name="ship_state" autoComplete="address-level1" placeholder="State" required aria-label="State" defaultValue={prefill?.ship_state ?? ""} onBlur={(e) => validateField("ship_state", e.target.value)} err={clientErrors.ship_state ?? state.fieldErrors?.ship_state} />
+              <StateSelect key={`ship_state-${prefillKey}`} name="ship_state" defaultValue={prefill?.ship_state ?? ""} onBlur={(v) => validateField("ship_state", v)} err={clientErrors.ship_state ?? state.fieldErrors?.ship_state} />
             </div>
             <Field key={`ship_pincode-${prefillKey}`} name="ship_pincode" autoComplete="postal-code" placeholder="Pincode" inputMode="numeric" required aria-label="Pincode" defaultValue={prefill?.ship_pincode ?? ""} onBlur={(e) => validateField("ship_pincode", e.target.value)} err={clientErrors.ship_pincode ?? state.fieldErrors?.ship_pincode} />
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 8 }}>
