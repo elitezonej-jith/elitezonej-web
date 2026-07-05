@@ -181,3 +181,83 @@ export async function createWalkInOrderAction(_prev: WalkInState, fd: FormData):
   // Return the order ID — client will navigate to invoice
   return { orderId };
 }
+
+// ── Edit existing walk-in order ──────────────────────────────────────────────
+
+const UpdateWalkInSchema = z.object({
+  order_id: z.string().min(1, "Order ID is required"),
+  customer_name: z.string().min(1, "Customer name is required"),
+  customer_phone: z.string().min(5, "Phone number is required"),
+  customer_email: z.string().email().optional().or(z.literal("")),
+  items: z.array(ItemSchema).min(1, "Add at least one item"),
+  subtotal: z.number().min(0),
+  discount: z.number().min(0),
+  tax: z.number().min(0),
+  total: z.number().min(0),
+  payment_method: z.enum(["cash", "card", "upi", "pending"]),
+  notes: z.string().optional(),
+});
+
+export type UpdateWalkInState = { error?: string; success?: boolean };
+
+export async function updateWalkInOrderAction(_prev: UpdateWalkInState, fd: FormData): Promise<UpdateWalkInState> {
+  const me = await requireUser("/studio/login");
+
+  let data: unknown;
+  try {
+    data = JSON.parse(String(fd.get("payload") ?? "{}"));
+  } catch {
+    return { error: "Invalid form data." };
+  }
+
+  const parsed = UpdateWalkInSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Please review the form." };
+  }
+
+  const v = parsed.data;
+  const email = v.customer_email || `walkin-${v.customer_phone.replace(/\D/g, "")}@placeholder.local`;
+  const paymentStatus = v.payment_method === "pending" ? "pending" : "paid";
+
+  const noteText = [
+    `Walk-in · ${v.payment_method.toUpperCase()}`,
+    v.notes ? v.notes : null,
+  ].filter(Boolean).join(" · ");
+
+  const { updateOrder } = await import("../../../lib/admin/repos/orders");
+
+  await updateOrder(v.order_id, {
+    customer_name: v.customer_name,
+    customer_phone: v.customer_phone,
+    customer_email: email,
+    items: v.items.map(it => ({
+      product_slug: it.product_slug,
+      product_name: it.product_name,
+      size: it.size,
+      colour: it.colour,
+      qty: it.qty,
+      unit_price: it.unit_price,
+      is_fabric: it.is_fabric,
+    })),
+    subtotal: v.subtotal,
+    discount: v.discount,
+    tax: v.tax,
+    total: v.total,
+    payment_status: paymentStatus,
+    notes: noteText,
+  });
+
+  await logAudit({
+    user_id: me.id,
+    action: "edit_walkin_order",
+    entity: "order",
+    entity_id: v.order_id,
+    payload: { items: v.items.length, total: v.total },
+  });
+
+  revalidatePath("/studio/orders");
+  revalidatePath(`/studio/orders/${v.order_id}`);
+  revalidatePath(`/studio/orders/${v.order_id}/invoice`);
+
+  return { success: true };
+}

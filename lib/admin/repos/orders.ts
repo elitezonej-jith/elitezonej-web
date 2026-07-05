@@ -92,6 +92,78 @@ export async function setOrderNotes(id: string, notes: string): Promise<void> {
   );
 }
 
+// ── Walk-in order editing ─────────────────────────────────────────────────────
+
+export type UpdateOrderData = {
+  customer_name: string;
+  customer_phone: string;
+  customer_email: string;
+  items: Array<{
+    product_slug: string;
+    product_name: string;
+    size: string | null;
+    colour: string | null;
+    qty: number;
+    unit_price: number;
+    is_fabric: boolean;
+  }>;
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+  payment_status: "pending" | "paid";
+  notes: string;
+};
+
+export async function updateOrder(id: string, data: UpdateOrderData): Promise<void> {
+  const nameParts = data.customer_name.trim().split(/\s+/);
+  const firstName = nameParts[0] || "Walk-in";
+  const lastName = nameParts.slice(1).join(" ") || "";
+
+  await sql.tx(async (t) => {
+    // Update order row
+    await t.run(
+      `UPDATE orders SET
+         ship_name = ?, email = ?, phone = ?, subtotal = ?, discount = ?,
+         tax = ?, total = ?, payment_status = ?, notes = ?,
+         updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [
+        data.customer_name, data.customer_email, data.customer_phone,
+        data.subtotal, data.discount, data.tax, data.total,
+        data.payment_status, data.notes || null, id,
+      ],
+    );
+
+    // Update customer record
+    const order = await t.get<{ customer_id: number }>(
+      "SELECT customer_id FROM orders WHERE id = ?", [id],
+    );
+    if (order) {
+      await t.run(
+        "UPDATE customers SET first_name = ?, last_name = ?, phone = ? WHERE id = ?",
+        [firstName, lastName, data.customer_phone, order.customer_id],
+      );
+      if (data.customer_email && !data.customer_email.includes("@placeholder.local")) {
+        await t.run(
+          "UPDATE customers SET email = ? WHERE id = ?",
+          [data.customer_email, order.customer_id],
+        );
+      }
+    }
+
+    // Replace line items
+    await t.run("DELETE FROM order_items WHERE order_id = ?", [id]);
+    for (const item of data.items) {
+      await t.run(
+        `INSERT INTO order_items (order_id, product_slug, qty, unit_price, size, colour, is_fabric)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [id, item.product_slug, item.qty, item.unit_price, item.size, item.colour, item.is_fabric ? 1 : 0],
+      );
+    }
+  });
+}
+
 // ── Storefront checkout ──────────────────────────────────────────────────────
 
 export type ContactSnapshot = {

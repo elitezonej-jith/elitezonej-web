@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import { getOrder, getOrderItems, listCouriers } from "../../../../lib/admin/repos/orders";
 import PageHead from "../../components/PageHead";
 import StatusTag from "../../components/StatusTag";
-import OrderControls from "./OrderControls";
-import { rupees, dateTime } from "../../../../lib/admin/format";
+import OrderDetailClient from "./OrderDetailClient";
+import { dateTime } from "../../../../lib/admin/format";
 import { requireUser } from "../../../../lib/admin/session";
+import { sql } from "../../../../lib/admin/db";
 
 export const dynamic = "force-dynamic";
 type Params = { params: Promise<{ id: string }> };
@@ -18,67 +19,28 @@ export default async function OrderDetailPage({ params }: Params) {
   if (!order) notFound();
   const items = await getOrderItems(id);
   const couriers = await listCouriers();
+
+  // Load products for the edit form's product search
+  const products = await sql.all<{
+    slug: string; name: string; price: number; sale_price: number | null; kind: string; sizes_json: string;
+  }>(
+    `SELECT slug, name, price, sale_price, kind, sizes_json FROM products
+     WHERE status = 'active' ORDER BY name ASC`
+  );
+
   return (
     <div className="stu-page">
       <PageHead title={`Order #${order.id}`} sub={`${order.customer} · ${dateTime(order.created_at)}`}
                 back={{ href: "/studio/orders", label: "Back to orders" }}>
         <StatusTag status={order.status} />
-        <Link href={`/studio/orders/${order.id}/invoice`} className="stu-btn stu-btn--ghost">Invoice</Link>
       </PageHead>
-      <div className="stu-cols">
-        <div className="stu-stack">
-          <section className="stu-card">
-            <header className="stu-card__head"><h3>Items</h3></header>
-            <div className="stu-card__body--flush">
-              <div className="stu-tbl-wrap">
-                <table className="stu-tbl">
-                  <thead><tr><th>Product</th><th>Variant</th><th className="stu-tbl__num">Qty</th>{!isStaff && <th className="stu-tbl__num">Unit</th>}{!isStaff && <th className="stu-tbl__num">Line</th>}</tr></thead>
-                  <tbody>
-                    {items.map((it) => (
-                      <tr key={it.id}>
-                        <td>
-                          <Link href={`/studio/products/${it.product_slug}`} className="stu-tbl__name">{it.product_name ?? it.product_slug}</Link>
-                          <span className="stu-tbl__sub">{it.product_slug}</span>
-                        </td>
-                        <td>{it.is_fabric ? `${it.colour ?? "—"} (metres)` : (it.size ?? "—")}</td>
-                        <td className="stu-tbl__num">{it.qty}</td>
-                        {!isStaff && <td className="stu-tbl__num">{rupees(it.unit_price)}</td>}
-                        {!isStaff && <td className="stu-tbl__num">{rupees(it.unit_price * it.qty)}</td>}
-                      </tr>
-                    ))}
-                  </tbody>
-                  {!isStaff && (
-                  <tfoot>
-                    <tr><td colSpan={4} className="stu-tbl__num">Subtotal</td><td className="stu-tbl__num">{rupees(order.subtotal)}</td></tr>
-                    <tr><td colSpan={4} className="stu-tbl__num">Tax (18%)</td><td className="stu-tbl__num">{rupees(order.tax)}</td></tr>
-                    <tr><td colSpan={4} className="stu-tbl__num" style={{ fontWeight: 700 }}>Total</td><td className="stu-tbl__num" style={{ fontWeight: 700 }}>{rupees(order.total)}</td></tr>
-                  </tfoot>
-                  )}
-                </table>
-              </div>
-            </div>
-          </section>
-        </div>
-        <div className="stu-stack">
-          <OrderControls
-            id={order.id}
-            status={order.status}
-            notes={order.notes ?? ""}
-            couriers={couriers.map(c => ({ code: c.code, name: c.name }))}
-            tracking={{ courier_name: order.courier_name, tracking_number: order.tracking_number, tracking_url: order.tracking_url, shipped_at: order.shipped_at }}
-            items={items.map(it => ({ product_name: it.product_name ?? it.product_slug, size: it.size, qty: it.qty, unit_price: it.unit_price }))}
-            orderSummary={`Order #${order.id}\n${order.customer} · ${order.email}\n${order.phone ?? ""}\n\nItems:\n${items.map(it => `• ${it.product_name ?? it.product_slug} (${it.size ?? "—"}) × ${it.qty} — ₹${it.unit_price * it.qty}`).join("\n")}\n\nTotal: ₹${order.total}\n\nShip to:\n${order.ship_name}\n${order.ship_line1}\n${order.ship_city}, ${order.ship_state} ${order.ship_pincode}`}
-          />
-          <section className="stu-card">
-            <header className="stu-card__head"><h3>Customer</h3></header>
-            <div className="stu-card__body" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              <strong>{order.customer}</strong>
-              <span style={{ color: "var(--stu-text-3)" }}>{order.email}</span>
-              <span style={{ color: "var(--stu-text-3)" }}>{order.phone ?? "—"} · {order.city ?? "—"}</span>
-            </div>
-          </section>
-        </div>
-      </div>
+      <OrderDetailClient
+        order={order}
+        items={items}
+        products={products}
+        couriers={couriers.map(c => ({ code: c.code, name: c.name }))}
+        isStaff={isStaff}
+      />
     </div>
   );
 }
