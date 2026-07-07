@@ -98,7 +98,7 @@ export default function CollectionClient({
       else if (cat === "premium") list = list.filter(p => p.isPremium);
       else if (cat !== "all") list = list.filter(p => p.category === cat);
     }
-    if (sub) list = list.filter(p => p.sub === sub);
+    if (sub) list = list.filter(p => p.sub === sub || p.category === sub);
     if (!isFabricMode && hasDbFilters) {
       for (const f of dbFilters) {
         const selected = active[f.field_key];
