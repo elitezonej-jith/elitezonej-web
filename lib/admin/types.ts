@@ -179,6 +179,8 @@ export type OrderItem = {
   size: string | null;
   colour: string | null;
   is_fabric: number;
+  gst_rate: number;
+  gst_amount: number;
 };
 
 export type BookingStatus =

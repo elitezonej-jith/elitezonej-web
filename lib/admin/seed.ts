@@ -160,6 +160,14 @@ export function seedFromCatalog(db: Database.Database): void {
       ["instagram", "https://instagram.com/elitezonej"],
       ["lead_time_days", "7"],
       ["low_stock_threshold", "3"],
+      // Indian Tax Invoice business details
+      ["business_legal_name", "ZONE J"],
+      ["business_gstin", "33BQSPN8858E1Z7"],
+      ["business_state_code", "33"],
+      ["business_address", "1/1334, 4TH CROSS STREET\nTHIRUVALLUVAR SALAI, BETHAL NAGAR,\nINJAMBAKKAM, CHENNAI- 60015"],
+      ["business_phone", "8939888593"],
+      ["business_phone2", "8939888594"],
+      ["business_email", "elitezonej@gmail.com"],
     ];
     for (const [k, v] of defaults) insertSetting.run(k, v);
   });

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getOrder, getOrderItems } from "../../../../../lib/admin/repos/orders";
 import { requireCustomer } from "../../../../../lib/storefront/session";
-import { fmtINR } from "@/lib/format";
+import { getBusinessInfo, splitGst, invoiceDate, computeItemGst, itemTotal } from "../../../../../lib/admin/invoice";
 import InvoiceClientActions from "./InvoiceClientActions";
 import "../../../../styles/orders.css";
 
@@ -11,9 +11,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   return { title: `Invoice ${id} — Elite Zone J` };
 }
 
-function fmtDate(iso: string): string {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" });
+function fmtNum(n: number): string {
+  return n.toLocaleString("en-IN");
 }
 
 export default async function CustomerInvoicePage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,78 +22,119 @@ export default async function CustomerInvoicePage({ params }: { params: Promise<
   if (!order || order.customer_id !== me.id) notFound();
 
   const items = await getOrderItems(id);
+  const biz = await getBusinessInfo();
+
+  const lineItems = items.map((it) => {
+    const gstRate = it.gst_rate ?? 5;
+    const gstAmount = it.gst_amount > 0 ? it.gst_amount : computeItemGst(it.unit_price, it.qty, gstRate);
+    const total = itemTotal(it.unit_price, it.qty, gstAmount);
+    return { ...it, gstRate, gstAmount, total };
+  });
+
+  const totalGst = lineItems.reduce((sum, it) => sum + it.gstAmount, 0);
+  const gst = splitGst(totalGst, biz.state_code, order.ship_state || "");
+  const grandTotal = order.total > 0 ? order.total : lineItems.reduce((sum, it) => sum + it.total, 0);
+
+  const customerName = order.ship_name || order.customer || "—";
+  const customerPhone = order.phone || "—";
+  const customerGst = "N/A";
 
   return (
     <div className="cust-inv-page">
       <InvoiceClientActions orderId={order.id} />
 
-      <div className="cust-inv-doc">
-        {/* Header */}
-        <div className="cust-inv-doc__header">
-          <div className="cust-inv-doc__brand">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo/wordmark-trimmed.png" alt="Elite Zone J" className="cust-inv-doc__logo" />
-            <p className="cust-inv-doc__tagline">Premium Tailoring · India</p>
+      <div className="cust-inv-doc tax-inv">
+
+        {/* ── Header: TAX INVOICE + Business Details ──────────────── */}
+        <div className="tax-inv__header">
+          <div className="tax-inv__left">
+            <h1 className="tax-inv__title">TAX INVOICE</h1>
+            <p className="tax-inv__biz-name">{biz.legal_name}</p>
+            <p className="tax-inv__address">{biz.address.split("\n").map((line, i) => (
+              <span key={i}>{line}<br /></span>
+            ))}</p>
           </div>
-          <div className="cust-inv-doc__meta">
-            <h2 className="cust-inv-doc__title">INVOICE</h2>
-            <table className="cust-inv-doc__meta-tbl">
-              <tbody>
-                <tr><td>Invoice #</td><td><strong>{order.id}</strong></td></tr>
-                <tr><td>Date</td><td>{fmtDate(order.created_at)}</td></tr>
-                <tr><td>Payment</td><td><strong className={order.payment_status === "paid" ? "cust-inv-doc__paid" : "cust-inv-doc__pending"}>{order.payment_status === "paid" ? "PAID" : "PENDING"}</strong></td></tr>
-              </tbody>
-            </table>
+          <div className="tax-inv__right">
+            <p><strong>GST NO:</strong> {biz.gstin}</p>
+            <p><strong>STATE CODE:</strong> {biz.state_code}</p>
+            <p><strong>PHONE NO :</strong> {biz.phone}</p>
+            {biz.phone2 && <p style={{ paddingLeft: "5.5em" }}>{biz.phone2}</p>}
+            <p><strong>EMAIL:</strong> {biz.email}</p>
           </div>
         </div>
 
-        {/* Bill to */}
-        <div className="cust-inv-doc__billing">
-          <h3>Bill to</h3>
-          <p className="cust-inv-doc__name">{order.ship_name || order.customer}</p>
-          {order.ship_line1 && <p>{order.ship_line1}</p>}
-          {order.ship_line2 && <p>{order.ship_line2}</p>}
-          {order.ship_city && <p>{order.ship_city}, {order.ship_state} {order.ship_pincode}</p>}
-          {order.phone && <p>Phone: {order.phone}</p>}
-          <p>Email: {order.email}</p>
+        {/* ── Billed To + Invoice No ─────────────────────────────── */}
+        <div className="tax-inv__row tax-inv__row--border">
+          <div className="tax-inv__cell">
+            <strong>BILLED TO:</strong>&nbsp;&nbsp;{customerName}
+          </div>
+          <div className="tax-inv__cell tax-inv__cell--right">
+            <strong>INVOICE NO:</strong> {order.id}
+          </div>
         </div>
 
-        {/* Items table */}
-        <table className="cust-inv-doc__table">
+        {/* ── Mobile + GST + Invoice Date ─────────────────────────── */}
+        <div className="tax-inv__row tax-inv__row--border">
+          <div className="tax-inv__cell">
+            <p><strong>MOBILE NO:</strong>&nbsp;&nbsp;{customerPhone}</p>
+            <p><strong>GST NO:</strong>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{customerGst}</p>
+          </div>
+          <div className="tax-inv__cell tax-inv__cell--right">
+            <p><strong>INVOICE DATE:</strong> {invoiceDate(order.created_at)}</p>
+          </div>
+        </div>
+
+        {/* ── Line Items Table ────────────────────────────────────── */}
+        <table className="tax-inv__table">
           <thead>
             <tr>
-              <th>Item</th>
-              <th>Variant</th>
-              <th className="cust-inv-doc__num">Qty</th>
-              <th className="cust-inv-doc__num">Rate</th>
-              <th className="cust-inv-doc__num">Amount</th>
+              <th className="tax-inv__th">DESCRIPTION</th>
+              <th className="tax-inv__th tax-inv__th--num">QTY</th>
+              <th className="tax-inv__th tax-inv__th--num">RATE</th>
+              <th className="tax-inv__th tax-inv__th--num">GST RATE</th>
+              <th className="tax-inv__th tax-inv__th--num">GST</th>
+              <th className="tax-inv__th tax-inv__th--num">TOTAL</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((it) => (
+            {lineItems.map((it) => (
               <tr key={it.id}>
-                <td>{it.product_name ?? (it.product_slug.startsWith("custom:") ? it.product_slug.slice(7) : it.product_slug)}</td>
-                <td>{it.size || it.colour || "—"}</td>
-                <td className="cust-inv-doc__num">{it.qty}</td>
-                <td className="cust-inv-doc__num">{fmtINR(it.unit_price)}</td>
-                <td className="cust-inv-doc__num">{fmtINR(it.unit_price * it.qty)}</td>
+                <td className="tax-inv__td">{it.product_name ?? it.product_slug}</td>
+                <td className="tax-inv__td tax-inv__td--num">{it.qty}</td>
+                <td className="tax-inv__td tax-inv__td--num">{fmtNum(it.unit_price)}</td>
+                <td className="tax-inv__td tax-inv__td--num">{it.gstRate}%</td>
+                <td className="tax-inv__td tax-inv__td--num">{fmtNum(it.gstAmount)}</td>
+                <td className="tax-inv__td tax-inv__td--num">{fmtNum(it.total)}</td>
               </tr>
             ))}
           </tbody>
-          <tfoot>
-            <tr><td colSpan={4}>Subtotal</td><td className="cust-inv-doc__num">{fmtINR(order.subtotal)}</td></tr>
-            {order.discount > 0 && <tr><td colSpan={4}>Discount{order.promo_code ? ` (${order.promo_code})` : ""}</td><td className="cust-inv-doc__num">−{fmtINR(order.discount)}</td></tr>}
-            <tr><td colSpan={4}>Shipping</td><td className="cust-inv-doc__num">{order.shipping > 0 ? fmtINR(order.shipping) : "FREE"}</td></tr>
-            {order.tax > 0 && <tr><td colSpan={4}>Tax (GST)</td><td className="cust-inv-doc__num">{fmtINR(order.tax)}</td></tr>}
-            <tr className="cust-inv-doc__total"><td colSpan={4}>Total</td><td className="cust-inv-doc__num">{fmtINR(order.total)}</td></tr>
-          </tfoot>
         </table>
 
-        {/* Footer */}
-        <div className="cust-inv-doc__footer">
-          <p>Thank you for choosing Elite Zone J.</p>
-          <p>Questions? WhatsApp: +91 89398 88594 · hello@elitezonej.com</p>
+        {/* ── GST Breakdown + Grand Total ─────────────────────────── */}
+        <div className="tax-inv__summary">
+          <div className="tax-inv__summary-row">
+            <span className="tax-inv__summary-label">CGST</span>
+            <span className="tax-inv__summary-value">{gst.cgst > 0 ? fmtNum(gst.cgst) : ""}</span>
+          </div>
+          <div className="tax-inv__summary-row">
+            <span className="tax-inv__summary-label">SGST</span>
+            <span className="tax-inv__summary-value">{gst.sgst > 0 ? fmtNum(gst.sgst) : ""}</span>
+          </div>
+          <div className="tax-inv__summary-row">
+            <span className="tax-inv__summary-label">IGST</span>
+            <span className="tax-inv__summary-value">{gst.igst > 0 ? fmtNum(gst.igst) : ""}</span>
+          </div>
+          <div className="tax-inv__summary-row tax-inv__summary-row--total">
+            <span className="tax-inv__summary-label">GRAND TOTAL</span>
+            <span className="tax-inv__summary-value">{fmtNum(grandTotal)}</span>
+          </div>
         </div>
+
+        {/* ── Footer ──────────────────────────────────────────────── */}
+        <div className="tax-inv__footer">
+          <p className="tax-inv__thanks"><strong>THANK YOU FOR<br />YOUR BUSINESS</strong></p>
+        </div>
+
       </div>
     </div>
   );
