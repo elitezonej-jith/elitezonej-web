@@ -4,7 +4,7 @@ import { saveProductAction, type ProductSaveState } from "../../actions/products
 import Switch from "../../components/Switch";
 import ImageUploader from "../../components/ImageUploader";
 import { useFormGuard } from "../../components/useFormGuard";
-import CategoryPicker from "./CategoryPicker";
+import CategoryPicker, { type CategoryDerived } from "./CategoryPicker";
 import FilterAttributes from "./FilterAttributes";
 import SizeStockEditor, { type SizeStockRow } from "./SizeStockEditor";
 import FabricStockEditor, { type ColourwayRow } from "./FabricStockEditor";
@@ -31,6 +31,7 @@ export default function ProductForm({
   const [state, action, pending] = useActionState(saveProductAction, initial);
   const [name, setName] = useState(product?.name ?? "");
   const [kind, setKind] = useState<"tailored" | "fabric">(product?.kind ?? "tailored");
+  const [gender, setGender] = useState<"men" | "women" | "unisex">(product?.gender ?? "men");
   const [seoOpen, setSeoOpen] = useState(false);
   const [images, setImages] = useState<string[]>([]);
   const [sizeStockRows, setSizeStockRows] = useState<SizeStockRow[]>(inventory);
@@ -39,6 +40,17 @@ export default function ProductForm({
   const slugDerived = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const features = product?.features?.join("\n") ?? "";
   const spec = product?.spec?.map(([k, v]) => `${k}: ${v}`).join("\n") ?? "";
+
+  // Auto-sync the gender dropdown when the operator picks a top-level
+  // category (Women → women, Men → men). Accessories and Fabrics are
+  // gender-neutral so we leave the selection alone in those cases.
+  function handleCategoryChange(derived: CategoryDerived) {
+    const link = derived.cat_link.toLowerCase();
+    if (link === "women") setGender("women");
+    else if (link === "men") setGender("men");
+    // "Fabrics" / "Accessories" / "" → don't override; operator knows best.
+    markDirty();
+  }
 
   return (
     <form ref={formRef} action={action} className="stu-form" onChange={markDirty}>
@@ -303,6 +315,7 @@ export default function ProductForm({
                 categories={categories}
                 initialCategory={product?.category || undefined}
                 initialSub={product?.sub || undefined}
+                onCategoryChange={handleCategoryChange}
               />
               <label className="stu-field">
                 <span className="stu-field__label">Product type</span>
@@ -313,7 +326,7 @@ export default function ProductForm({
               </label>
               <label className="stu-field">
                 <span className="stu-field__label">For</span>
-                <select name="gender" defaultValue={product?.gender ?? "men"} className="stu-select">
+                <select name="gender" value={gender} onChange={(e) => { setGender(e.target.value as "men" | "women" | "unisex"); markDirty(); }} className="stu-select">
                   <option value="men">Men</option>
                   <option value="women">Women</option>
                   <option value="unisex">Unisex</option>

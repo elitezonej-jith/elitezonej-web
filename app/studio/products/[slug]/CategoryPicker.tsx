@@ -1,16 +1,20 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 type Cat = { id: number; name: string; slug: string; parent_id: number | null };
+
+export type CategoryDerived = { category: string; sub: string; cat_link: string; cat: string };
 
 export default function CategoryPicker({
   categories,
   initialCategory,
   initialSub,
+  onCategoryChange,
 }: {
   categories: Cat[];
   initialCategory?: string;
   initialSub?: string;
+  onCategoryChange?: (derived: CategoryDerived) => void;
 }) {
   const tops = categories.filter(c => c.parent_id === null);
 
@@ -76,6 +80,18 @@ export default function CategoryPicker({
   }
 
   const derived = deriveValues();
+
+  // Notify parent when the category path changes (skip the initial mount to
+  // avoid overriding the existing gender on first render of an edit form).
+  const isInitialMount = useRef(true);
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    onCategoryChange?.(derived);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path.join(",")]);
 
   // Get children of a given parent
   function childrenOf(parentId: number | null) {
