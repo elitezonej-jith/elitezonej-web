@@ -1,5 +1,8 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useActionState, useState, useRef } from "react";
+import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, rectSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { saveProductAction, type ProductSaveState } from "../../actions/products";
 import Switch from "../../components/Switch";
 import ImageUploader from "../../components/ImageUploader";
@@ -13,8 +16,31 @@ import type { Product } from "../../../../lib/admin/types";
 import type { ProductMeta } from "../../../../lib/admin/repos/product-meta";
 
 type Cat = { id: number; name: string; slug: string; parent_id: number | null };
+type ImageItem = { id: number; path: string };
 
 const initial: ProductSaveState = {};
+
+/* ── Sortable image tile for new-product grid ──────────────────────────── */
+function SortableImageTile({ img, onRemove }: { img: ImageItem; onRemove: () => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: img.id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition: transition ?? undefined,
+    opacity: isDragging ? 0.4 : undefined,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="pf-images__item" {...attributes} {...listeners}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={img.path} alt="" className="pf-images__thumb" />
+      <button
+        type="button"
+        className="pf-images__remove"
+        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        onPointerDown={(e) => e.stopPropagation()}
+      >×</button>
+    </div>
+  );
+}
 
 export default function ProductForm({
   mode, product, meta, categories = [],
@@ -33,13 +59,30 @@ export default function ProductForm({
   const [kind, setKind] = useState<"tailored" | "fabric">(product?.kind ?? "tailored");
   const [gender, setGender] = useState<"men" | "women" | "unisex">(product?.gender ?? "men");
   const [seoOpen, setSeoOpen] = useState(false);
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<ImageItem[]>([]);
+  const nextId = useRef(1);
   const [sizeStockRows, setSizeStockRows] = useState<SizeStockRow[]>(inventory);
   const [fabricColourRows, setFabricColourRows] = useState<ColourwayRow[]>(fabricColours);
   const { formRef, markDirty } = useFormGuard();
   const slugDerived = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const features = product?.features?.join("\n") ?? "";
   const spec = product?.spec?.map(([k, v]) => `${k}: ${v}`).join("\n") ?? "";
+
+  // DnD sensors for new-product image reorder (6px activation prevents accidental drags)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function handleImageDragEnd(e: DragEndEvent) {
+    if (!e.over || e.active.id === e.over.id) return;
+    setImages(prev => {
+      const oldIdx = prev.findIndex(i => i.id === e.active.id);
+      const newIdx = prev.findIndex(i => i.id === e.over!.id);
+      return arrayMove(prev, oldIdx, newIdx);
+    });
+    markDirty();
+  }
 
   // Auto-sync the gender dropdown when the operator picks a top-level
   // category (Women → women, Men → men, Accessories/Fabrics → unisex).
@@ -56,7 +99,7 @@ export default function ProductForm({
       {/* Hidden slug - auto-generated or preserved */}
       <input type="hidden" name="slug" value={product?.slug ?? slugDerived} />
       {/* Hidden image paths for new product */}
-      {images.map((img, i) => <input key={i} type="hidden" name="images" value={img} />)}
+      {images.map((img) => <input key={img.id} type="hidden" name="images" value={img.path} />)}
 
       <div className="stu-cols">
         {/* MAIN COLUMN */}
@@ -103,22 +146,26 @@ export default function ProductForm({
               <header className="stu-card__head"><h3>Product images</h3></header>
               <div className="stu-card__body">
                 {images.length > 0 && (
-                  <div className="pf-images">
-                    {images.map((img, i) => (
-                      <div key={i} className="pf-images__item">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={img} alt="" className="pf-images__thumb" />
-                        <button type="button" className="pf-images__remove" onClick={() => setImages(prev => prev.filter((_, j) => j !== i))}>×</button>
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleImageDragEnd}>
+                    <SortableContext items={images.map(i => i.id)} strategy={rectSortingStrategy}>
+                      <div className="pf-images">
+                        {images.map((img) => (
+                          <SortableImageTile
+                            key={img.id}
+                            img={img}
+                            onRemove={() => setImages(prev => prev.filter(i => i.id !== img.id))}
+                          />
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </SortableContext>
+                  </DndContext>
                 )}
                 <ImageUploader
                   folder="products"
                   multiple={true}
                   aspect={900 / 1200}
-                  onUploaded={({ path }) => setImages(prev => [...prev, path])}
-                  hint="Portrait 3:4 ratio, 900×1200px ideal. First image becomes the thumbnail."
+                  onUploaded={({ path }) => { setImages(prev => [...prev, { id: nextId.current++, path }]); markDirty(); }}
+                  hint="Portrait 3:4 ratio, 900×1200px ideal. First image becomes the thumbnail. Drag to reorder."
                 />
               </div>
             </section>
