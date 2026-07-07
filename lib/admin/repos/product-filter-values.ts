@@ -50,7 +50,7 @@ export async function setTagsForProduct(
     await t.run("DELETE FROM product_filter_values WHERE product_slug = ?", [slug]);
     for (const tag of tags) {
       await t.run(
-        "INSERT OR IGNORE INTO product_filter_values (product_slug, filter_id, option_id) VALUES (?, ?, ?)",
+        "INSERT INTO product_filter_values (product_slug, filter_id, option_id) VALUES (?, ?, ?) ON CONFLICT (product_slug, option_id) DO NOTHING",
         [slug, tag.filter_id, tag.option_id],
       );
     }
