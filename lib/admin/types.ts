@@ -48,6 +48,7 @@ export type ProductRow = {
   size_guide: string;
   delivery_min_days: number | null;
   delivery_max_days: number | null;
+  gst_rate: number;
   created_at: string;
   updated_at: string;
 };

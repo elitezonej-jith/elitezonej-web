@@ -119,12 +119,20 @@ export async function createWalkInOrderAction(_prev: WalkInState, fd: FormData):
     ],
   );
 
-  // Insert order items
+  // Insert order items (with per-item GST snapshot from product's gst_rate)
   for (const item of v.items) {
+    // Look up the product's GST rate (default 5% if not found)
+    const prod = await sql.get<{ gst_rate: number }>(
+      "SELECT gst_rate FROM products WHERE slug = ?",
+      [item.product_slug],
+    );
+    const gstRate = prod?.gst_rate ?? 5;
+    const gstAmount = Math.round((item.unit_price * item.qty * gstRate) / 100);
+
     await sql.run(
-      `INSERT INTO order_items (order_id, product_slug, qty, unit_price, size, colour, is_fabric)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [orderId, item.product_slug, item.qty, item.unit_price, item.size, item.colour, item.is_fabric ? 1 : 0],
+      `INSERT INTO order_items (order_id, product_slug, qty, unit_price, size, colour, is_fabric, gst_rate, gst_amount)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [orderId, item.product_slug, item.qty, item.unit_price, item.size, item.colour, item.is_fabric ? 1 : 0, gstRate, gstAmount],
     );
   }
 

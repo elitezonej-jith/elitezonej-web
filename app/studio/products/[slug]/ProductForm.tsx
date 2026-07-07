@@ -205,10 +205,16 @@ export default function ProductForm({
                   <span className="stu-field__label">Delivery · max days</span>
                   <input name="delivery_max_days" type="number" min={1} max={60} step={1} defaultValue={product?.delivery_max_days ?? ""} className="stu-input" placeholder="e.g. 7" />
                 </label>
-                <div className="stu-field">
-                  <span className="stu-field__label">&nbsp;</span>
-                  <span className="stu-field__hint">Leave blank to use the global default from Settings.</span>
-                </div>
+                <label className="stu-field">
+                  <span className="stu-field__label">GST rate</span>
+                  <select name="gst_rate" defaultValue={product?.gst_rate ?? 5} className="stu-select">
+                    <option value="0">0% (Exempt)</option>
+                    <option value="5">5% (Garments ≤ ₹1000)</option>
+                    <option value="12">12% (Garments &gt; ₹1000)</option>
+                    <option value="18">18%</option>
+                    <option value="28">28%</option>
+                  </select>
+                </label>
               </div>
             </div>
           </section>

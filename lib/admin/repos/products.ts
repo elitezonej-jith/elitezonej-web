@@ -101,6 +101,7 @@ export type ProductInput = {
   size_guide: string;
   delivery_min_days: number | null;
   delivery_max_days: number | null;
+  gst_rate?: number;
 };
 
 export async function upsertProduct(input: ProductInput): Promise<void> {
@@ -109,12 +110,12 @@ export async function upsertProduct(input: ProductInput): Promise<void> {
       slug, name, cat, cat_link, price, sale_price, line,
       sizes_json, features_json, spec_json, note, fit, fabric,
       occasion, badge, gender, category, sub, kind, status, description, size_guide,
-      delivery_min_days, delivery_max_days, updated_at
+      delivery_min_days, delivery_max_days, gst_rate, updated_at
     ) VALUES (
       ?, ?, ?, ?, ?, ?, ?,
       ?, ?, ?, ?, ?, ?,
       ?, ?, ?, ?, ?, ?, ?, ?, ?,
-      ?, ?,
+      ?, ?, ?,
       CURRENT_TIMESTAMP
     )
     ON CONFLICT(slug) DO UPDATE SET
@@ -141,6 +142,7 @@ export async function upsertProduct(input: ProductInput): Promise<void> {
       size_guide = excluded.size_guide,
       delivery_min_days = excluded.delivery_min_days,
       delivery_max_days = excluded.delivery_max_days,
+      gst_rate = excluded.gst_rate,
       updated_at = CURRENT_TIMESTAMP`,
     [
       input.slug,
@@ -167,6 +169,7 @@ export async function upsertProduct(input: ProductInput): Promise<void> {
       input.size_guide,
       input.delivery_min_days,
       input.delivery_max_days,
+      input.gst_rate ?? 5,
     ],
   );
 }

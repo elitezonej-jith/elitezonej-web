@@ -55,6 +55,7 @@ const ProductSchema = z.object({
   size_guide: z.string().max(8000).default(""),
   delivery_min_days: z.union([z.literal(""), z.coerce.number().int().min(1).max(60)]).optional(),
   delivery_max_days: z.union([z.literal(""), z.coerce.number().int().min(1).max(60)]).optional(),
+  gst_rate: z.coerce.number().int().min(0).max(28).default(5),
   filter_tags_json: z.string().default("[]"),
 }).refine(
   (d) => {
@@ -111,6 +112,7 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
     size_guide: v.size_guide,
     delivery_min_days: deliveryMin,
     delivery_max_days: deliveryMax,
+    gst_rate: v.gst_rate,
   };
   await upsertProduct(input);
 
