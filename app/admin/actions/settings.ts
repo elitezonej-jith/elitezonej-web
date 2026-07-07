@@ -16,6 +16,14 @@ const ALLOWED_SETTING_KEYS = new Set([
   "atelier_address",
   "instagram",
   "low_stock_threshold",
+  // Tax Invoice business details
+  "business_legal_name",
+  "business_gstin",
+  "business_state_code",
+  "business_address",
+  "business_phone",
+  "business_phone2",
+  "business_email",
 ]);
 
 export async function saveSettingsAction(fd: FormData): Promise<void> {
