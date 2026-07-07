@@ -33,7 +33,7 @@ export default async function CustomerInvoicePage({ params }: { params: Promise<
 
   const totalGst = lineItems.reduce((sum, it) => sum + it.gstAmount, 0);
   const gst = splitGst(totalGst, biz.state_code, order.ship_state || "");
-  const grandTotal = order.total > 0 ? order.total : lineItems.reduce((sum, it) => sum + it.total, 0);
+  const grandTotal = lineItems.reduce((sum, it) => sum + it.total, 0);
 
   const customerName = order.ship_name || order.customer || "—";
   const customerPhone = order.phone || "—";
