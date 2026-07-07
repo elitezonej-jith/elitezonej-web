@@ -42,13 +42,12 @@ export default function ProductForm({
   const spec = product?.spec?.map(([k, v]) => `${k}: ${v}`).join("\n") ?? "";
 
   // Auto-sync the gender dropdown when the operator picks a top-level
-  // category (Women → women, Men → men). Accessories and Fabrics are
-  // gender-neutral so we leave the selection alone in those cases.
+  // category (Women → women, Men → men, Accessories/Fabrics → unisex).
   function handleCategoryChange(derived: CategoryDerived) {
     const link = derived.cat_link.toLowerCase();
     if (link === "women") setGender("women");
     else if (link === "men") setGender("men");
-    // "Fabrics" / "Accessories" / "" → don't override; operator knows best.
+    else if (link === "accessories" || link === "fabrics") setGender("unisex");
     markDirty();
   }
 
