@@ -60,22 +60,54 @@ export default function CategoryPicker({
     const names = path.map(id => categories.find(c => c.id === id)?.name || "");
     const catDisplay = names.slice(1).join(" · ") || names[0] || "";
 
-    // category = the deepest non-top-level slug or name
-    // sub = the leaf slug if depth >= 3
+    // The storefront URL model is: /collection?c=<gender>&sub=<subcollection>
+    // Products have: gender (men/women/unisex), category (product type), sub (subcollection slug)
+    //
+    // Tree structure vs product fields:
+    //   1-level: [Women]           → category = "", sub = "" (just gender)
+    //   2-level: [Women > Office Wear] → category = "", sub = "office-wear"
+    //   3-level: [Women > Skirts > A-line] → category = "skirts", sub = "a-line-skirts"
+    //
+    // The top-level gender nodes (Women/Men) map to the gender field (handled
+    // separately via onCategoryChange). The child node is always the `sub`.
+
+    const isGenderTop = ["women", "men"].includes(topNode?.slug?.toLowerCase() || topNode?.name?.toLowerCase() || "");
+
     let category = "";
     let sub = "";
-    if (path.length >= 2) {
-      const midNode = categories.find(c => c.id === path[1]);
-      category = midNode?.slug || midNode?.name.toLowerCase() || "";
-    }
-    if (path.length >= 3) {
-      const leafNode = categories.find(c => c.id === path[path.length - 1]);
-      sub = leafNode?.slug || "";
-      // category stays as the mid-level
-    }
+
     if (path.length === 1) {
-      category = topNode?.slug || "";
+      // Just a top-level selected (e.g. "Women" or "Accessories")
+      if (!isGenderTop) {
+        category = topNode?.slug || "";
+      }
+    } else if (path.length === 2) {
+      if (isGenderTop) {
+        // Women > Office Wear → sub = "office-wear"
+        const childNode = categories.find(c => c.id === path[1]);
+        sub = childNode?.slug || childNode?.name.toLowerCase() || "";
+      } else {
+        // Accessories > Brooches → category = "accessories", sub = "brooches"
+        category = topNode?.slug || "";
+        const childNode = categories.find(c => c.id === path[1]);
+        sub = childNode?.slug || childNode?.name.toLowerCase() || "";
+      }
+    } else if (path.length >= 3) {
+      if (isGenderTop) {
+        // Women > Skirts > A-line → category = "skirts", sub = "a-line-skirts"
+        const midNode = categories.find(c => c.id === path[1]);
+        category = midNode?.slug || midNode?.name.toLowerCase() || "";
+        const leafNode = categories.find(c => c.id === path[path.length - 1]);
+        sub = leafNode?.slug || "";
+      } else {
+        // Accessories > Type > Subtype → category = "type", sub = "subtype"
+        const midNode = categories.find(c => c.id === path[1]);
+        category = midNode?.slug || midNode?.name.toLowerCase() || "";
+        const leafNode = categories.find(c => c.id === path[path.length - 1]);
+        sub = leafNode?.slug || "";
+      }
     }
+
     return { category, sub, cat_link: catLink, cat: catDisplay };
   }
 
