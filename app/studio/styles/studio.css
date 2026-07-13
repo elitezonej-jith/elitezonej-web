@@ -208,6 +208,17 @@
 }
 .stu-page--narrow { max-width: 880px; }
 
+/* ── Sticky toolbar (list pages) ─────────────────────────────────────── */
+.stu-sticky-toolbar {
+  position: sticky;
+  top: 53px;
+  z-index: 3;
+  background: rgba(247, 246, 243, 0.92);
+  backdrop-filter: blur(10px);
+  margin: -32px -40px 0;
+  padding: 32px 40px 12px;
+}
+
 /* ── Page header ──────────────────────────────────────────────────────── */
 .stu-page-head {
   display: flex; align-items: flex-end; justify-content: space-between;
@@ -1013,7 +1024,7 @@
   margin: 22px 0;
 }
 
-/* ── Folio (page count) ──────────────────────────────────────────────── */
+/* ── Folio (pagination) ──────────────────────────────────────────────── */
 .stu-folio {
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 22px;
@@ -1023,7 +1034,90 @@
   font-size: 13px; color: var(--stu-text-3);
   font-weight: 500;
 }
-.stu-folio__nav { display: flex; gap: 8px; }
+.stu-folio__nav {
+  display: flex; align-items: center; gap: 4px;
+}
+.stu-folio__arrow {
+  display: grid; place-items: center;
+  width: 32px; height: 32px;
+  border-radius: var(--stu-radius-sm);
+  font-size: 14px;
+  color: var(--stu-text-2);
+  text-decoration: none;
+  transition: background 150ms var(--stu-ease), color 150ms var(--stu-ease);
+}
+.stu-folio__arrow:hover:not(.is-disabled) {
+  background: var(--stu-surface-2);
+  color: var(--stu-text);
+}
+.stu-folio__arrow.is-disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+.stu-folio__num {
+  display: grid; place-items: center;
+  min-width: 32px; height: 32px;
+  padding: 0 6px;
+  border-radius: var(--stu-radius-sm);
+  font-size: 13px; font-weight: 500;
+  color: var(--stu-text-2);
+  text-decoration: none;
+  transition: background 150ms var(--stu-ease), color 150ms var(--stu-ease);
+}
+.stu-folio__num:hover:not(.is-current) {
+  background: var(--stu-surface-2);
+  color: var(--stu-text);
+}
+.stu-folio__num.is-current {
+  background: var(--stu-text);
+  color: var(--stu-surface);
+  pointer-events: none;
+}
+.stu-folio__ellipsis {
+  display: grid; place-items: center;
+  width: 24px; height: 32px;
+  font-size: 13px;
+  color: var(--stu-text-4);
+  user-select: none;
+}
+.stu-folio__jump {
+  display: flex; align-items: center; gap: 4px;
+  margin-left: 12px;
+  padding-left: 12px;
+  border-left: 1px solid var(--stu-border);
+}
+.stu-folio__jump-input {
+  width: 44px; height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--stu-border);
+  border-radius: var(--stu-radius-sm);
+  font-size: 13px; font-weight: 500;
+  text-align: center;
+  background: var(--stu-bg);
+  outline: none;
+  transition: border-color 180ms var(--stu-ease);
+}
+.stu-folio__jump-input:focus {
+  border-color: var(--stu-text-3);
+}
+.stu-folio__jump-input::placeholder {
+  color: var(--stu-text-4);
+  font-weight: 400;
+}
+.stu-folio__jump-btn {
+  height: 32px; padding: 0 10px;
+  border: 1px solid var(--stu-border);
+  border-radius: var(--stu-radius-sm);
+  background: var(--stu-surface);
+  font-size: 12px; font-weight: 600;
+  color: var(--stu-text-2);
+  cursor: pointer;
+  transition: background 150ms var(--stu-ease), color 150ms var(--stu-ease);
+}
+.stu-folio__jump-btn:hover {
+  background: var(--stu-surface-2);
+  color: var(--stu-text);
+}
 
 /* ── Banner / preview frame ──────────────────────────────────────────── */
 .stu-banner-preview {

@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { IconSearch } from "./Icons";
 
 export type Chip = { key: string; label: string; href: string; active: boolean };
@@ -19,6 +19,9 @@ export default function FilterBar({
   const sp = useSearchParams();
   const [q, setQ] = useState(sp.get(searchParam) ?? "");
   const [, startTransition] = useTransition();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync external URL changes (e.g. chip click resets search)
   useEffect(() => { setQ(sp.get(searchParam) ?? ""); }, [sp, searchParam]);
 
   const submit = (val: string) => {
@@ -28,6 +31,27 @@ export default function FilterBar({
     startTransition(() => router.push(`${pathname}?${next.toString()}`));
   };
 
+  // Debounced live search — fires 300ms after the user stops typing
+  useEffect(() => {
+    const current = sp.get(searchParam) ?? "";
+    if (q === current) return; // no change — skip to prevent loops
+    debounceRef.current = setTimeout(() => {
+      submit(q);
+    }, 300);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q]);
+
+  // Instant submit on Enter (cancels pending debounce via state change → effect cleanup)
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      submit(q);
+    }
+  };
+
   return (
     <div className="stu-filters">
       <div className="stu-filters__search">
@@ -35,8 +59,7 @@ export default function FilterBar({
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") submit(q); }}
-          onBlur={() => { if (q !== (sp.get(searchParam) ?? "")) submit(q); }}
+          onKeyDown={handleKeyDown}
           placeholder={placeholder}
           aria-label={placeholder}
         />

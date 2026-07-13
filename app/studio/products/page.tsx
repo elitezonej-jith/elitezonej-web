@@ -76,16 +76,18 @@ export default async function ProductsListPage({ searchParams }: SP) {
   return (
     <div className="stu-page">
       <FlashToast flash={sp.flash} />
-      <PageHead
-        title="Products"
-        sub="Add, edit, and organize every piece in your store. Featured items and new arrivals show up across the homepage."
-      >
-        <Link href="/studio/products/new" className="stu-btn stu-btn--primary">
-          <IconPlus width={16} height={16} /> Add product
-        </Link>
-      </PageHead>
+      <div className="stu-sticky-toolbar">
+        <PageHead
+          title="Products"
+          sub="Add, edit, and organize every piece in your store. Featured items and new arrivals show up across the homepage."
+        >
+          <Link href="/studio/products/new" className="stu-btn stu-btn--primary">
+            <IconPlus width={16} height={16} /> Add product
+          </Link>
+        </PageHead>
 
-      <FilterBar chips={chips} placeholder="Search products by name or slug…" />
+        <FilterBar chips={chips} placeholder="Search products by name or slug…" />
+      </div>
 
       <div className="stu-card">
         <div className="stu-card__body--flush">
