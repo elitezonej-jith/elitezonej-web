@@ -12,6 +12,7 @@ import FilterAttributes from "./FilterAttributes";
 import SizeStockEditor, { type SizeStockRow } from "./SizeStockEditor";
 import FabricStockEditor, { type ColourwayRow } from "./FabricStockEditor";
 import FabricMetaFields from "./FabricMetaFields";
+import NewProductColourEditor, { type ColourRow } from "./NewProductColourEditor";
 import type { Product } from "../../../../lib/admin/types";
 import type { ProductMeta } from "../../../../lib/admin/repos/product-meta";
 
@@ -63,6 +64,7 @@ export default function ProductForm({
   const nextId = useRef(1);
   const [sizeStockRows, setSizeStockRows] = useState<SizeStockRow[]>(inventory);
   const [fabricColourRows, setFabricColourRows] = useState<ColourwayRow[]>(fabricColours);
+  const [productColourRows, setProductColourRows] = useState<ColourRow[]>([]);
   const { formRef, markDirty } = useFormGuard();
   const slugDerived = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
   const features = product?.features?.join("\n") ?? "";
@@ -275,6 +277,19 @@ export default function ProductForm({
                   />
                 </div>
               </section>
+
+              {/* Colour variants (new product only — edit page uses ColourManager) */}
+              {mode === "new" && (
+                <section className="stu-card">
+                  <header className="stu-card__head"><h3>Colour options</h3></header>
+                  <div className="stu-card__body">
+                    <input type="hidden" name="product_colours_json" value={JSON.stringify(productColourRows.filter(r => r.name.trim()))} />
+                    <NewProductColourEditor
+                      onChange={(rows) => { setProductColourRows(rows); markDirty(); }}
+                    />
+                  </div>
+                </section>
+              )}
 
               {/* Details (tailored) */}
               <section className="stu-card">

@@ -29,6 +29,7 @@ const ProductSchema = z.object({
   sizes: z.string().default(""),
   inventory_json: z.string().default("[]"),
   fabric_colours_json: z.string().default("[]"),
+  product_colours_json: z.string().default("[]"),
   fabric_meta_width: z.coerce.number().int().min(0).max(120).default(58),
   fabric_meta_gsm: z.coerce.number().int().min(0).max(2000).default(0),
   fabric_meta_composition: z.string().max(200).default(""),
@@ -186,6 +187,23 @@ export async function saveProductAction(_prev: ProductSaveState, fd: FormData): 
     const imagePaths = fd.getAll("images").map(String).filter(Boolean);
     for (const imgPath of imagePaths) {
       await addImage(v.slug, imgPath, "");
+    }
+
+    // Create product colour variants (from NewProductColourEditor)
+    let productColours: Array<{ name: string; hex: string; is_default: boolean }> = [];
+    try { productColours = JSON.parse(v.product_colours_json); } catch { /* malformed — treat as empty */ }
+    const cleanColours = productColours.filter(
+      (c) => c.name && typeof c.name === "string" && c.name.trim(),
+    );
+    for (let i = 0; i < cleanColours.length; i++) {
+      const c = cleanColours[i];
+      await createColour({
+        product_slug: v.slug,
+        name: c.name.trim(),
+        hex: /^#[0-9a-fA-F]{6}$/.test(c.hex) ? c.hex : "#000000",
+        sort_order: i,
+        is_default: c.is_default ? 1 : 0,
+      });
     }
   }
 
