@@ -1,4 +1,5 @@
 "use client";
+import { createPortal } from "react-dom";
 import { useModalA11y } from "../../components/useModalA11y";
 import { IconTrash } from "./Icons";
 
@@ -23,7 +24,7 @@ export default function ConfirmDialog({
   const dialogRef = useModalA11y<HTMLDivElement>(open, onClose);
 
   if (!open) return null;
-  return (
+  return createPortal(
     <div className="stu-dialog-overlay" onClick={onClose}>
       <div
         ref={dialogRef}
@@ -50,6 +51,7 @@ export default function ConfirmDialog({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
