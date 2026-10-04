@@ -7,9 +7,11 @@ import {
   verifyCheckoutSignature,
   razorpayConfigured,
   fetchRazorpayPayment,
+  captureRazorpayPayment,
   amountMatches,
   publicKeyId,
 } from "../../lib/storefront/payments/razorpay";
+import { settleCapturedPayment } from "../../lib/storefront/payments/settle";
 import {
   createPendingOrder,
   fulfilOrderPaid,
@@ -351,11 +353,21 @@ export async function confirmPayment(input: {
   }
 
   // Reconcile the captured amount/currency — the signature proves the
-  // payment belongs to this order but does NOT cover the amount. The webhook
-  // is the authoritative path; here we refuse only on a *confirmed* mismatch
-  // and otherwise proceed (a fetch failure falls back to the webhook).
+  // payment belongs to this order but does NOT cover the amount — and its
+  // capture state. If Razorpay can't be reached we don't guess: the webhook
+  // (payment.captured / order.paid) confirms the order once it lands.
   const gw = await fetchRazorpayPayment(input.razorpay_payment_id);
-  if (gw && (!amountMatches(payment.amount, gw.amount) || gw.currency !== payment.currency)) {
+  if (!gw) {
+    await logAudit({
+      user_id: null,
+      action: "payment_confirm_deferred",
+      entity: "order",
+      entity_id: orderId,
+      payload: { payment_id: input.razorpay_payment_id, reason: "gateway_unreachable" },
+    });
+    return { ok: false, error: PAYMENT_PENDING_MSG };
+  }
+  if (!amountMatches(payment.amount, gw.amount) || gw.currency !== payment.currency) {
     await logAudit({
       user_id: null,
       action: "payment_amount_mismatch",
@@ -371,20 +383,62 @@ export async function confirmPayment(input: {
     return { ok: false, error: "Payment amount could not be verified. Please contact us — you have not been charged twice." };
   }
 
-  const result = await fulfilOrderPaid(orderId, {
-    providerPaymentId: input.razorpay_payment_id,
-  });
-  if (!result.ok) return { ok: false, error: result.error };
+  // An `authorized` payment is NOT money in hand — Razorpay auto-refunds it
+  // after a few days unless captured. Capture it here (covers the account's
+  // auto-capture setting being off); never mark an order paid before capture.
+  let status = gw.status;
+  if (status === "authorized") {
+    status = (await captureRazorpayPayment(input.razorpay_payment_id, gw.amount)) ?? "authorized";
+  }
+  if (status !== "captured") {
+    await logAudit({
+      user_id: null,
+      action: "payment_not_captured",
+      entity: "order",
+      entity_id: orderId,
+      payload: { payment_id: input.razorpay_payment_id, gateway_status: status },
+    });
+    return {
+      ok: false,
+      error: status === "authorized" ? PAYMENT_PENDING_MSG : "Your payment did not go through. You have not been charged.",
+    };
+  }
 
-  await logAudit({
-    user_id: null,
-    action: result.alreadyPaid ? "payment_confirm_idempotent" : "order_paid",
-    entity: "order",
-    entity_id: orderId,
-    payload: { payment_id: input.razorpay_payment_id },
+  const result = await settleCapturedPayment({
+    orderId,
+    paymentId: input.razorpay_payment_id,
+    source: "callback",
   });
-  return { ok: true, orderId };
+  switch (result.kind) {
+    case "paid":
+      await logAudit({
+        user_id: null,
+        action: result.alreadyPaid ? "payment_confirm_idempotent" : "order_paid",
+        entity: "order",
+        entity_id: orderId,
+        payload: { payment_id: input.razorpay_payment_id },
+      });
+      return { ok: true, orderId };
+    case "refunded":
+    case "refund_in_progress":
+      return {
+        ok: false,
+        error:
+          "Sorry — an item in your order sold out while you were paying. Your payment has been refunded in full and should reach you in 5–7 working days.",
+      };
+    case "refund_failed":
+      return {
+        ok: false,
+        error:
+          "Sorry — an item in your order sold out while you were paying. We'll refund your payment in full; our team has been alerted. Please don't pay again.",
+      };
+    case "retry":
+      return { ok: false, error: PAYMENT_PENDING_MSG };
+  }
 }
+
+const PAYMENT_PENDING_MSG =
+  "We've received your payment and are confirming your order. Please don't pay again — your confirmation will follow shortly.";
 
 // ── Sandbox payment ─────────────────────────────────────────────────────────
 // Simulated gateway used only while no real Razorpay keys are configured. The

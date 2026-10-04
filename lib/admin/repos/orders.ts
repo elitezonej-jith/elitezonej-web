@@ -460,6 +460,57 @@ export async function markDelivered(id: string): Promise<{ ok: true } | { ok: fa
  * Marks a still-pending order's payment as failed (gateway reported
  * payment.failed). Never touches a paid order and never decrements stock.
  */
+/**
+ * Atomically claims an unpaid order for an automatic refund (money captured
+ * but the order can't be fulfilled, e.g. stock ran out mid-payment). Only one
+ * caller wins — the client callback and the webhook can both hit this for the
+ * same payment, and exactly one of them must issue the refund.
+ */
+export async function claimOrderForAutoRefund(
+  orderId: string,
+): Promise<{ prevStatus: string } | null> {
+  return sql.tx(async (t) => {
+    const prev = await t.get<{ status: string }>(
+      "SELECT status FROM orders WHERE id = ? AND payment_status IN ('pending','failed')",
+      [orderId],
+    );
+    if (!prev) return null;
+    // Portable compare-and-set (no driver-specific FOR UPDATE — see the note
+    // above fulfilOrderPaid): the update only lands if neither status moved
+    // since the read, so exactly one racing caller wins and the status we
+    // remember is the one we overwrote.
+    const r = await t.run(
+      "UPDATE orders SET status = 'cancelled', payment_status = 'refunded', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = ? AND payment_status IN ('pending','failed')",
+      [orderId, prev.status],
+    );
+    if (r.count === 0) return null;
+    await t.run(
+      "DELETE FROM first_order_claims WHERE order_id = ? AND status = 'pending'",
+      [orderId],
+    );
+    return { prevStatus: prev.status };
+  });
+}
+
+/** Undoes a claim when the refund call itself failed, so the order isn't shown
+ *  as refunded/cancelled while the customer's money is still held. */
+export async function revertAutoRefundClaim(orderId: string, prevStatus: string): Promise<void> {
+  await sql.run(
+    "UPDATE orders SET status = ?, payment_status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND payment_status = 'refunded' AND status = 'cancelled'",
+    [prevStatus, orderId],
+  );
+}
+
+/** Reflects a full refund issued from the Razorpay dashboard. Fulfilment status
+ *  is left alone — whether to cancel or recall the shipment is the admin's call. */
+export async function markOrderRefunded(orderId: string): Promise<boolean> {
+  const r = await sql.run(
+    "UPDATE orders SET payment_status = 'refunded', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND payment_status = 'paid'",
+    [orderId],
+  );
+  return r.count === 1;
+}
+
 export async function markOrderPaymentFailed(orderId: string): Promise<void> {
   await sql.tx(async (t) => {
     await t.run(

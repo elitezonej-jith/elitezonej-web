@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyWebhookSignature, amountMatches } from "../../../../lib/storefront/payments/razorpay";
 import { getPaymentByProviderOrderId } from "../../../../lib/admin/repos/payments";
-import { fulfilOrderPaid, markOrderPaymentFailed } from "../../../../lib/admin/repos/orders";
-import { recordWebhookEvent } from "../../../../lib/admin/repos/webhook-events";
+import { markOrderPaymentFailed, markOrderRefunded } from "../../../../lib/admin/repos/orders";
+import { recordWebhookEvent, forgetWebhookEvent } from "../../../../lib/admin/repos/webhook-events";
+import { settleCapturedPayment } from "../../../../lib/storefront/payments/settle";
 import { logAudit } from "../../../../lib/admin/repos/audit";
 
 // Node runtime: needs the raw body + node:crypto for HMAC verification.
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest) {
     payload?: {
       payment?: { entity?: { id?: string; order_id?: string; amount?: number; currency?: string } };
       order?: { entity?: { id?: string; amount?: number; currency?: string } };
+      refund?: { entity?: { id?: string; payment_id?: string; amount?: number } };
     };
   };
   try {
@@ -91,13 +93,51 @@ export async function POST(req: NextRequest) {
       }
 
       // Idempotent — safe even if the client callback already fulfilled it.
-      const r = await fulfilOrderPaid(payment.order_id, { providerPaymentId: paymentId });
+      // Both events only fire once the payment is captured.
+      const r = paymentId
+        ? await settleCapturedPayment({
+            orderId: payment.order_id,
+            paymentId,
+            source: "webhook",
+          })
+        : ({ kind: "retry", error: "order.paid without a payment entity" } as const);
       await logAudit({
         user_id: null,
-        action: r.ok ? "order_paid_webhook" : "order_paid_webhook_failed",
+        action:
+          r.kind === "paid"
+            ? "order_paid_webhook"
+            : r.kind === "refunded"
+              ? "order_refunded_webhook"
+              : r.kind === "refund_in_progress"
+                ? "order_refund_concurrent_webhook"
+                : "order_paid_webhook_failed",
         entity: "order",
         entity_id: payment.order_id,
-        payload: { event: event.event, ok: r.ok },
+        payload: { event: event.event, result: r.kind, error: "error" in r ? r.error : undefined },
+      });
+      // Transient failure or a refund that didn't go through: un-record the
+      // event and return 5xx so Razorpay retries (it backs off for ~24h).
+      if (r.kind === "retry" || r.kind === "refund_failed") {
+        await forgetWebhookEvent(eventId);
+        return NextResponse.json({ received: false, retry: true }, { status: 500 });
+      }
+    }
+  }
+
+  // Full refund issued from the Razorpay dashboard → reflect it on the order
+  // so Admin doesn't keep showing it as paid. Partial refunds are only logged.
+  if (event.event === "refund.processed" && providerOrderId) {
+    const re = event.payload?.refund?.entity;
+    const payment = await getPaymentByProviderOrderId(providerOrderId);
+    if (payment && re) {
+      const full = amountMatches(payment.amount, Number(re.amount ?? 0));
+      const changed = full ? await markOrderRefunded(payment.order_id) : false;
+      await logAudit({
+        user_id: null,
+        action: full ? "order_refunded_dashboard" : "order_partial_refund",
+        entity: "order",
+        entity_id: payment.order_id,
+        payload: { refund_id: re.id, refund_paise: re.amount, payment_id: re.payment_id, status_changed: changed },
       });
     }
   }
