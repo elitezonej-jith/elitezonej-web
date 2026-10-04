@@ -111,6 +111,57 @@ export async function fetchRazorpayPayment(
   }
 }
 
+/** Captures an `authorized` payment. Needed when the account's auto-capture
+ *  setting is off — an authorized-but-uncaptured payment is auto-refunded by
+ *  Razorpay after a few days, so it must never be treated as paid. Returns the
+ *  resulting status, or null if the call fails. */
+export async function captureRazorpayPayment(
+  paymentId: string,
+  amountPaise: number,
+): Promise<string | null> {
+  const k = keys();
+  if (!k) return null;
+  const auth = Buffer.from(`${k.id}:${k.secret}`).toString("base64");
+  try {
+    const res = await fetch(`${API}/payments/${encodeURIComponent(paymentId)}/capture`, {
+      method: "POST",
+      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ amount: Math.round(amountPaise), currency: "INR" }),
+    });
+    if (!res.ok) return null;
+    const j = (await res.json()) as { status?: string };
+    return String(j.status ?? "");
+  } catch {
+    return null;
+  }
+}
+
+/** Issues a full refund for a captured payment. Returns the refund id, or an
+ *  error if Razorpay rejects it (e.g. already fully refunded) or is unreachable. */
+export async function refundRazorpayPayment(
+  paymentId: string,
+  notes: Record<string, string>,
+): Promise<{ id: string } | { error: string }> {
+  const k = keys();
+  if (!k) return { error: "Razorpay not configured" };
+  const auth = Buffer.from(`${k.id}:${k.secret}`).toString("base64");
+  try {
+    const res = await fetch(`${API}/payments/${encodeURIComponent(paymentId)}/refund`, {
+      method: "POST",
+      headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ speed: "normal", notes }),
+    });
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      return { error: `Razorpay refund failed (${res.status}): ${t.slice(0, 200)}` };
+    }
+    const j = (await res.json()) as { id: string };
+    return { id: j.id };
+  } catch (err) {
+    return { error: (err as Error).message };
+  }
+}
+
 /** payments.amount is stored in rupees; gateway amounts are in paise. */
 export function amountMatches(storedRupees: number, gatewayPaise: number): boolean {
   return Math.round(storedRupees * 100) === Math.round(gatewayPaise);

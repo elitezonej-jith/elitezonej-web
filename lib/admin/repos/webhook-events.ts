@@ -25,6 +25,13 @@ export async function recordWebhookEvent(
   return r.count === 1;
 }
 
+/** Drops a recorded event so a provider retry is processed again. Used when
+ *  handling failed transiently (e.g. DB unavailable) — otherwise the retry
+ *  would be swallowed as a duplicate and a paid order never confirmed. */
+export async function forgetWebhookEvent(eventId: string): Promise<void> {
+  await sql.run("DELETE FROM webhook_events WHERE event_id = ?", [eventId]);
+}
+
 /** Returns the order id a prior checkout submission with this key created,
  *  or null if the key is new. */
 export async function getCheckoutIdempotency(key: string): Promise<string | null> {
