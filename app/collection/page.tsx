@@ -25,10 +25,31 @@ export async function generateMetadata({
     ? `/collection?c=${cat}&sub=${sub}`
     : `/collection?c=${cat}`;
   return {
-    title: meta.title,
+    title: seoTitle(cat, sub, meta.title),
     description: meta.stand,
     alternates: { canonical },
   };
+}
+
+// Search-friendly titles. The on-page heading stays short ("Men"); the
+// <title> says what people actually search for ("men's tailored suits").
+const CATEGORY_TITLES: Record<string, string> = {
+  men: "Men's Tailored Suits, Shirts & Sherwanis",
+  women: "Women's Designer Wear, Blazers & Lehengas",
+  fabrics: "Premium Suiting & Shirting Fabrics by the Metre",
+  accessories: "Brooches, Lapel Pins, Buttons & Men's Accessories",
+  new: "New Arrivals: Tailoring & Designer Wear",
+  sale: "Sale on Tailored Suits & Designer Wear",
+  all: "All Tailoring, Designer Wear & Accessories",
+  festive: "Festive Wear: Sherwanis, Lehengas & Bandhgalas",
+};
+
+function seoTitle(cat: string, sub: string, label: string): string {
+  if (!sub) return CATEGORY_TITLES[cat] ?? label;
+  // Subcategory: "Business Suits for Men", "Blazers for Women".
+  if (cat === "men") return `${label} for Men`;
+  if (cat === "women") return `${label} for Women`;
+  return label;
 }
 
 export default async function CollectionPage({

@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { listProductsForPage } from "@/lib/storefront/catalogue";
+import { getStorefrontNav } from "@/lib/storefront/nav";
 
 // Keep in sync with metadataBase in app/layout.tsx. Overridable per-env.
 const BASE_URL = (
@@ -39,10 +40,37 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: p.createdAt ? new Date(p.createdAt) : now,
       changeFrequency: "weekly",
       priority: 0.8,
+      // Product photos, so Google Images can index them with the product.
+      images: (p.images ?? [])
+        .slice(0, 4)
+        .map((u) => (u.startsWith("/") ? `${BASE_URL}${u}` : u)),
     }));
   } catch {
     productRoutes = [];
   }
 
-  return [...staticRoutes, ...productRoutes];
+  // Subcategory pages from the live menu (e.g. /collection?c=men&sub=business-suits).
+  let subcategoryRoutes: MetadataRoute.Sitemap = [];
+  try {
+    const nav = await getStorefrontNav();
+    const hrefs = new Set<string>();
+    for (const cat of nav) {
+      for (const g of cat.groups ?? []) {
+        for (const it of g.items) {
+          if (/^\/collection\?c=[a-z0-9-]+&sub=[a-z0-9-]+$/.test(it.href)) hrefs.add(it.href);
+        }
+      }
+    }
+    subcategoryRoutes = [...hrefs].map((h) => ({
+      // Next.js writes <loc> verbatim, so "&" must be pre-escaped for valid XML.
+      url: `${BASE_URL}${h.replace(/&/g, "&amp;")}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    }));
+  } catch {
+    subcategoryRoutes = [];
+  }
+
+  return [...staticRoutes, ...subcategoryRoutes, ...productRoutes];
 }
