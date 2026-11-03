@@ -11,7 +11,12 @@ import { getBespokeContent } from "@/lib/storefront/bespoke-content";
 import "../styles/bespoke.css";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Bespoke & Made-to-Measure — Elite Zone J" };
+export const metadata = {
+  title: "Bespoke & Made-to-Measure Tailoring",
+  description:
+    "Bespoke and made-to-measure suits, sherwanis and womenswear from our atelier in India. Book a fitting, choose your cloth, and wear it in seven days.",
+  alternates: { canonical: "/bespoke" },
+};
 
 function replaceLead(text: string, leadLabel: string): string {
   return text.replace(/\{leadTime\}/g, leadLabel);

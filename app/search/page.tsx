@@ -16,7 +16,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { q } = await searchParams;
   return {
-    title: q ? `Search: ${q} · Elite Zone J` : "Search · Elite Zone J",
+    title: q ? `Search: ${q}` : "Search",
+    // Internal search results are thin/duplicate content for Google.
+    robots: { index: false, follow: true },
   };
 }
 

@@ -9,6 +9,7 @@ import "./size-guide.css";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
+  alternates: { canonical: "/size-guide" },
   // Plain string → root layout template "%s · Elite Zone J" adds the brand.
   title: "Size guide",
   description:

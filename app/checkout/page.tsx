@@ -5,7 +5,8 @@ import CheckoutClient from "./CheckoutClient";
 import { getCurrentCustomer } from "../../lib/storefront/session";
 import { listAddressesForCustomer } from "../../lib/admin/repos/addresses";
 
-export const metadata = { title: "Checkout — Elite Zone J" };
+// Private page: keep it out of search results.
+export const metadata = { title: "Checkout", robots: { index: false, follow: true } };
 
 // Checkout is open to guests — getCurrentCustomer (not requireCustomer) so the
 // guest path is untouched; the picker only renders when there are addresses.

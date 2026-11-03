@@ -6,7 +6,8 @@ import { getSiteSettings } from "@/lib/storefront/site-settings";
 import { getDeliveryMap } from "@/lib/storefront/delivery";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Your bag — Elite Zone J" };
+// Private page: keep it out of search results.
+export const metadata = { title: "Your bag", robots: { index: false, follow: true } };
 
 export default async function CartPage() {
   const { leadTimeDays } = await getSiteSettings();

@@ -4,7 +4,8 @@ import TrustStrip from "../components/TrustStrip";
 import WishlistClient from "./WishlistClient";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Your wishlist — Elite Zone J" };
+// Private page: keep it out of search results.
+export const metadata = { title: "Your wishlist", robots: { index: false, follow: true } };
 
 export default function WishlistPage() {
   return (

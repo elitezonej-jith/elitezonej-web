@@ -7,7 +7,8 @@ import LoginForm from "./LoginForm";
 import "../styles/account.css";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Sign in — Elite Zone J" };
+// Private page: keep it out of search results.
+export const metadata = { title: "Sign in", robots: { index: false, follow: true } };
 
 export default async function LoginPage({
   searchParams,
