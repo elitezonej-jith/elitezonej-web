@@ -29,6 +29,8 @@ const LD = [
     name: "Elite Zone J",
     // Spellings people search for; helps Google tie them to this brand.
     alternateName: ["EliteZoneJ", "Elite Zone J Fashion", "Zone J"],
+    description:
+      "Indian designer tailoring house: bespoke, made-to-measure and ready-to-wear suits, sherwanis, shirts, women's tailoring, suiting fabrics and accessories, with home fittings and delivery across India.",
     url: SITE,
     logo: `${SITE}/logo/favicon-512.png`,
     contactPoint: {

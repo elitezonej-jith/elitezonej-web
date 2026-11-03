@@ -28,8 +28,39 @@ export default async function BespokePage() {
 
   const headlineParts = replaceLead(content.hero.headline, leadLabel).split("\n");
 
+  // Structured data for search and AI assistants: each service with its
+  // starting price and turnaround, taken from the same Studio content the
+  // page shows ("From ₹45,000 · 4 to 6 weeks").
+  const servicesLd = content.services.map((svc) => {
+    const priceText = replaceLead(svc.price, leadLabel);
+    const minPrice = Number((priceText.match(/₹\s?([\d,]+)/)?.[1] ?? "").replace(/,/g, ""));
+    return {
+      "@context": "https://schema.org",
+      "@type": "Service",
+      name: svc.title,
+      serviceType: svc.category || "Tailoring",
+      description: `${priceText}. ${svc.features.map((f) => replaceLead(f, leadLabel)).join(". ")}.`,
+      provider: { "@type": "Organization", name: "Elite Zone J", url: "https://elitezonej.com" },
+      areaServed: { "@type": "Country", name: "India" },
+      url: "https://elitezonej.com/bespoke",
+      ...(minPrice > 0
+        ? {
+            offers: {
+              "@type": "Offer",
+              priceCurrency: "INR",
+              priceSpecification: { "@type": "PriceSpecification", minPrice, priceCurrency: "INR" },
+            },
+          }
+        : {}),
+    };
+  });
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(servicesLd).replace(/</g, "\\u003c") }}
+      />
       <Header />
 
       <main>
