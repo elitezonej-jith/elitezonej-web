@@ -41,7 +41,7 @@ export async function buildLlmsTxt(): Promise<string> {
 
   return `# Elite Zone J (EliteZoneJ)
 
-> Elite Zone J is an Indian designer tailoring house selling bespoke, made-to-measure and ready-to-wear clothing for men and women: suits, tuxedos, wedding suits, sherwanis, shirts, trousers, women's tailoring and evening wear, plus suiting fabrics by the metre and accessories (brooches, lapel pins, buttons, ties, chains, rings, glasses, belts). Online store: ${SITE}. Prices in Indian rupees (INR).
+> Elite Zone J is a designer tailoring house in Injambakkam, Chennai (Tamil Nadu, India), selling bespoke, made-to-measure and ready-to-wear clothing for men and women: suits, tuxedos, wedding suits, sherwanis, shirts, trousers, women's tailoring and evening wear, plus suiting fabrics by the metre and accessories (brooches, lapel pins, buttons, ties, chains, rings, glasses, belts). Online store: ${SITE}. Prices in Indian rupees (INR).
 
 Also written as: EliteZoneJ, Elite Zone J Fashion, Zone J. Not affiliated with other shops named "Elite Zone".
 
@@ -63,6 +63,7 @@ ${categories}
 
 ## Ordering and contact
 
+- Based in Injambakkam, Chennai, Tamil Nadu. Fittings by appointment or at your address; delivery across India.
 - ${shipping}
 - WhatsApp: ${WHATSAPP_DISPLAY} (${WHATSAPP_LINK})
 - Instagram: https://www.instagram.com/zone_j__/

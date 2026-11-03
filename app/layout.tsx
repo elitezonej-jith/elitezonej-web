@@ -38,14 +38,14 @@ export const metadata: Metadata = {
   title: {
     // "EliteZoneJ" (one word) is how people type the brand/domain; without it
     // Google "corrects" the query to the many unrelated "Elite Zone" shops.
-    default: "Elite Zone J (EliteZoneJ) — Bespoke Tailoring & Designer Wear, India",
+    default: "Elite Zone J (EliteZoneJ) — Bespoke Tailoring & Designer Wear, Chennai",
     template: "%s · Elite Zone J",
   },
   description:
     "Designer-led men's and women's tailoring from India. Suits, sherwanis, lehengas, and bespoke services. Made-to-measure in seven days.",
   keywords: [
     "Indian tailoring", "bespoke suit India", "sherwani", "lehenga",
-    "made to measure", "wedding suit", "Delhi tailoring", "men's tailoring",
+    "made to measure", "wedding suit", "Chennai tailoring", "tailor in Chennai", "men's tailoring",
   ],
   authors: [{ name: "Elite Zone J" }],
   // Google Search Console ownership check. Set GOOGLE_SITE_VERIFICATION in

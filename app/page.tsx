@@ -15,7 +15,7 @@ export const revalidate = 60;
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
   description:
-    "Elite Zone J (EliteZoneJ): designer-led bespoke and ready-to-wear tailoring from India. Suits, sherwanis, blazers, lehengas, fabrics and accessories, made-to-measure in seven days.",
+    "Elite Zone J (EliteZoneJ): designer-led bespoke and ready-to-wear tailoring from Injambakkam, Chennai. Suits, sherwanis, blazers, lehengas, fabrics and accessories, made-to-measure in seven days.",
 };
 
 const SITE = "https://elitezonej.com";
@@ -25,14 +25,26 @@ const SITE = "https://elitezonej.com";
 const LD = [
   {
     "@context": "https://schema.org",
-    "@type": "Organization",
+    // ClothingStore is a LocalBusiness (and an Organization): lets Google show
+    // the business for local searches like "tailor in Chennai".
+    "@type": "ClothingStore",
     name: "Elite Zone J",
     // Spellings people search for; helps Google tie them to this brand.
     alternateName: ["EliteZoneJ", "Elite Zone J Fashion", "Zone J"],
     description:
-      "Indian designer tailoring house: bespoke, made-to-measure and ready-to-wear suits, sherwanis, shirts, women's tailoring, suiting fabrics and accessories, with home fittings and delivery across India.",
+      "Designer tailoring house in Injambakkam, Chennai: bespoke, made-to-measure and ready-to-wear suits, sherwanis, shirts, women's tailoring, suiting fabrics and accessories, with home fittings and delivery across India.",
     url: SITE,
     logo: `${SITE}/logo/favicon-512.png`,
+    image: `${SITE}/generated/_sections/hero.webp`,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Injambakkam",
+      addressLocality: "Chennai",
+      addressRegion: "Tamil Nadu",
+      addressCountry: "IN",
+    },
+    areaServed: { "@type": "Country", name: "India" },
+    telephone: WHATSAPP_DISPLAY.replace(/\s/g, ""),
     contactPoint: {
       "@type": "ContactPoint",
       telephone: WHATSAPP_DISPLAY.replace(/\s/g, ""),

@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Bespoke & Made-to-Measure Tailoring",
   description:
-    "Bespoke and made-to-measure suits, sherwanis and womenswear from our atelier in India. Book a fitting, choose your cloth, and wear it in seven days.",
+    "Bespoke and made-to-measure suits, sherwanis and womenswear from our atelier in Injambakkam, Chennai. Book a fitting at the atelier or at your home, choose your cloth, and wear it in 14 days.",
   alternates: { canonical: "/bespoke" },
 };
 
