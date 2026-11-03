@@ -14,7 +14,7 @@ export default function AnnounceBar({ cfg }: { cfg: RC }) {
   }));
   if (!items.length) return null;
   return (
-    <div className="announce-bar" aria-label={ariaLabel}>
+    <div className="announce-bar" role="marquee" aria-label={ariaLabel}>
       <div className="announce-ticker" aria-hidden="true">
         {[0, 1].map((copy) => (
           <span key={copy} className="announce-ticker__track">
