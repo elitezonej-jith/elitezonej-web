@@ -508,6 +508,9 @@
   transition: transform 500ms cubic-bezier(.22, 1, .36, 1);
 }
 
+/* Hero copy choreography starts 1.2 s earlier than originally designed
+   (eyebrow at 300 ms, not 1500 ms): the copy is hidden until it animates
+   in, and hidden text counts as "not painted" for LCP. */
 .hg-eyebrow {
   font-family: var(--font-mono);
   font-weight: 500;
@@ -517,7 +520,7 @@
   letter-spacing: 0.5em; /* breathes IN to 0.22em */
   opacity: 0;
   transform: translateY(8px);
-  animation: hg-eyebrow-in 1000ms cubic-bezier(.22, 1, .36, 1) calc(var(--idx) * 200ms + 1500ms) forwards;
+  animation: hg-eyebrow-in 1000ms cubic-bezier(.22, 1, .36, 1) calc(var(--idx) * 200ms + 300ms) forwards;
 }
 @keyframes hg-eyebrow-in {
   to { opacity: 1; transform: translateY(0); letter-spacing: 0.22em; }
@@ -534,7 +537,7 @@
   color: #ffffff;
   white-space: pre-line;
   clip-path: inset(0 100% 0 0);
-  animation: hg-clip-reveal 1100ms cubic-bezier(.65, 0, .35, 1) calc(var(--idx) * 200ms + 1700ms) forwards;
+  animation: hg-clip-reveal 1100ms cubic-bezier(.65, 0, .35, 1) calc(var(--idx) * 200ms + 500ms) forwards;
 }
 
 /* Accent rose hairline under the title — draws to 56px, then pulses on hover */
@@ -544,7 +547,7 @@
   height: 1px;
   background: var(--accent);
   margin: 6px 0 4px;
-  animation: hg-rule-draw 900ms cubic-bezier(.65, 0, .35, 1) calc(var(--idx) * 200ms + 2400ms) forwards;
+  animation: hg-rule-draw 900ms cubic-bezier(.65, 0, .35, 1) calc(var(--idx) * 200ms + 1200ms) forwards;
 }
 
 .hg-sub {
@@ -557,7 +560,7 @@
   line-height: 1.4;
   opacity: 0;
   transform: translateY(8px);
-  animation: hg-fade-up 700ms cubic-bezier(.22, 1, .36, 1) calc(var(--idx) * 200ms + 2700ms) forwards;
+  animation: hg-fade-up 700ms cubic-bezier(.22, 1, .36, 1) calc(var(--idx) * 200ms + 1500ms) forwards;
 }
 
 .hg-cta {
@@ -574,7 +577,7 @@
   color: #ffffff;
   padding-bottom: 6px;
   opacity: 0;
-  animation: hg-fade-in 600ms cubic-bezier(.22, 1, .36, 1) calc(var(--idx) * 200ms + 2900ms) forwards;
+  animation: hg-fade-in 600ms cubic-bezier(.22, 1, .36, 1) calc(var(--idx) * 200ms + 1700ms) forwards;
 }
 .hg-cta-arrow {
   display: inline-block;
@@ -590,7 +593,7 @@
   background: #ffffff;
   transform-origin: left center;
   transform: scaleX(0);
-  animation: hg-line-draw 700ms cubic-bezier(.65, 0, .35, 1) calc(var(--idx) * 200ms + 3050ms) forwards;
+  animation: hg-line-draw 700ms cubic-bezier(.65, 0, .35, 1) calc(var(--idx) * 200ms + 1850ms) forwards;
   transition: background 300ms;
 }
 
@@ -604,7 +607,7 @@
   background: rgba(255, 250, 230, 0.32);
   z-index: 3;
   pointer-events: none;
-  animation: hg-foot-draw 1500ms cubic-bezier(.65, 0, .35, 1) calc(var(--idx) * 200ms + 3500ms) forwards;
+  animation: hg-foot-draw 1500ms cubic-bezier(.65, 0, .35, 1) calc(var(--idx) * 200ms + 2300ms) forwards;
 }
 
 /* Hover — hovered tile sharpens, copy nudges, hairline pulses, arrow slides. */

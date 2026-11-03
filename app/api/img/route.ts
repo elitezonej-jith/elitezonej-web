@@ -10,6 +10,29 @@ import { ALLOWED_IMAGE_WIDTHS, BLOB_HOST } from "@/lib/image-widths";
 export const runtime = "nodejs";
 
 const MAX_INPUT_BYTES = 12 * 1024 * 1024;
+
+// Small in-memory LRU of resized variants. On Vercel the CDN does the real
+// caching; this matters when there is no CDN in front (the Docker build,
+// `next start` in CI/local), where every request would otherwise re-run sharp.
+const CACHE_MAX_BYTES = 48 * 1024 * 1024;
+const cache = new Map<string, Buffer>();
+let cacheBytes = 0;
+function cacheGet(key: string): Buffer | undefined {
+  const v = cache.get(key);
+  if (v) { cache.delete(key); cache.set(key, v); } // mark most-recently used
+  return v;
+}
+function cacheSet(key: string, v: Buffer): void {
+  if (v.length > CACHE_MAX_BYTES / 8) return;
+  cache.set(key, v);
+  cacheBytes += v.length;
+  for (const [k, old] of cache) {
+    if (cacheBytes <= CACHE_MAX_BYTES) break;
+    cache.delete(k);
+    cacheBytes -= old.length;
+  }
+}
+const IMMUTABLE = "public, max-age=31536000, s-maxage=31536000, immutable";
 const MAX_PIXELS = 24_000_000;
 const LOCAL_PREFIXES = ["/generated/", "/uploads/"];
 
@@ -37,6 +60,14 @@ export async function GET(req: NextRequest): Promise<Response> {
     return new NextResponse("Bad image request", { status: 400 });
   }
 
+  const key = `${src}|${w}|${q}`;
+  const hit = cacheGet(key);
+  if (hit) {
+    return new NextResponse(new Uint8Array(hit), {
+      headers: { "Content-Type": "image/webp", "Cache-Control": IMMUTABLE },
+    });
+  }
+
   try {
     const res = await fetch(src, { cache: "no-store" });
     if (!res.ok) throw new Error(`source ${res.status}`);
@@ -51,14 +82,12 @@ export async function GET(req: NextRequest): Promise<Response> {
       .resize({ width: w, withoutEnlargement: true })
       .webp({ quality: q, effort: 4 })
       .toBuffer();
+    cacheSet(key, out);
 
+    // Source URLs are content-addressed (unique upload names), so the
+    // variant never changes: cache it everywhere for a year.
     return new NextResponse(new Uint8Array(out), {
-      headers: {
-        "Content-Type": "image/webp",
-        // Source URLs are content-addressed (unique upload names), so the
-        // variant never changes: cache it everywhere for a year.
-        "Cache-Control": "public, max-age=31536000, s-maxage=31536000, immutable",
-      },
+      headers: { "Content-Type": "image/webp", "Cache-Control": IMMUTABLE },
     });
   } catch (e) {
     console.warn("[img] falling back to original:", (e as Error).message, src);

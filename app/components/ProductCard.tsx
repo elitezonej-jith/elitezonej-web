@@ -117,7 +117,10 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
       onMouseEnter={() => setShowAlts(true)}
     >
       <div className="plate" data-loaded={loaded || undefined}>
-        <Link href={`/products/${p.slug}`} aria-label={p.name}>
+        {/* prefetch={false}: product pages are ISR-cached at the edge, so they
+            open fast without it, and prefetching every card in a grid
+            downloaded ~100 KB of page data while the page was loading. */}
+        <Link href={`/products/${p.slug}`} aria-label={p.name} prefetch={false}>
           {VARIANTS.map((v, i) => {
             // Only the primary loads up front; alts render on hover/in-view.
             if (i > 0 && !showAlts) return null;
@@ -151,7 +154,7 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
             Hidden on desktop and when reduced-motion is set (CSS). */}
         <span className="pcard-progress" aria-hidden="true" />
       </div>
-      <Link href={`/products/${p.slug}`} className="meta-link">
+      <Link href={`/products/${p.slug}`} className="meta-link" prefetch={false}>
         <div className="meta">
           <h3 className="name">{p.name}</h3>
           <div className="row">
