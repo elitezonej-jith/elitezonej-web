@@ -10,7 +10,16 @@
 - `idx_payments_order`, existing `idx_orders_*`, `inventory` PK `(product_slug,size)`, `idx_fabric_colours_slug` — all checkout lookups are index-served.
 
 ## Caching
-- Storefront catalog/home reads already use the existing repo layer; no change. The commerce write path is intentionally **not** cached (correctness > latency for money/stock).
+- **Homepage (`/`)**: ISR, `revalidate = 60`. Studio saves call `revalidatePath("/")`. The build prerenders it, so the build needs `DB_DRIVER=postgres` + `DATABASE_URL` (Production has both; Preview lacks `DB_DRIVER`).
+- **Product pages (`/products/[slug]`)**: ISR, `revalidate = 300`, rendered on first visit (`generateStaticParams` returns `[]`). Review eligibility is per-visitor, so it is fetched from `/api/reviews/eligibility` in the browser; the page itself must not read cookies.
+- **Search index**: `/api/search-index`, CDN-cached 5 min, loaded only when a visitor uses search.
+- **Images**: `/api/img` resizes Blob uploads and `/generated/` images to allow-listed widths (`lib/image-widths.ts`); CDN-cached for a year. Falls back to the original on error.
+- Storefront catalog reads use `unstable_cache` in the repo layer. The commerce write path is intentionally **not** cached (correctness > latency for money/stock).
+
+## Front-end budget (enforced in CI by `lighthouserc.json`)
+- CI (`.github/workflows/lighthouse.yml`) builds the site, warms the image resizer (`.github/perf/warmup.mjs`, mimicking the CDN), then runs Lighthouse mobile 5× on `/`, `/collection?c=men` and a product page.
+- Fails the PR if the median performance score < 0.65, Total Blocking Time > 400 ms or CLS > 0.1; warns if LCP > 6.5 s or page weight > 1.4 MB. Thresholds sit below current results (≈73–81) so only real regressions fail; tighten them as the site gets faster.
+- See "Performance rules" in AGENTS.md for the coding rules that keep it there.
 - Schema SQL is read once at module load (existing pattern preserved), not per request.
 
 ## Serverless considerations

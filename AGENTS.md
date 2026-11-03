@@ -54,6 +54,26 @@ mode via `isEphemeralPersistence()`. `lib/db/sql.ts` is a dormant Postgres
 migration stub — nothing imports it yet; activating it is a deliberate,
 approved task, not a casual change.
 
+## Performance rules (the storefront must stay fast on phones)
+CI runs Lighthouse (mobile) on every pull request and fails below the budget
+in `lighthouserc.json`. Background: docs/performance-strategy.md. Do not:
+- Pass large data from a server component into every page. Anything only
+  some visitors need (e.g. the search index) is fetched on demand from an
+  API route (`/api/search-index`).
+- Call React state setters on every animation frame. Write per-frame values
+  to a CSS variable on a ref instead.
+- Run `requestAnimationFrame`/`setInterval` loops while the element is off
+  screen or the tab is hidden. Start/stop them from an IntersectionObserver.
+- Add full-screen loaders, curtains or `loading.tsx` at the root. Navigation
+  feedback is the thin `NavProgress` bar.
+- Mark below-the-fold images `priority`; only the hero/LCP image is.
+- Add `force-dynamic` or read `cookies()`/`headers()` in storefront pages
+  (`/`, `/products/[slug]`). They are ISR-cached; per-visitor data is fetched
+  client-side from an API route (see `/api/reviews/eligibility`).
+- Serve photos at full size. Product images go through `next/image`, whose
+  custom loader resizes them via `/api/img` (allowed widths in
+  `lib/image-widths.ts`). Don't add `unoptimized` to `next.config.ts`.
+
 ## Verification gate (no "done" without evidence)
 There is no test/lint/typecheck script. The real typecheck is:
 

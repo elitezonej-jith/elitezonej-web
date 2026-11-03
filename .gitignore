@@ -70,3 +70,5 @@ CLAUDE.md
 # kiro
 .kiro/
 KT.md
+# Lighthouse CI reports
+.lighthouseci/
