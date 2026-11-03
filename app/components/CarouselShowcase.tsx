@@ -30,9 +30,12 @@ export default function CarouselShowcase({
         <Link className="btn btn-primary" href={ctaHref}>{ctaLabel}</Link>
       </aside>
       <div className="carousel-track" role="list">
-        {products.slice(0, 6).map((p, i) => (
+        {products.slice(0, 6).map((p) => (
           <div key={p.slug} className="carousel-cell" role="listitem">
-            <ProductCard p={p} priority={i < 3} />
+            {/* Not priority: carousels sit below the full-screen hero, and
+                marking 3 cards per carousel as priority made them preload
+                ahead of the hero image (the page's LCP). */}
+            <ProductCard p={p} />
           </div>
         ))}
       </div>

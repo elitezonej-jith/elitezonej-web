@@ -789,9 +789,12 @@
    in. Smaller scale + small translate compared to the desktop version so
    it doesn't fight the carousel snap-scroll for attention. */
 @media (hover: none) and (pointer: coarse) {
+  /* No blur on phones: animating blur() over full-screen images is very
+     expensive for mobile GPUs. The dark-to-bright develop is kept. */
   .hg-img {
+    filter: brightness(0.3) saturate(0.5);
     animation:
-      hg-develop      2400ms cubic-bezier(.22, 1, .36, 1) calc(var(--idx) * 200ms + 200ms) forwards,
+      hg-develop-lite 2400ms cubic-bezier(.22, 1, .36, 1) calc(var(--idx) * 200ms + 200ms) forwards,
       hg-burns-mobile 18s    ease-in-out                  3400ms                            infinite alternate;
   }
   .hg-grain { animation: none; }
@@ -800,6 +803,9 @@
     transform: scale(1);
     filter: brightness(1) saturate(1) blur(0);
   }
+}
+@keyframes hg-develop-lite {
+  to { filter: brightness(1) saturate(1); transform: scale(1.0); }
 }
 @keyframes hg-burns-mobile {
   from { transform: scale(1.0)  translate(0, 0); }

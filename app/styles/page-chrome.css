@@ -1037,70 +1037,8 @@ details.foot-col-acc[open] > summary .foot-col-acc__chev { transform: rotate(180
   details.foot-col-acc > summary { padding: 0; min-height: 0; border-bottom: 0; }
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   LoadingCurtain — full-bleed ink slab with the wordmark, only on the
-   first visit of the session. Gated by sessionStorage in the JS.
-   ───────────────────────────────────────────────────────────────────── */
-.loading-curtain {
-  position: fixed;
-  inset: 0;
-  z-index: 9998;
-  background: var(--ink);
-  color: var(--paper);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  animation: loading-curtain-in 460ms cubic-bezier(.22, 1, .36, 1);
-  transition: opacity 600ms cubic-bezier(.22, 1, .36, 1);
-}
-/* Pure opacity fade — the previous translateY(-3vh) dragged the
-   embedded wordmark visibly upward during the 900ms fade, which read
-   as "the logo flies off the top of the screen" for ~half a second. */
-.loading-curtain.is-fading {
-  opacity: 0;
-}
-@keyframes loading-curtain-in {
-  0%   { opacity: 0; }
-  100% { opacity: 1; }
-}
-.loading-curtain__mark {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 18px;
-  animation: loading-curtain-mark 1100ms cubic-bezier(.22, 1, .36, 1) 80ms both;
-}
-@keyframes loading-curtain-mark {
-  0%   { opacity: 0; transform: translateY(20px); letter-spacing: 0.6em; }
-  100% { opacity: 1; transform: translateY(0); letter-spacing: 0.22em; }
-}
-.loading-curtain__rule {
-  display: block;
-  width: 0;
-  height: 1px;
-  background: var(--accent);
-  animation: loading-curtain-rule 700ms cubic-bezier(.65, 0, .35, 1) 600ms forwards;
-}
-@keyframes loading-curtain-rule { to { width: 56px; } }
-.loading-curtain__sub {
-  font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: 11px;
-  letter-spacing: 0.32em;
-  text-transform: uppercase;
-  color: rgba(250, 247, 242, 0.62);
-  opacity: 0;
-  animation: fade-in 600ms cubic-bezier(.22, 1, .36, 1) 800ms forwards;
-}
+/* Shared keyframe (previously defined with the removed LoadingCurtain). */
 @keyframes fade-in { to { opacity: 1; } }
-
-@media (prefers-reduced-motion: reduce) {
-  .loading-curtain,
-  .loading-curtain * { animation: none !important; transition: none !important; }
-  .loading-curtain__rule { width: 56px; }
-  .loading-curtain__sub { opacity: 1; }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .route-transition,
@@ -1163,4 +1101,22 @@ details.foot-col-acc[open] > summary .foot-col-acc__chev { transform: rotate(180
 }
 @media (prefers-reduced-motion: reduce) {
   .skel::after { animation: none; }
+}
+
+/* Top navigation progress bar (app/components/NavProgress.tsx). */
+.nav-progress {
+  position: fixed; top: 0; left: 0; right: 0; height: 2px;
+  z-index: 1000; overflow: hidden; pointer-events: none;
+}
+.nav-progress span {
+  display: block; height: 100%; width: 40%;
+  background: var(--ink);
+  animation: navProgressSlide 1s cubic-bezier(.4, 0, .2, 1) infinite;
+}
+@keyframes navProgressSlide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(260%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress span { animation: none; width: 100%; opacity: .5; }
 }
