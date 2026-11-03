@@ -88,6 +88,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     };
   }
 
+  // Breadcrumb trail for search results: Home › Category › Product. Mirrors the
+  // visible crumb in ProductPageClient.
+  const catHref = `/collection?c=${product.kind === "fabric" ? "fabrics" : product.category === "accessories" ? "accessories" : product.gender}`;
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${SITE}/` },
+      { "@type": "ListItem", position: 2, name: product.catLink, item: `${SITE}${catHref}` },
+      { "@type": "ListItem", position: 3, name: product.name, item: url },
+    ],
+  };
+
   const related = allProducts.filter((p) => p.slug !== slug).slice(0, 3);
   const { leadTimeDays } = settings;
 
@@ -98,7 +111,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         // Escape against </script> breakout (and HTML-comment / ampersand
         // injection) before inlining the serialized JSON-LD.
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(ld)
+          __html: JSON.stringify([ld, breadcrumbLd])
             .replace(/</g, "\\u003c")
             .replace(/>/g, "\\u003e")
             .replace(/&/g, "\\u0026"),

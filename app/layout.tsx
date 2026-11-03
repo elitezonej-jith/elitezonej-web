@@ -36,7 +36,9 @@ const SITE_URL = "https://elitezonej.com";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Elite Zone J — Premium Tailoring · India",
+    // "EliteZoneJ" (one word) is how people type the brand/domain; without it
+    // Google "corrects" the query to the many unrelated "Elite Zone" shops.
+    default: "Elite Zone J (EliteZoneJ) — Bespoke Tailoring & Designer Wear, India",
     template: "%s · Elite Zone J",
   },
   description:
@@ -46,6 +48,11 @@ export const metadata: Metadata = {
     "made to measure", "wedding suit", "Delhi tailoring", "men's tailoring",
   ],
   authors: [{ name: "Elite Zone J" }],
+  // Google Search Console ownership check. Set GOOGLE_SITE_VERIFICATION in
+  // Vercel (Production) to the code from Search Console's "HTML tag" method.
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+    : {}),
   // No site-wide canonical here: a root `alternates.canonical` is inherited by
   // every page that doesn't set its own, which told Google that /bespoke,
   // /size-guide etc. were duplicates of the homepage. Each page sets its own.
@@ -95,7 +102,7 @@ export const viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
-      lang="en"
+      lang="en-IN"
       data-scroll-behavior="smooth"
       className={`${libreBaskerville.variable} ${roboto.variable}`}
       // Inline custom props override disturbia.css :root (loaded after
