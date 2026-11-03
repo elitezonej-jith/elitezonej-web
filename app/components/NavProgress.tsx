@@ -17,9 +17,20 @@ export default function NavProgress() {
     setActive(false);
   }, [pathname, searchParams]);
 
+  // Safety net: hide after 10 s if a click never turned into a navigation
+  // (e.g. a link whose handler cancels it).
   useEffect(() => {
+    if (!active) return;
+    const t = window.setTimeout(() => setActive(false), 10000);
+    return () => window.clearTimeout(t);
+  }, [active]);
+
+  useEffect(() => {
+    // Capture phase on window: next/link calls preventDefault() in React's
+    // own click handler (to do a client-side navigation), so a normal
+    // bubbling listener would see every <Link> click as "cancelled".
     const onClick = (e: MouseEvent) => {
-      if (e.defaultPrevented || e.button !== 0) return;
+      if (e.button !== 0) return;
       if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
       const a = (e.target as Element | null)?.closest?.("a");
       if (!a || !a.href || a.target === "_blank" || a.hasAttribute("download")) return;
@@ -29,8 +40,8 @@ export default function NavProgress() {
       if (url.pathname.startsWith("/api/")) return;
       setActive(true);
     };
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
+    window.addEventListener("click", onClick, true);
+    return () => window.removeEventListener("click", onClick, true);
   }, []);
 
   if (!active) return null;

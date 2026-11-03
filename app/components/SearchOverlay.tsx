@@ -16,9 +16,11 @@ type Props = {
   open: boolean;
   onClose: () => void;
   searchIndex: SearchIndexItem[];
+  /** True while the index is still being fetched (see SearchToggle). */
+  loading?: boolean;
 };
 
-export default function SearchOverlay({ open, onClose, searchIndex }: Props) {
+export default function SearchOverlay({ open, onClose, searchIndex, loading = false }: Props) {
   const [q, setQ] = useState("");
   const [mounted, setMounted] = useState(false);
   const [results, setResults] = useState<SearchIndexItem[]>([]);
@@ -141,7 +143,7 @@ export default function SearchOverlay({ open, onClose, searchIndex }: Props) {
 
   const hasTokens = tokenize(q).length > 0;
   const showResults = hasTokens && results.length > 0;
-  const showEmpty = hasTokens && results.length === 0;
+  const showEmpty = hasTokens && results.length === 0 && !loading;
 
   return createPortal(
     <>
