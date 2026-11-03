@@ -20,6 +20,20 @@ import { getAggregateForProduct, listForProduct } from "@/lib/admin/repos/produc
 // show up straight away. Nothing in this page reads cookies or headers.
 export const revalidate = 300;
 
+const SITE = "https://elitezonej.com";
+
+// Real product photos for Google (JSON-LD) and link previews (Open Graph).
+// Uploaded products keep their photos in Vercel Blob (`images`); only the
+// original catalogue has /generated/<slug>/ files. Pointing at /generated for
+// an uploaded product gave Google and WhatsApp/Instagram a 404 image.
+function productImages(p: { slug: string; kind?: string; images?: string[] }): string[] {
+  if (p.images && p.images.length > 0) {
+    return p.images.slice(0, 4).map((u) => (u.startsWith("/") ? SITE + u : u));
+  }
+  if (p.kind === "fabric") return [`${SITE}/generated/_sections/process-cloth.webp`];
+  return [`${SITE}/generated/${p.slug}/01-front.webp`, `${SITE}/generated/${p.slug}/02-overview.webp`];
+}
+
 // Empty list = build nothing up front (keeps builds fast); each product is
 // rendered on its first visit and cached from then on.
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
@@ -42,22 +56,24 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   ]);
 
   // Schema.org Product structured data — eligible for rich results in
-  // Google search (price, availability, ratings). Fabrics don't have
-  // per-slug photography, so fall back to the cloth library image.
-  const ldImage = product.kind === "fabric"
-    ? ["/generated/_sections/process-cloth.webp"]
-    : [`/generated/${slug}/01-front.webp`, `/generated/${slug}/02-overview.webp`];
+  // Google search (image, price, availability, ratings).
+  const ldImage = productImages(product);
+  const url = `${SITE}/products/${slug}`;
   const ld: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     image: ldImage,
+    url,
+    sku: slug,
     description: product.description ?? product.line,
     brand: { "@type": "Brand", name: "Elite Zone J" },
     offers: {
       "@type": "Offer",
+      url,
       priceCurrency: "INR",
-      price: product.price,
+      // The price a customer actually pays (sale price when on sale).
+      price: product.salePrice ?? product.price,
       availability: "https://schema.org/InStock",
       itemCondition: "https://schema.org/NewCondition",
     },
@@ -112,12 +128,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const p = await getProductForPage(slug);
   if (!p) return { title: { absolute: "Not found · Elite Zone J" } };
-  // Same image path the JSON-LD uses (see ProductPage): fabrics fall back to
-  // the cloth library image; everything else uses the per-slug photography.
-  const ldImage =
-    p.kind === "fabric"
-      ? ["/generated/_sections/process-cloth.webp"]
-      : [`/generated/${slug}/01-front.webp`, `/generated/${slug}/02-overview.webp`];
+  const ldImage = productImages(p);
   return {
     title: p.name,
     description: p.line,

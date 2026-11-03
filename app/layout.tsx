@@ -46,7 +46,9 @@ export const metadata: Metadata = {
     "made to measure", "wedding suit", "Delhi tailoring", "men's tailoring",
   ],
   authors: [{ name: "Elite Zone J" }],
-  alternates: { canonical: "/" },
+  // No site-wide canonical here: a root `alternates.canonical` is inherited by
+  // every page that doesn't set its own, which told Google that /bespoke,
+  // /size-guide etc. were duplicates of the homepage. Each page sets its own.
   openGraph: {
     type: "website",
     siteName: "Elite Zone J",

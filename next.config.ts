@@ -19,6 +19,18 @@ const nextConfig: NextConfig = {
     deviceSizes: [...IMAGE_DEVICE_SIZES],
     imageSizes: [...IMAGE_SIZES],
   },
+  // One host for search engines: www.elitezonej.com served a full duplicate
+  // of the site. Permanent redirect to the bare domain (matches metadataBase).
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.elitezonej.com" }],
+        destination: "https://elitezonej.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
   serverExternalPackages: ["better-sqlite3"],
   // Client router cache (in-browser, per-session, keyed by route segment —
   // NOT a shared server cache). Re-warms back/forward & repeat navigations.

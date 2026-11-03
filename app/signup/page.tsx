@@ -7,7 +7,8 @@ import SignupForm from "./SignupForm";
 import "../styles/account.css";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Create account — Elite Zone J" };
+// Private page: keep it out of search results.
+export const metadata = { title: "Create account", robots: { index: false, follow: true } };
 
 export default async function SignupPage({
   searchParams,

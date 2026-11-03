@@ -10,7 +10,8 @@ import "../styles/account.css";
 import "../styles/addresses.css";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Your account — Elite Zone J" };
+// Private page: keep it out of search results.
+export const metadata = { title: "Your account", robots: { index: false, follow: true } };
 
 export default async function AccountPage() {
   const me = await requireCustomer();

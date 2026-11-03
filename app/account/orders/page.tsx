@@ -8,7 +8,8 @@ import "../../styles/account.css";
 import "../../styles/orders.css";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Your orders — Elite Zone J" };
+// Private page: keep it out of search results.
+export const metadata = { title: "Your orders", robots: { index: false, follow: true } };
 
 function statusLabel(status: string): string {
   if (status === "new") return "Awaiting payment";
