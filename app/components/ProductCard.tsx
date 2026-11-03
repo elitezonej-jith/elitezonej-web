@@ -48,24 +48,13 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
     const startIdx = hash % VARIANTS.length;
     setActive(startIdx);
 
-    const inViewRef = { current: false };
-    const visibleRef = { current: !document.hidden };
-
-    const io = new IntersectionObserver(
-      ([e]) => {
-        inViewRef.current = e.isIntersecting && e.intersectionRatio > 0.25;
-        // Touch autoplay needs the alt frames — load them once visible.
-        if (e.isIntersecting) setShowAlts(true);
-      },
-      { threshold: [0, 0.25, 0.5, 1] }
-    );
-    io.observe(el);
-
-    const onVis = () => { visibleRef.current = !document.hidden; };
-    document.addEventListener("visibilitychange", onVis);
-
+    // The rAF loop only runs while this card is on screen and the tab is
+    // visible. Previously every card on the page ran its own loop forever,
+    // writing a style property each frame even when off-screen, which kept
+    // phones recalculating styles non-stop.
+    let inView = false;
     let raf = 0;
-    let last = performance.now();
+    let last = 0;
     // Offset the starting accumulator so each card lands its first
     // crossfade at a slightly different time even after sync-pause/resume.
     let acc = (hash % SLIDE_MS);
@@ -73,26 +62,46 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
     const tick = (now: number) => {
       const dt = now - last;
       last = now;
-      if (inViewRef.current && visibleRef.current) {
-        acc += dt;
-        const pct = Math.min(1, (acc % SLIDE_MS) / SLIDE_MS);
-        // Write progress directly to a CSS var — avoids 60fps React re-renders.
-        el.style.setProperty("--p", String(pct));
-        if (acc >= SLIDE_MS) {
-          acc = 0;
-          el.style.setProperty("--p", "0");
-          setActive(prev => (prev + 1) % VARIANTS.length);
-        }
-      } else {
-        el.style.setProperty("--p", "0");
+      acc += dt;
+      const pct = Math.min(1, (acc % SLIDE_MS) / SLIDE_MS);
+      // Write progress directly to a CSS var — avoids 60fps React re-renders.
+      el.style.setProperty("--p", String(pct));
+      if (acc >= SLIDE_MS) {
         acc = 0;
+        el.style.setProperty("--p", "0");
+        setActive(prev => (prev + 1) % VARIANTS.length);
       }
       raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
+    const start = () => {
+      if (raf || !inView || document.hidden) return;
+      last = performance.now();
+      raf = requestAnimationFrame(tick);
+    };
+    const stop = () => {
+      if (!raf) return;
+      cancelAnimationFrame(raf);
+      raf = 0;
+      acc = 0;
+      el.style.setProperty("--p", "0");
+    };
+
+    const io = new IntersectionObserver(
+      ([e]) => {
+        inView = e.isIntersecting && e.intersectionRatio > 0.25;
+        // Touch autoplay needs the alt frames — load them once visible.
+        if (e.isIntersecting) setShowAlts(true);
+        if (inView) start(); else stop();
+      },
+      { threshold: [0, 0.25, 0.5, 1] }
+    );
+    io.observe(el);
+
+    const onVis = () => { if (document.hidden) stop(); else start(); };
+    document.addEventListener("visibilitychange", onVis);
 
     return () => {
-      cancelAnimationFrame(raf);
+      stop();
       io.disconnect();
       document.removeEventListener("visibilitychange", onVis);
     };
@@ -108,7 +117,10 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
       onMouseEnter={() => setShowAlts(true)}
     >
       <div className="plate" data-loaded={loaded || undefined}>
-        <Link href={`/products/${p.slug}`} aria-label={p.name}>
+        {/* prefetch={false}: product pages are ISR-cached at the edge, so they
+            open fast without it, and prefetching every card in a grid
+            downloaded ~100 KB of page data while the page was loading. */}
+        <Link href={`/products/${p.slug}`} aria-label={p.name} prefetch={false}>
           {VARIANTS.map((v, i) => {
             // Only the primary loads up front; alts render on hover/in-view.
             if (i > 0 && !showAlts) return null;
@@ -142,7 +154,7 @@ export default function ProductCard({ p, priority = false }: { p: Product; prior
             Hidden on desktop and when reduced-motion is set (CSS). */}
         <span className="pcard-progress" aria-hidden="true" />
       </div>
-      <Link href={`/products/${p.slug}`} className="meta-link">
+      <Link href={`/products/${p.slug}`} className="meta-link" prefetch={false}>
         <div className="meta">
           <h3 className="name">{p.name}</h3>
           <div className="row">

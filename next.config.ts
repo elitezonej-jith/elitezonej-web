@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import path from "node:path";
+import { IMAGE_DEVICE_SIZES, IMAGE_SIZES } from "./lib/image-widths";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -8,21 +9,15 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
-  // Source images are now compressed WebP (~80 KB each) so the optimizer
-  // no longer OOMs the worker. Re-enabled to serve responsive variants
-  // and modern formats per viewport.
+  // Images: Vercel's Image Optimization is NOT used (Hobby quota was
+  // exceeded). Instead the custom loader sends product photos to our own
+  // resizer, /api/img, whose output the CDN caches for a year. The size
+  // lists drive the <Image> srcset and are the only widths /api/img accepts.
   images: {
-    // Images are pre-compressed WebP (~83KB avg). Vercel Image Optimization
-    // quota is exceeded on Hobby plan — serve directly without transformation.
-    // Blob-hosted images bypass via the custom loader; local /generated images
-    // are already optimized at generation time.
-    unoptimized: true,
-    formats: ["image/webp"],
-    remotePatterns: [
-      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
-    ],
     loader: "custom",
     loaderFile: "./lib/image-loader.ts",
+    deviceSizes: [...IMAGE_DEVICE_SIZES],
+    imageSizes: [...IMAGE_SIZES],
   },
   serverExternalPackages: ["better-sqlite3"],
   // Client router cache (in-browser, per-session, keyed by route segment —

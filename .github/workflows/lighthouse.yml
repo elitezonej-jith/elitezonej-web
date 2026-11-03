@@ -1,0 +1,47 @@
+name: Lighthouse (mobile speed budget)
+
+on:
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # No DB_DRIVER here, so the app uses its built-in SQLite seed data.
+      - run: npm run build
+
+      - name: Start production server
+        run: |
+          npx next start -p 3100 > /tmp/next.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:3100/ && exit 0; sleep 1; done
+          cat /tmp/next.log; exit 1
+
+      - name: Warm image resizer (mimics the CDN in production)
+        run: node .github/perf/warmup.mjs http://localhost:3100 / "/collection?c=men" /products/heritage-three-piece
+
+      - name: Lighthouse CI
+        run: npx -y @lhci/cli@0.15.x autorun
+
+      - name: Upload Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: .lighthouseci/
+          include-hidden-files: true
+          retention-days: 14

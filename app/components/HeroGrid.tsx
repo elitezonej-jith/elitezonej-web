@@ -55,7 +55,6 @@ export default function HeroGrid({ tiles = DEFAULT_TILES }: { tiles?: HeroTile[]
   const TILES = tiles.length ? tiles : DEFAULT_TILES;
   const railRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
-  const [progress, setProgress] = useState(0); // 0–1, fills active dot
   const interactedAt = useRef<number>(0);
   const inViewRef = useRef<boolean>(true);
   const visibleRef = useRef<boolean>(true);
@@ -176,12 +175,11 @@ export default function HeroGrid({ tiles = DEFAULT_TILES }: { tiles?: HeroTile[]
         !userScrollingRef.current;
 
       if (canPlay) {
+        // No per-frame React state here: the old setProgress() re-rendered
+        // the whole hero 60x/second on phones and nothing in the CSS read it.
         acc += dt;
-        const pct = Math.min(1, acc / SLIDE_MS);
-        setProgress(pct);
         if (acc >= SLIDE_MS) {
           acc = 0;
-          setProgress(0);
           // advance
           setActive(prev => {
             const next = (prev + 1) % TILES.length;
@@ -190,8 +188,6 @@ export default function HeroGrid({ tiles = DEFAULT_TILES }: { tiles?: HeroTile[]
           });
         }
       } else {
-        // not playing — reset progress unless mid-slide
-        if (progress !== 0) setProgress(0);
         acc = 0;
       }
       raf = requestAnimationFrame(tick);
@@ -219,9 +215,6 @@ export default function HeroGrid({ tiles = DEFAULT_TILES }: { tiles?: HeroTile[]
       rail?.removeEventListener("scroll", onScrollEnd);
       if (scrollIdleTimer) window.clearTimeout(scrollIdleTimer);
     };
-    // We deliberately exclude `progress` from deps so the rAF doesn't restart
-    // each frame; it reads progress via closure and that's fine here.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [goTo]);
 
   return (
@@ -294,7 +287,6 @@ export default function HeroGrid({ tiles = DEFAULT_TILES }: { tiles?: HeroTile[]
             aria-label={`Go to ${t.title.replace("\n", " ")}`}
             data-active={active === i}
             className="hg-dot"
-            style={active === i ? { ["--p" as string]: progress } : undefined}
             onClick={() => { userInteract(); goTo(i); }}
           >
             <span className="hg-dot-track" aria-hidden="true">
