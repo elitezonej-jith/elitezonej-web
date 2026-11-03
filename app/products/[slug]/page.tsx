@@ -28,9 +28,14 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const product = await getProductForPage(slug);
   if (!product) notFound();
 
-  const aggregate = await getAggregateForProduct(slug);
-  const reviews = await listForProduct(slug, "approved");
-  const me = await getCurrentCustomer();
+  // Independent reads run in parallel instead of one after another.
+  const [aggregate, reviews, me, allProducts, settings] = await Promise.all([
+    getAggregateForProduct(slug),
+    listForProduct(slug, "approved"),
+    getCurrentCustomer(),
+    listProductsForPage(),
+    getSiteSettings(),
+  ]);
 
   // Determine review eligibility
   let canWrite = false;
@@ -76,8 +81,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     };
   }
 
-  const related = (await listProductsForPage()).filter((p) => p.slug !== slug).slice(0, 3);
-  const { leadTimeDays } = await getSiteSettings();
+  const related = allProducts.filter((p) => p.slug !== slug).slice(0, 3);
+  const { leadTimeDays } = settings;
 
   return (
     <>

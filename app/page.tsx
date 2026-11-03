@@ -1,14 +1,14 @@
 import HomepageRenderer from "./components/storefront/HomepageRenderer";
 import "./styles/home.css";
 
-// ISR: the homepage is served from Vercel's edge cache (in India for Indian
-// visitors) instead of being rendered in the US on every visit. It refreshes
-// in the background at most every 60 s, and every /studio save that affects
-// it already calls revalidatePath("/") / updateTag("homepage"), so edits
-// still show up straight away. Nothing on this page reads cookies or
-// headers; per-visitor UI (cart, wishlist) is client-side.
-// Needs the build to reach the database (it prerenders "/" once at build).
-export const revalidate = 60;
+// Force-dynamic at the page level: the Vercel build can't reach Neon, so
+// prerendering "/" (needed for ISR, `revalidate = 60`) fails the build.
+// Runtime perf still benefits from the per-fetch `unstable_cache` wrappers
+// inside HomepageRenderer (60 s, invalidated by revalidateTag("homepage")).
+// To serve "/" from the edge cache instead, give the build access to the DB
+// (DATABASE_URL in the Build environment / Neon IP allow-list), then switch
+// this back to `export const revalidate = 60`.
+export const dynamic = "force-dynamic";
 
 export default function Home() {
   return <HomepageRenderer />;
