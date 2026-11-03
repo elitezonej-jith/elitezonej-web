@@ -7,48 +7,39 @@ import ProductPageClient from "./ProductPageClient";
 import { getProductForPage } from "@/lib/storefront/product-for-page";
 import { listProductsForPage } from "@/lib/storefront/catalogue";
 import { getSiteSettings } from "@/lib/storefront/site-settings";
-import {
-  getAggregateForProduct,
-  listForProduct,
-  hasCustomerPurchased,
-  hasExistingReview,
-} from "@/lib/admin/repos/product-reviews";
-import { getCurrentCustomer } from "@/lib/storefront/session";
+import { getAggregateForProduct, listForProduct } from "@/lib/admin/repos/product-reviews";
 
 // HEADER_CSS removed: the legacy block hard-coded the cream/oxblood
 // header/footer/trust-strip from the original tailoring brand, which
 // conflicted with the new disturbia.css theme. Header/Footer/TrustStrip
 // components now style themselves via globals.css + disturbia.css.
 
-// Temporarily force-dynamic: Vercel build can't reach Neon to prerender ISR.
-export const dynamic = "force-dynamic";
+// ISR: rendered on first visit, then served from Vercel's edge cache and
+// refreshed in the background at most every 5 minutes. Studio product saves
+// and review moderation call revalidatePath(`/products/${slug}`), so those
+// show up straight away. Nothing in this page reads cookies or headers.
+export const revalidate = 300;
+
+// Empty list = build nothing up front (keeps builds fast); each product is
+// rendered on its first visit and cached from then on.
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  return [];
+}
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const product = await getProductForPage(slug);
   if (!product) notFound();
 
-  // Independent reads run in parallel instead of one after another.
-  const [aggregate, reviews, me, allProducts, settings] = await Promise.all([
+  // Independent reads run in parallel. Nothing here is per-visitor: review
+  // eligibility is fetched client-side (/api/reviews/eligibility), which is
+  // what allows this page to be cached (see `revalidate` above).
+  const [aggregate, reviews, allProducts, settings] = await Promise.all([
     getAggregateForProduct(slug),
     listForProduct(slug, "approved"),
-    getCurrentCustomer(),
     listProductsForPage(),
     getSiteSettings(),
   ]);
-
-  // Determine review eligibility
-  let canWrite = false;
-  let reviewState: "anon" | "not_purchased" | "already_reviewed" | "can_write" = "anon";
-  if (me) {
-    const [purchased, alreadyReviewed] = await Promise.all([
-      hasCustomerPurchased(me.id, slug),
-      hasExistingReview(me.id, slug),
-    ]);
-    if (alreadyReviewed) reviewState = "already_reviewed";
-    else if (!purchased) reviewState = "not_purchased";
-    else { reviewState = "can_write"; canWrite = true; }
-  }
 
   // Schema.org Product structured data — eligible for rich results in
   // Google search (price, availability, ratings). Fabrics don't have
@@ -105,8 +96,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           leadTimeDays={leadTimeDays}
           reviews={reviews}
           reviewAggregate={aggregate}
-          canWrite={canWrite}
-          reviewState={reviewState}
         />
       </main>
       <TrustStrip />

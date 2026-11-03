@@ -1,8 +1,9 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import type { ProductReview, ReviewAggregate } from "../../../lib/admin/repos/product-reviews";
 import { submitReviewAction, type SubmitReviewState } from "./actions";
+import type { ReviewState } from "../../api/reviews/eligibility/route";
 
 function Stars({
   value,
@@ -40,15 +41,24 @@ export default function ReviewsSection({
   slug,
   aggregate,
   reviews,
-  canWrite,
-  reviewState,
 }: {
   slug: string;
   aggregate: ReviewAggregate;
   reviews: ProductReview[];
-  canWrite: boolean;
-  reviewState: "anon" | "not_purchased" | "already_reviewed" | "can_write";
 }) {
+  // Eligibility is per visitor, so it is fetched in the browser; that lets
+  // the product page itself be cached. null = still checking (render
+  // nothing rather than flash "Sign in").
+  const [reviewState, setReviewState] = useState<ReviewState | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/reviews/eligibility?slug=${encodeURIComponent(slug)}`, { cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : { reviewState: "anon" }))
+      .then((d: { reviewState: ReviewState }) => { if (!cancelled) setReviewState(d.reviewState); })
+      .catch(() => { if (!cancelled) setReviewState("anon"); });
+    return () => { cancelled = true; };
+  }, [slug]);
+  const canWrite = reviewState === "can_write";
   const [state, formAction, pending] = useActionState<SubmitReviewState, FormData>(
     submitReviewAction,
     {},
@@ -145,7 +155,7 @@ export default function ReviewsSection({
             </button>
           </form>
         )
-      ) : reviewState === "already_reviewed" ? (
+      ) : reviewState === null ? null : reviewState === "already_reviewed" ? (
         <p className="rv-signin">You&apos;ve already reviewed this product.</p>
       ) : reviewState === "not_purchased" ? (
         <p className="rv-signin">Purchase this product to leave a review.</p>
