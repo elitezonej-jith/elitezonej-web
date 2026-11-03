@@ -50,7 +50,7 @@ function RatingBadge() {
   return (
     <div className="rating-badge">
       <div className="rating-label">Excellent</div>
-      <div className="rating-stars" aria-label="Rated 4.8 out of 5">
+      <div className="rating-stars" role="img" aria-label="Rated 4.8 out of 5">
         {[0,1,2,3,4].map(i => (
           <span key={i} className="star-square">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="#ffffff">
@@ -122,7 +122,7 @@ export default async function Footer({ minimal = false }: { minimal?: boolean })
           </FooterAccordion>
 
           <FooterAccordion title="Follow" className="foot-col-social">
-            <div className="social-row" aria-label="Social media">
+            <div className="social-row" role="group" aria-label="Social media">
               <a href="https://www.instagram.com/zone_j__/" aria-label="Instagram" className="social-icon" target="_blank" rel="noopener noreferrer"><InstagramIcon /></a>
               <a href="https://www.youtube.com/@jithcoke28" aria-label="YouTube"   className="social-icon" target="_blank" rel="noopener noreferrer"><YouTubeIcon /></a>
               <a href="https://in.pinterest.com/jithcoke/" aria-label="Pinterest" className="social-icon" target="_blank" rel="noopener noreferrer"><PinterestIcon /></a>
@@ -135,7 +135,7 @@ export default async function Footer({ minimal = false }: { minimal?: boolean })
 
         {/* Mobile-only condensed strip — replaces the 3 stacked accordions
             with a single editorial block: logo, inline middot links, social. */}
-        <div className="foot-mobile" aria-label="Footer">
+        <div className="foot-mobile" role="group" aria-label="Footer">
           <Link href="/" className="foot-mobile__logo" aria-label={s.brandName}>
             <Image
               src="/logo/lockup-trimmed.png"
@@ -152,7 +152,7 @@ export default async function Footer({ minimal = false }: { minimal?: boolean })
             <li><Link href="/cart">Returns</Link></li>
             <li><Link href="/cart">Privacy</Link></li>
           </ul>
-          <div className="foot-mobile__social" aria-label="Social media">
+          <div className="foot-mobile__social" role="group" aria-label="Social media">
             <a href="https://www.instagram.com/zone_j__/" aria-label="Instagram" className="social-icon" target="_blank" rel="noopener noreferrer"><InstagramIcon /></a>
             <a href="https://www.youtube.com/@jithcoke28" aria-label="YouTube" className="social-icon" target="_blank" rel="noopener noreferrer"><YouTubeIcon /></a>
             <a href="https://in.pinterest.com/jithcoke/" aria-label="Pinterest" className="social-icon" target="_blank" rel="noopener noreferrer"><PinterestIcon /></a>
